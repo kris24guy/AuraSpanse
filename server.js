@@ -1,422 +1,525 @@
-'use strict';
-
-// ─── Dependencies ────────────────────────────────────────────────────────────
-const express  = require('express');
-const Stripe   = require('stripe');
-const fetch    = require('node-fetch');
-const { Resend } = require('resend');
-
-const app    = express();
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const resend = new Resend(process.env.RESEND_API_KEY);
-
+const express = require("express");
+const https = require("https");
+const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// ─── Env guard ────────────────────────────────────────────────────────────────
-const REQUIRED_ENV = ['STRIPE_SECRET_KEY', 'ANTHROPIC_API_KEY', 'RESEND_API_KEY', 'PRICE_ID'];
-const missing = REQUIRED_ENV.filter(k => !process.env[k]);
-if (missing.length) {
-  console.error('❌  Missing env vars:', missing.join(', '));
-  process.exit(1);
+function callClaude(birthdate) {
+  return new Promise((resolve, reject) => {
+    const prompt = `Generate a full living aura reading for someone born on ${birthdate}.
+
+The tone must NOT be like a horoscope. Instead, speak directly about their personal color frequencies — what each hue reveals about their innate strengths, hidden weaknesses, and specific actionable steps they can take to align with their highest vibration. Ground every insight in the color itself: its frequency, its elemental nature, what it activates and what it blocks.
+
+Return ONLY valid JSON — no markdown, no backticks, no extra text:
+{
+  "subHues": [
+    {
+      "name": "unique 2-3 word poetic hue name (e.g. Twilight Ember Amber, Void Pearl Indigo, Sacred Storm Viridian)",
+      "hex": "#rich saturated hex",
+      "emotion": "1-3 word primary emotion",
+      "frequency": 432,
+      "element": "one of: Fire Water Earth Air Ether Plasma Void Starlight Storm Crystal Thunder Mist",
+      "strength": "2 sentences — what innate gift or power this color frequency gives them",
+      "weakness": "2 sentences — what shadow or block this color reveals they must face",
+      "action": "2 sentences — a specific grounded action they can take to work with this color frequency"
+    },
+    { "name":"...", "hex":"...", "emotion":"...", "frequency": 528, "element":"...", "strength":"...", "weakness":"...", "action":"..." },
+    { "name":"...", "hex":"...", "emotion":"...", "frequency": 639, "element":"...", "strength":"...", "weakness":"...", "action":"..." }
+  ],
+  "finalHue": {
+    "name": "unique 2-4 word signature aura name",
+    "hex": "#hex that harmonizes all three sub-hues",
+    "description": "3 sentences on their blended aura essence — what it means for who they are at their core, not predictions"
+  },
+  "aurascope": "6 sentences that go deeper — weave together the three frequencies into a personal portrait of their soul's design: their creative architecture, their relational patterns, the specific fears that limit them, and the concrete inner shifts that would transform their life. This is intimate color psychology, not fortune telling.",
+  "mantra": "exactly 8-12 words — a powerful personal mantra that reflects their specific color frequencies"
+}`;
+
+    const body = JSON.stringify({
+      model: "claude-opus-4-5",
+      max_tokens: 2000,
+      system: "You are the Universe's Aura Oracle — a master of chromotherapy, color frequency psychology, sacred geometry, chakra science, and the intersection of quantum physics and ancient wisdom. You interpret the electromagnetic signature encoded in a birth date to reveal a person's true color nature. You speak with intimate directness — not as a fortune teller, but as a mirror showing someone their own deepest design. Every reading is grounded in the specific properties of each color frequency: its Hz range, its elemental correspondence, what it opens and what it blocks in the human energy field.",
+      messages: [{ role: "user", content: prompt }]
+    });
+
+    const options = {
+      hostname: "api.anthropic.com",
+      path: "/v1/messages",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01"
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", chunk => data += chunk);
+      res.on("end", () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) return reject(new Error(parsed.error.message));
+          const text = parsed.content.filter(b => b.type === "text").map(b => b.text).join("");
+          const clean = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+          let result;
+          try { result = JSON.parse(clean); }
+          catch {
+            const match = clean.match(/\{[\s\S]*\}/);
+            if (match) result = JSON.parse(match[0]);
+            else throw new Error("Could not parse aura data");
+          }
+          resolve(result);
+        } catch (e) { reject(e); }
+      });
+    });
+
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
 }
 
-// ─── Aura Data ────────────────────────────────────────────────────────────────
-const ZODIAC = {
-  aries:       { color:'#FF4136', stone:'Diamond',    traits:['+Courage','+Initiative','-Impulsive'],   label:'The Ram'         },
-  taurus:      { color:'#2ECC40', stone:'Emerald',    traits:['+Steadfast','+Sensual','-Stubborn'],      label:'The Bull'        },
-  gemini:      { color:'#FFDC00', stone:'Agate',      traits:['+Curious','+Adaptable','-Inconsistent'],  label:'The Twins'       },
-  cancer:      { color:'#B0C4DE', stone:'Moonstone',  traits:['+Nurturing','+Intuitive','-Guarded'],     label:'The Crab'        },
-  leo:         { color:'#FF851B', stone:'Peridot',    traits:['+Magnetic','+Generous','-Domineering'],   label:'The Lion'        },
-  virgo:       { color:'#01FF70', stone:'Sapphire',   traits:['+Precise','+Devoted','-Critical'],        label:'The Maiden'      },
-  libra:       { color:'#F012BE', stone:'Opal',       traits:['+Diplomatic','+Charming','-Indecisive'],  label:'The Scales'      },
-  scorpio:     { color:'#85144b', stone:'Topaz',      traits:['+Perceptive','+Loyal','-Obsessive'],      label:'The Scorpion'    },
-  sagittarius: { color:'#7FDBFF', stone:'Turquoise',  traits:['+Visionary','+Honest','-Restless'],       label:'The Archer'      },
-  capricorn:   { color:'#3D9970', stone:'Garnet',     traits:['+Disciplined','+Ambitious','-Rigid'],     label:'The Sea-Goat'    },
-  aquarius:    { color:'#39CCCC', stone:'Amethyst',   traits:['+Original','+Humanitarian','-Aloof'],     label:'The Water Bearer'},
-  pisces:      { color:'#001f3f', stone:'Aquamarine', traits:['+Empathic','+Imaginative','-Escapist'],   label:'The Fish'        },
-};
+app.post("/api/reading", async (req, res) => {
+  const { birthdate } = req.body;
+  if (!birthdate) return res.status(400).json({ error: "Birth date is required" });
+  try {
+    const data = await callClaude(birthdate);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Oracle connection failed. Please try again." });
+  }
+});
 
-const BIRTHSTONES_BY_MONTH = [
-  'Garnet','Amethyst','Aquamarine','Diamond','Emerald','Moonstone',
-  'Ruby','Peridot','Sapphire','Opal','Topaz','Turquoise'
+const HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aurascope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;overflow-x:hidden}
+body{background:radial-gradient(ellipse at 28% 22%,#1a0840,#090220 40%,#030110 72%,#000);color:#ede8ff;font-family:'Crimson Pro',Georgia,serif;}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d,3s) var(--dl,0s) ease-in-out infinite}
+.geo{position:fixed;pointer-events:none;opacity:.055}
+.screen{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(32px,5vw,72px) clamp(16px,4vw,40px);text-align:center;}
+.hidden{display:none!important}
+.orb-wrap{position:relative}
+.orb{width:100%;height:100%;border-radius:50%}
+.orb-shine{position:absolute;inset:18%;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(255,255,255,.3),transparent);pointer-events:none}
+.ring{position:absolute;border-radius:50%;border:1px solid;opacity:.35}
+.label{display:block;font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.24em;color:rgba(180,150,255,.35);text-transform:uppercase;margin-bottom:8px;text-align:left}
+input[type=date],input[type=email]{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:13px 18px;color:#ede8ff;font-family:'Crimson Pro',Georgia,serif;font-size:1.05rem;outline:none;transition:border-color .3s,box-shadow .3s;color-scheme:dark;}
+input:focus{border-color:rgba(139,92,246,.7);box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) saturate(2) hue-rotate(240deg);cursor:pointer}
+.btn-start{font-family:'Cinzel',serif;font-size:.84rem;letter-spacing:.18em;text-transform:uppercase;background:linear-gradient(135deg,#5b21b6,#8b5cf6,#c026d3);color:#fff;border:none;border-radius:50px;padding:15px 52px;cursor:pointer;box-shadow:0 4px 30px rgba(91,33,182,.5);transition:transform .2s,box-shadow .2s;}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(91,33,182,.65)}
+.btn-unlock{font-family:'Cinzel',serif;font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;background:linear-gradient(135deg,#7c3aed,#a855f7,#ec4899);color:#fff;border:none;border-radius:50px;padding:15px 44px;cursor:pointer;box-shadow:0 4px 26px rgba(124,58,237,.5);transition:transform .2s,box-shadow .2s;}
+.btn-unlock:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(124,58,237,.65)}
+.btn-ghost{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;background:none;border:1px solid rgba(139,92,246,.22);border-radius:50px;padding:10px 30px;color:rgba(195,165,255,.45);cursor:pointer;transition:all .25s;}
+.btn-ghost:hover{color:rgba(195,165,255,.9);border-color:rgba(139,92,246,.5)}
+.gold{background:linear-gradient(135deg,#b8922c,#f0d060,#d4a84b,#f5e090,#b8922c);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 5s ease infinite;}
+.progress-track{height:3px;background:rgba(139,92,246,.13);border-radius:99px;overflow:hidden;width:320px;max-width:80vw}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#5b21b6,#8b5cf6,#c026d3);border-radius:99px;transition:width .6s ease}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px;width:100%;max-width:980px}
+.hue-card{background:rgba(255,255,255,.025);border-radius:18px;padding:28px 22px;backdrop-filter:blur(10px);transition:transform .3s;text-align:center}
+.hue-card:hover{transform:translateY(-5px)}
+.tag{display:inline-block;padding:3px 11px;border-radius:99px;font-family:'Cinzel',serif;font-size:.67rem;letter-spacing:.1em;margin:3px}
+.card-section{margin-top:16px;text-align:left;padding:12px 14px;border-radius:10px}
+.card-section-label{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;opacity:.5}
+.aurascope-block{position:relative;border-radius:18px;padding:clamp(24px,4vw,44px);max-width:760px;margin:0 auto 28px;overflow:hidden}
+.aurascope-text{font-style:italic;font-size:clamp(1rem,2.5vw,1.1rem);line-height:2;color:rgba(215,205,255,.8)}
+.aurascope-blur{filter:blur(7px);user-select:none;pointer-events:none;-webkit-filter:blur(7px)}
+.unlock-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:linear-gradient(to bottom,rgba(9,2,32,.1) 0%,rgba(9,2,32,.85) 55%,rgba(9,2,32,.98) 100%);border-radius:18px;padding:20px}
+.unlock-overlay.hidden{display:none!important}
+.mantra-block{background:linear-gradient(135deg,rgba(176,136,56,.07),rgba(230,185,80,.04));border:1px solid rgba(176,136,56,.22);border-radius:12px;padding:20px 32px;max-width:600px;margin:0 auto 46px}
+.eyebrow{font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.34em;color:rgba(180,150,255,.36);text-transform:uppercase;margin-bottom:12px}
+.divider{display:flex;align-items:center;gap:14px;margin:50px auto;max-width:520px;width:100%}
+.divider-line{flex:1;height:1px}
+.results-inner{max-width:980px;margin:0 auto;width:100%}
+.email-capture{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:380px}
+
+@keyframes twinkle{0%,100%{opacity:.18}50%{opacity:.95}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes ringOut{0%{transform:scale(.88);opacity:.55}100%{transform:scale(1.65);opacity:0}}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spinCW{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes spinCCW{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+@keyframes hueShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(200deg)}}
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div class="geo" style="top:4%;right:3%;width:180px;height:180px;animation:spinCW 44s linear infinite">
+  <svg viewBox="0 0 200 200" fill="none" stroke="#a855f7" stroke-width=".6">
+    <circle cx="100" cy="100" r="92"/><circle cx="100" cy="100" r="60"/><circle cx="100" cy="100" r="28"/>
+    <line x1="100" y1="8" x2="100" y2="192"/>
+    <line x1="100" y1="8" x2="100" y2="192" transform="rotate(60 100 100)"/>
+    <line x1="100" y1="8" x2="100" y2="192" transform="rotate(120 100 100)"/>
+    <polygon points="100,14 183,158 17,158"/><polygon points="100,186 17,42 183,42"/>
+  </svg>
+</div>
+<div class="geo" style="bottom:8%;left:2%;width:110px;height:110px;animation:spinCCW 60s linear infinite">
+  <svg viewBox="0 0 120 120" fill="none" stroke="#ec4899" stroke-width=".5">
+    <circle cx="60" cy="60" r="56"/>
+    <line x1="60" y1="4" x2="60" y2="116"/>
+    <line x1="60" y1="4" x2="60" y2="116" transform="rotate(45 60 60)"/>
+    <line x1="60" y1="4" x2="60" y2="116" transform="rotate(90 60 60)"/>
+    <line x1="60" y1="4" x2="60" y2="116" transform="rotate(135 60 60)"/>
+  </svg>
+</div>
+
+<!-- INTRO -->
+<div id="screen-intro" class="screen">
+  <div style="animation:floatY 4.5s ease-in-out infinite;margin-bottom:38px">
+    <div class="orb-wrap" style="width:168px;height:168px">
+      <div class="ring" style="inset:-17px;border-color:rgba(168,85,247,.38);animation:ringOut 2.2s 0s ease-out infinite"></div>
+      <div class="ring" style="inset:-34px;border-color:rgba(168,85,247,.26);animation:ringOut 2.8s .9s ease-out infinite"></div>
+      <div class="ring" style="inset:-51px;border-color:rgba(168,85,247,.14);border-style:dashed;animation:ringOut 3.4s 1.8s ease-out infinite"></div>
+      <div class="orb" style="background:conic-gradient(from 0deg,#5b21b6,#8b5cf6,#c026d3,#f59e0b,#10b981,#06b6d4,#3b82f6,#5b21b6);box-shadow:0 0 70px rgba(139,92,246,.55),0 0 140px rgba(139,92,246,.22);filter:blur(1.2px);animation:breathe 3.5s ease-in-out infinite,hueShift 14s ease-in-out infinite"></div>
+      <div class="orb-shine"></div>
+    </div>
+  </div>
+
+  <h1 class="gold" style="font-family:'Cinzel Decorative',serif;font-size:clamp(2.2rem,7vw,4.2rem);letter-spacing:.14em;margin-bottom:8px">AURASCOPE</h1>
+  <p style="font-family:'Cinzel',serif;font-size:clamp(.62rem,1.8vw,.8rem);letter-spacing:.28em;color:rgba(180,150,255,.35);text-transform:uppercase;margin-bottom:32px">Read the living frequency of your soul</p>
+
+  <div style="display:flex;align-items:center;gap:12px;width:100%;max-width:400px;margin-bottom:34px">
+    <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(139,92,246,.4))"></div>
+    <span style="color:rgba(139,92,246,.5)">&#10022;</span>
+    <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,rgba(139,92,246,.4))"></div>
+  </div>
+
+  <div style="width:100%;max-width:360px">
+    <div style="margin-bottom:22px">
+      <label class="label">Date of Birth</label>
+      <input type="date" id="inp-bdate"/>
+    </div>
+    <p id="intro-error" style="color:#f87171;font-size:.88rem;font-style:italic;min-height:22px;margin-bottom:8px"></p>
+    <button class="btn-start" id="btn-start" style="display:block;margin:0 auto">Reveal My Aura</button>
+  </div>
+
+  <p style="margin-top:46px;font-size:.76rem;font-style:italic;color:rgba(180,150,255,.18);max-width:360px;letter-spacing:.05em">
+    Your birth date encodes a unique electromagnetic signature — a living map of your color frequencies, strengths, and soul design
+  </p>
+</div>
+
+<!-- SCANNING -->
+<div id="screen-scan" class="screen hidden">
+  <div style="position:relative;width:260px;height:260px;margin-bottom:50px">
+    <div class="ring" style="inset:-26px;border-color:rgba(168,85,247,.52);border-width:1.5px;animation:spinCW 10s linear infinite;opacity:1"></div>
+    <div class="ring" style="inset:-52px;border-color:rgba(168,85,247,.3);border-style:dashed;animation:spinCCW 16s linear infinite;opacity:1"></div>
+    <div class="ring" style="inset:-78px;border-color:rgba(168,85,247,.16);animation:spinCW 22s linear infinite;opacity:1"></div>
+    <div class="ring" style="inset:-104px;border-color:rgba(168,85,247,.08);border-style:dashed;animation:spinCCW 30s linear infinite;opacity:1"></div>
+    <div class="orb" style="background:conic-gradient(from 0deg,#5b21b6,#8b5cf6,#c026d3,#f59e0b,#10b981,#06b6d4,#3b82f6,#5b21b6);box-shadow:0 0 110px rgba(139,92,246,.65),0 0 220px rgba(139,92,246,.28);filter:blur(2px);animation:breathe 2s ease-in-out infinite,hueShift 9s ease-in-out infinite"></div>
+    <div class="orb-shine" style="animation:breathe 2s ease-in-out infinite"></div>
+  </div>
+  <h2 id="scan-label" style="font-family:'Cinzel',serif;font-size:clamp(.95rem,3vw,1.3rem);letter-spacing:.1em;color:rgba(200,170,255,.9);margin-bottom:10px">Reading Your Frequency...</h2>
+  <p id="scan-msg" style="font-style:italic;color:rgba(180,150,255,.5);font-size:.92rem;margin-bottom:50px;min-height:28px;transition:opacity .4s">Decoding your birth frequency...</p>
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  <p id="progress-pct" style="font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.22em;color:rgba(139,92,246,.4);margin-top:9px;width:320px;max-width:80vw;text-align:right">0%</p>
+</div>
+
+<!-- RESULTS -->
+<div id="screen-results" class="screen hidden" style="padding-top:60px;padding-bottom:60px">
+  <div class="results-inner">
+
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:52px;animation:fadeUp .9s ease">
+      <p class="eyebrow">Aura Reading for</p>
+      <h1 id="res-bdate" class="gold" style="font-family:'Cinzel Decorative',serif;font-size:clamp(1.4rem,3.5vw,2.4rem);margin-bottom:8px"></h1>
+      <p style="font-style:italic;color:rgba(200,175,255,.65);font-size:.87rem;letter-spacing:.08em">Three living frequencies encoded in your birth — your strengths, your shadows, your design</p>
+    </div>
+
+    <!-- Sub Hue Cards -->
+    <div class="cards-grid" id="cards-grid"></div>
+
+    <!-- Divider -->
+    <div class="divider" style="animation:fadeUp 1s 1.1s ease both">
+      <div class="divider-line" style="background:linear-gradient(to right,transparent,rgba(139,92,246,.3))"></div>
+      <svg width="34" height="34" viewBox="0 0 40 40" fill="none" stroke="rgba(139,92,246,.44)" stroke-width=".7">
+        <circle cx="20" cy="20" r="17"/><circle cx="20" cy="20" r="7"/>
+        <line x1="20" y1="3" x2="20" y2="37"/><line x1="3" y1="20" x2="37" y2="20"/>
+        <line x1="20" y1="3" x2="20" y2="37" transform="rotate(60 20 20)"/>
+        <line x1="20" y1="3" x2="20" y2="37" transform="rotate(120 20 20)"/>
+      </svg>
+      <div class="divider-line" style="background:linear-gradient(to left,transparent,rgba(139,92,246,.3))"></div>
+    </div>
+
+    <!-- Final Aura -->
+    <div style="text-align:center;margin-bottom:52px;animation:fadeUp 1.5s ease both">
+      <p class="eyebrow" style="margin-bottom:28px">Your Signature Aura</p>
+      <div id="final-orb-wrap" style="margin-bottom:28px"></div>
+      <h2 id="final-hue-name" style="font-family:'Cinzel Decorative',serif;font-size:clamp(1.1rem,3vw,1.9rem);margin-bottom:16px;letter-spacing:.07em"></h2>
+      <p id="final-hue-desc" style="font-style:italic;max-width:580px;margin:0 auto;font-size:1.05rem;line-height:1.9;color:rgba(215,200,255,.72)"></p>
+    </div>
+
+    <!-- Aurascope (blurred + unlock) -->
+    <div style="margin-bottom:28px;animation:fadeUp 1.8s ease both">
+      <p class="eyebrow" style="text-align:center">Your Full Aurascope</p>
+      <div class="aurascope-block" style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2)">
+        <p id="aurascope-text" class="aurascope-text aurascope-blur"></p>
+        <div class="unlock-overlay" id="unlock-overlay">
+          <p style="font-family:'Cinzel',serif;font-size:.82rem;letter-spacing:.12em;color:rgba(200,170,255,.9);text-transform:uppercase;margin-bottom:4px">Your Full Aurascope Awaits</p>
+          <p style="font-style:italic;color:rgba(180,150,255,.55);font-size:.9rem;max-width:340px">Receive your complete soul-frequency reading, mantra, and monthly aura updates</p>
+          <div class="email-capture">
+            <div style="width:100%">
+              <input type="email" id="inp-email" placeholder="Your email address..." style="text-align:center"/>
+            </div>
+            <button class="btn-unlock" id="btn-unlock">&#10022; Send My Full Reading</button>
+            <p id="email-error" style="color:#f87171;font-size:.85rem;font-style:italic;min-height:20px"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mantra (also blurred until unlock) -->
+    <div class="mantra-block" id="mantra-block" style="filter:blur(6px);user-select:none;transition:filter .8s ease;animation:fadeUp 2s ease both">
+      <p class="eyebrow" style="color:rgba(176,136,56,.42);letter-spacing:.28em">Your Sacred Mantra</p>
+      <p id="mantra-text" style="font-family:'Cinzel',serif;font-style:italic;font-size:clamp(.88rem,2.2vw,1.05rem);letter-spacing:.09em;color:rgba(232,188,84,.85)"></p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;animation:fadeUp 2.2s ease both">
+      <button class="btn-ghost" id="btn-reset">Begin a New Reading</button>
+    </div>
+
+    <p style="margin-top:60px;font-size:.74rem;font-style:italic;color:rgba(180,150,255,.15);letter-spacing:.06em">
+      Channeled through chromotherapy, frequency science &amp; the ancient wisdom of light
+    </p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var c=document.getElementById('stars');
+  for(var i=0;i<160;i++){
+    var s=document.createElement('div');
+    s.className='star';
+    s.style.cssText='left:'+(Math.random()*100).toFixed(1)+'%;top:'+(Math.random()*100).toFixed(1)+'%;width:'+(Math.random()*2+.4).toFixed(1)+'px;height:'+(Math.random()*2+.4).toFixed(1)+'px;--d:'+(Math.random()*3+2).toFixed(1)+'s;--dl:'+(Math.random()*6).toFixed(1)+'s';
+    c.appendChild(s);
+  }
+})();
+
+var userBdate='', auraData=null;
+var scanInt=null, msgInt=null;
+var msgs=[
+  'Decoding your birth frequency...',
+  'Mapping your electromagnetic signature...',
+  'Reading vibrational layers across the chakric spectrum...',
+  'Translating light frequencies into living language...',
+  'Consulting the ancient library of color wisdom...',
+  'Weaving the luminous threads of your soul design...',
+  'Synthesizing your unique auric constellation...'
 ];
 
-function getZodiacSign(dob) {
-  const d = new Date(dob);
-  const month = d.getMonth() + 1;
-  const day   = d.getDate();
-  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'aries';
-  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'taurus';
-  if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'gemini';
-  if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return 'cancer';
-  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return 'leo';
-  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return 'virgo';
-  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return 'libra';
-  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return 'scorpio';
-  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return 'sagittarius';
-  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return 'capricorn';
-  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return 'aquarius';
-  return 'pisces';
+function show(id){
+  ['screen-intro','screen-scan','screen-results'].forEach(function(s){
+    document.getElementById(s).classList.toggle('hidden',s!==id);
+  });
 }
 
-function getHour(dob) {
-  const d = new Date(dob);
-  return d.getHours ? d.getHours() : new Date().getHours();
-}
-
-function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-// ─── HTML Pages ───────────────────────────────────────────────────────────────
-function homePage() {
-  return `<!DOCTYPE html><html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Auraspanse — Decode Your Energy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#06030f;--surface:#0d0820;--border:#2a1f4a;
-  --purple:#c084fc;--pink:#f472b6;--gold:#fbbf24;--text:#e2d9f3;--muted:#7c6fa0
-}
-body{background:var(--bg);color:var(--text);font-family:'Raleway',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-x:hidden}
-.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
-.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 3s infinite alternate}
-@keyframes twinkle{0%{opacity:.1}100%{opacity:.9}}
-.card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:48px 40px;width:100%;max-width:480px;box-shadow:0 0 80px rgba(192,132,252,.15)}
-h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.4rem,5vw,2rem);background:linear-gradient(135deg,var(--purple),var(--pink),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:8px}
-.tagline{text-align:center;color:var(--muted);font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:36px}
-label{display:block;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:14px 16px;color:var(--text);font-family:'Raleway',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s}
-input:focus{border-color:var(--purple)}
-.field{margin-bottom:20px}
-.price-note{text-align:center;font-size:.78rem;color:var(--muted);margin:12px 0 24px;line-height:1.6}
-.price-note strong{color:var(--gold)}
-button{width:100%;background:linear-gradient(135deg,#7c3aed,#a855f7,#ec4899);border:none;border-radius:12px;padding:16px;color:#fff;font-family:'Cinzel Decorative',serif;font-size:1rem;letter-spacing:.05em;cursor:pointer;transition:opacity .2s,transform .1s}
-button:hover{opacity:.9}
-button:active{transform:scale(.98)}
-button:disabled{opacity:.5;cursor:not-allowed}
-.error{color:#f87171;font-size:.82rem;text-align:center;margin-top:12px;display:none}
-.orb{width:60px;height:60px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.3),transparent 60%),var(--purple);filter:blur(2px);box-shadow:0 0 30px var(--purple);margin:0 auto 28px;animation:pulse-orb 3s ease-in-out infinite}
-@keyframes pulse-orb{0%,100%{transform:scale(1);box-shadow:0 0 30px var(--purple)}50%{transform:scale(1.08);box-shadow:0 0 50px var(--purple),0 0 80px rgba(244,114,182,.3)}}
-</style>
-</head>
-<body>
-<div class="stars" id="stars"></div>
-<div class="card">
-  <div class="orb"></div>
-  <h1>Auraspanse</h1>
-  <p class="tagline">Decode Your Energy</p>
-  <div class="field"><label for="email">Your Email</label><input type="email" id="email" placeholder="you@email.com" autocomplete="email" required></div>
-  <div class="field"><label for="dob">Date of Birth</label><input type="date" id="dob" required></div>
-  <p class="price-note">Full spectrum reading delivered to your inbox<br><strong>$4.99</strong> — one-time</p>
-  <button id="payBtn" onclick="pay()">✦ Reveal My Aura ✦</button>
-  <p class="error" id="err"></p>
-</div>
-<script>
-// Generate stars
-const s=document.getElementById('stars');
-for(let i=0;i<120;i++){
-  const d=document.createElement('div');
-  d.className='star';
-  d.style.left=Math.random()*100+'%';
-  d.style.top=Math.random()*100+'%';
-  d.style.animationDelay=Math.random()*3+'s';
-  d.style.animationDuration=(2+Math.random()*3)+'s';
-  s.appendChild(d);
-}
-
-async function pay(){
-  const email=document.getElementById('email').value.trim();
-  const dob=document.getElementById('dob').value;
-  const err=document.getElementById('err');
-  const btn=document.getElementById('payBtn');
-  err.style.display='none';
-  if(!email||!dob){err.textContent='Please fill in all fields.';err.style.display='block';return;}
-  btn.disabled=true;btn.textContent='Opening checkout…';
-  try{
-    const r=await fetch('/create-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,dob})});
-    const j=await r.json();
-    if(!r.ok)throw new Error(j.error||'Payment failed');
-    window.location.href=j.url;
-  }catch(e){
-    err.textContent=e.message;err.style.display='block';
-    btn.disabled=false;btn.textContent='✦ Reveal My Aura ✦';
+function makeOrb(hex,size,rings){
+  var wrap=document.createElement('div');
+  wrap.style.cssText='position:relative;width:'+size+'px;height:'+size+'px;margin:0 auto';
+  for(var i=0;i<rings;i++){
+    var r=document.createElement('div');
+    var off=(i+1)*18;
+    r.style.cssText='position:absolute;inset:-'+off+'px;border-radius:50%;border:1px solid '+hex+';opacity:.35;animation:ringOut '+(2.4+i*.8)+'s '+(i*.9)+'s ease-out infinite';
+    wrap.appendChild(r);
   }
-}
-</script>
-</body></html>`;
-}
-
-function loadingPage(signColor, sign) {
-  return `<!DOCTYPE html><html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Checking the Spectrum…</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#06030f;color:#e2d9f3;font-family:'Raleway',sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;overflow:hidden}
-h2{font-family:'Cinzel Decorative',serif;font-size:1.2rem;letter-spacing:.1em;opacity:.9}
-.orb{width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.35),transparent 60%),${signColor};filter:blur(3px);box-shadow:0 0 60px ${signColor},0 0 120px ${signColor}40;animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-.msg{font-size:.9rem;color:#a78bca;letter-spacing:.05em;min-height:1.4em;text-align:center;transition:opacity .4s}
-.bar-track{width:260px;height:4px;background:#1a1030;border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#ec4899);border-radius:4px;transition:width .15s linear}
-</style>
-</head>
-<body>
-<h2>Checking the Spectrum</h2>
-<div class="orb"></div>
-<p class="msg" id="msg">Tuning your frequency…</p>
-<div class="bar-track"><div class="bar-fill" id="bar"></div></div>
-<script>
-const msgs=['Tuning your frequency…','Reading your zodiac signature…','Locating your birthstone resonance…','Mapping your energy layers…','Synthesising your core traits…','Composing your full reading…'];
-let i=0,pct=0;
-const bar=document.getElementById('bar');
-const msg=document.getElementById('msg');
-function tick(){
-  pct=Math.min(100,pct+(100/msgs.length/10));
-  bar.style.width=pct+'%';
-  if(pct>=100*((i+1)/msgs.length)&&i<msgs.length-1){
-    i++;msg.style.opacity=0;
-    setTimeout(()=>{msg.textContent=msgs[i];msg.style.opacity=1;},400);
-  }
-  if(pct<100)setTimeout(tick,250);
-}
-tick();
-</script>
-</body></html>`;
+  var orb=document.createElement('div');
+  orb.style.cssText='width:100%;height:100%;border-radius:50%;animation:breathe 3.5s ease-in-out infinite;background:radial-gradient(circle at 38% 34%,'+hex+'ff,'+hex+'99,'+hex+'22);box-shadow:0 0 42px '+hex+'55,0 0 90px '+hex+'28';
+  var shine=document.createElement('div');
+  shine.style.cssText='position:absolute;inset:18%;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(255,255,255,.3),transparent);pointer-events:none';
+  wrap.appendChild(orb);
+  wrap.appendChild(shine);
+  return wrap;
 }
 
-function successPage(reading, email, signCap, sign, dob, emailSent) {
-  const data  = ZODIAC[sign];
-  const color = data.color;
-  const stone = data.stone;
-  const label = data.label;
-  const traits = data.traits;
-  const month  = new Date(dob).getMonth();
-  const birthstone = BIRTHSTONES_BY_MONTH[month];
-
-  const readingHtml = reading
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
-
-  return `<!DOCTYPE html><html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Your ${signCap} Aura Reading</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--aura:${color};--bg:#06030f;--surface:#0d0820;--border:#2a1f4a;--text:#e2d9f3;--muted:#7c6fa0}
-body{background:var(--bg);color:var(--text);font-family:'Raleway',sans-serif;min-height:100vh;padding:40px 20px}
-.container{max-width:680px;margin:0 auto}
-.header{text-align:center;margin-bottom:48px}
-.orb{width:100px;height:100px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.3),transparent 60%),var(--aura);filter:blur(3px);box-shadow:0 0 60px var(--aura),0 0 120px ${color}40;margin:0 auto 24px;animation:pulse 4s ease-in-out infinite}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.5rem,5vw,2.2rem);background:linear-gradient(135deg,var(--aura),#f472b6,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
-.subtitle{color:var(--muted);font-size:.88rem;letter-spacing:.1em;text-transform:uppercase}
-.card{background:#0d0820;border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:20px}
-.card h2{font-family:'Cinzel Decorative',serif;font-size:1rem;color:var(--aura);letter-spacing:.08em;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
-.traits{display:flex;flex-wrap:wrap;gap:10px}
-.trait{padding:8px 16px;border-radius:20px;font-size:.82rem;letter-spacing:.05em;border:1px solid}
-.trait.pos{border-color:${color}60;background:${color}15;color:#e2d9f3}
-.trait.neg{border-color:#f4727260;background:#f4727215;color:#fca5a5}
-.stones{display:flex;gap:12px;flex-wrap:wrap}
-.stone-chip{padding:10px 18px;border-radius:12px;font-size:.82rem;background:rgba(255,255,255,.04);border:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.stone-dot{width:10px;height:10px;border-radius:50%;background:var(--aura);box-shadow:0 0 8px var(--aura)}
-.reading{line-height:2;font-size:.95rem;color:#d1c8e8;font-weight:300}
-.reading strong{color:#fff;font-weight:600}
-.email-note{text-align:center;margin-top:32px;padding:20px;background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.2);border-radius:14px;font-size:.82rem;color:var(--muted)}
-.email-note strong{color:#c084fc}
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="header">
-    <div class="orb"></div>
-    <h1>${signCap} Aura Reading</h1>
-    <p class="subtitle">${label} &nbsp;·&nbsp; ${stone}</p>
-  </div>
-
-  <div class="card">
-    <h2>✦ Your Core Traits</h2>
-    <div class="traits">
-      ${traits.map(t => `<span class="trait ${t[0]==='+' ? 'pos' : 'neg'}">${t}</span>`).join('')}
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>✦ Your Stones</h2>
-    <div class="stones">
-      <div class="stone-chip"><div class="stone-dot"></div>${stone} (Birth Sign)</div>
-      <div class="stone-chip"><div class="stone-dot" style="background:#c084fc;box-shadow:0 0 8px #c084fc"></div>${birthstone} (Birth Month)</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>✦ Full Spectrum Reading</h2>
-    <div class="reading">${readingHtml}</div>
-  </div>
-
-  ${emailSent ? `<div class="email-note">A copy of this reading was sent to <strong>${email}</strong></div>` : ''}
-</div>
-</body></html>`;
+function formatBdate(val){
+  var d=new Date(val+'T12:00:00');
+  return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
 }
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+document.getElementById('btn-start').addEventListener('click', startReading);
+document.getElementById('inp-bdate').addEventListener('keydown', function(e){ if(e.key==='Enter') startReading(); });
 
-// Home
-app.get('/', (req, res) => res.send(homePage()));
+function startReading(){
+  userBdate=document.getElementById('inp-bdate').value;
+  var err=document.getElementById('intro-error');
+  if(!userBdate){ err.textContent='Please enter your birth date to begin your reading.'; return; }
+  err.textContent='';
+  show('screen-scan');
 
-// Create Stripe Checkout Session
-app.post('/create-payment', async (req, res) => {
-  const { email, dob } = req.body;
+  var pct=0, msgIdx=0;
+  var fill=document.getElementById('progress-fill');
+  var pctEl=document.getElementById('progress-pct');
+  var msgEl=document.getElementById('scan-msg');
 
-  if (!email || !dob) {
-    return res.status(400).json({ error: 'Email and date of birth are required.' });
-  }
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return res.status(500).json({ error: 'Payment is not configured on this server.' });
-  }
-  if (!process.env.PRICE_ID) {
-    return res.status(500).json({ error: 'PRICE_ID is not configured on this server.' });
-  }
+  scanInt=setInterval(function(){
+    pct=Math.min(pct+Math.random()*8+2,87);
+    fill.style.width=pct.toFixed(0)+'%';
+    pctEl.textContent=pct.toFixed(0)+'%';
+  },700);
+  msgInt=setInterval(function(){
+    msgIdx=(msgIdx+1)%msgs.length;
+    msgEl.style.opacity=0;
+    setTimeout(function(){ msgEl.textContent=msgs[msgIdx]; msgEl.style.opacity=1; },300);
+  },2400);
 
-  try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      customer_email: email,
-      line_items: [{ price: process.env.PRICE_ID, quantity: 1 }],
-      metadata: { email, dob },
-      success_url: `${process.env.BASE_URL || ''}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${process.env.BASE_URL || ''}/`,
+  fetch('/api/reading',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({birthdate:userBdate})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    clearInterval(scanInt); clearInterval(msgInt);
+    if(data.error) throw new Error(data.error);
+    auraData=data;
+    fill.style.width='100%'; pctEl.textContent='100%';
+    setTimeout(renderResults,1000);
+  })
+  .catch(function(e){
+    clearInterval(scanInt); clearInterval(msgInt);
+    document.getElementById('intro-error').textContent=e.message||'Oracle connection failed. Please try again.';
+    show('screen-intro');
+  });
+}
+
+function renderResults(){
+  var subHues=auraData.subHues, finalHue=auraData.finalHue;
+  document.getElementById('res-bdate').textContent=formatBdate(userBdate);
+
+  var grid=document.getElementById('cards-grid');
+  grid.innerHTML='';
+  subHues.forEach(function(h){
+    var card=document.createElement('div');
+    card.className='hue-card';
+    card.style.border='1px solid '+h.hex+'44';
+    card.style.boxShadow='0 0 34px '+h.hex+'1c,inset 0 0 22px '+h.hex+'09';
+
+    var orbDiv=document.createElement('div');
+    orbDiv.style.marginBottom='20px';
+    orbDiv.appendChild(makeOrb(h.hex,88,2));
+    card.appendChild(orbDiv);
+
+    var title=document.createElement('h3');
+    title.style.cssText='font-family:Cinzel,serif;font-size:.96rem;letter-spacing:.07em;color:'+h.hex+';text-shadow:0 0 24px '+h.hex+'72;margin-bottom:14px';
+    title.textContent=h.name;
+    card.appendChild(title);
+
+    var tags=document.createElement('div');
+    tags.style.marginBottom='18px';
+    [[h.element,h.hex],[h.frequency+' Hz','#a855f7'],[h.emotion,'#ec4899']].forEach(function(t){
+      var s=document.createElement('span');
+      s.className='tag';
+      s.style.cssText='border:1px solid '+t[1]+'36;color:'+t[1]+';background:'+t[1]+'0f';
+      s.textContent=t[0];
+      tags.appendChild(s);
     });
-    res.json({ url: session.url });
-  } catch (err) {
-    console.error('Stripe error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
+    card.appendChild(tags);
+
+    // Strength
+    var str=document.createElement('div');
+    str.className='card-section';
+    str.style.cssText='margin-top:14px;padding:12px 14px;border-radius:10px;background:'+h.hex+'0d;border:1px solid '+h.hex+'22;text-align:left';
+    str.innerHTML='<div class="card-section-label" style="font-family:Cinzel,serif;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;color:'+h.hex+';opacity:.7">Strength</div><p style="font-size:.9rem;line-height:1.75;color:rgba(220,205,255,.8);font-style:italic">'+h.strength+'</p>';
+    card.appendChild(str);
+
+    // Weakness
+    var wk=document.createElement('div');
+    wk.style.cssText='margin-top:10px;padding:12px 14px;border-radius:10px;background:rgba(236,72,153,.05);border:1px solid rgba(236,72,153,.18);text-align:left';
+    wk.innerHTML='<div style="font-family:Cinzel,serif;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;color:rgba(236,72,153,.7)">Shadow</div><p style="font-size:.9rem;line-height:1.75;color:rgba(220,205,255,.75);font-style:italic">'+h.weakness+'</p>';
+    card.appendChild(wk);
+
+    // Action
+    var ac=document.createElement('div');
+    ac.style.cssText='margin-top:10px;padding:12px 14px;border-radius:10px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.2);text-align:left';
+    ac.innerHTML='<div style="font-family:Cinzel,serif;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;color:rgba(16,185,129,.7)">Alignment</div><p style="font-size:.9rem;line-height:1.75;color:rgba(220,205,255,.75);font-style:italic">'+h.action+'</p>';
+    card.appendChild(ac);
+
+    grid.appendChild(card);
+  });
+
+  // Final orb
+  var fw=document.getElementById('final-orb-wrap');
+  fw.innerHTML='';
+  fw.appendChild(makeOrb(finalHue.hex,170,3));
+  var fn=document.getElementById('final-hue-name');
+  fn.textContent=finalHue.name;
+  fn.style.color=finalHue.hex;
+  fn.style.textShadow='0 0 40px '+finalHue.hex+'84';
+  document.getElementById('final-hue-desc').textContent=finalHue.description;
+
+  // Aurascope blurred
+  document.getElementById('aurascope-text').textContent=auraData.aurascope;
+  document.getElementById('mantra-text').textContent='"'+auraData.mantra+'"';
+
+  show('screen-results');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Unlock / subscribe
+document.getElementById('btn-unlock').addEventListener('click', function(){
+  var email=document.getElementById('inp-email').value.trim();
+  var err=document.getElementById('email-error');
+  if(!email||!email.includes('@')){ err.textContent='Please enter a valid email address.'; return; }
+  err.textContent='';
+
+  // Send full reading via mailto
+  var h=auraData.subHues, f=auraData.finalHue, ln='\n', bar='='.repeat(50);
+  var body=[
+    '✦  YOUR FULL AURASCOPE READING  ✦',ln,
+    bar,'YOUR BIRTH FREQUENCY: '+userBdate,bar,ln,
+    bar,'THREE AURIC FREQUENCIES',bar,ln,
+    '◈ '+h[0].name.toUpperCase(),' Frequency: '+h[0].frequency+' Hz  |  '+h[0].element+'  |  '+h[0].emotion,ln,
+    'STRENGTH: '+h[0].strength,ln,'SHADOW: '+h[0].weakness,ln,'ALIGNMENT: '+h[0].action,ln,
+    '◈ '+h[1].name.toUpperCase(),' Frequency: '+h[1].frequency+' Hz  |  '+h[1].element+'  |  '+h[1].emotion,ln,
+    'STRENGTH: '+h[1].strength,ln,'SHADOW: '+h[1].weakness,ln,'ALIGNMENT: '+h[1].action,ln,
+    '◈ '+h[2].name.toUpperCase(),' Frequency: '+h[2].frequency+' Hz  |  '+h[2].element+'  |  '+h[2].emotion,ln,
+    'STRENGTH: '+h[2].strength,ln,'SHADOW: '+h[2].weakness,ln,'ALIGNMENT: '+h[2].action,ln,
+    bar,'YOUR SIGNATURE AURA: '+f.name.toUpperCase(),bar,ln,f.description,ln,
+    bar,'YOUR FULL AURASCOPE',bar,ln,auraData.aurascope,ln,
+    bar,'YOUR SACRED MANTRA',bar,ln,'"'+auraData.mantra+'"',ln,
+    '✦  ✦  ✦',ln,'Channeled through Aurascope — the living aura oracle'
+  ].join('\n');
+
+  var a=document.createElement('a');
+  a.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent('✦ Your Full Aurascope Reading — '+f.name)+'&body='+encodeURIComponent(body);
+  a.click();
+
+  // Reveal
+  document.getElementById('aurascope-text').classList.remove('aurascope-blur');
+  document.getElementById('unlock-overlay').classList.add('hidden');
+  document.getElementById('mantra-block').style.filter='none';
 });
 
-// Loading screen (shown right after redirect back from Stripe, before AI runs)
-app.get('/loading', (req, res) => {
-  const { session_id } = req.query;
-  if (!session_id) return res.redirect('/');
-  const sign = 'aries'; // default color; full data loads on /success
-  res.send(loadingPage(ZODIAC[sign].color, sign));
+document.getElementById('btn-reset').addEventListener('click', function(){
+  auraData=null;
+  document.getElementById('inp-bdate').value='';
+  document.getElementById('inp-email').value='';
+  document.getElementById('email-error').textContent='';
+  document.getElementById('aurascope-text').classList.add('aurascope-blur');
+  document.getElementById('unlock-overlay').classList.remove('hidden');
+  document.getElementById('mantra-block').style.filter='blur(6px)';
+  show('screen-intro');
+  window.scrollTo({top:0});
 });
+</script>
+</body>
+</html>`;
 
-// Success — verify payment, run AI, send email, render reading
-app.get('/success', async (req, res) => {
-  const { session_id } = req.query;
-  if (!session_id) return res.redirect('/');
+app.get("*", (req, res) => res.send(HTML));
 
-  try {
-    // Verify payment
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    if (session.payment_status !== 'paid') {
-      return res.status(402).send('<h2>Payment not completed.</h2>');
-    }
-
-    const { email, dob } = session.metadata;
-    const sign     = getZodiacSign(dob);
-    const signCap  = cap(sign);
-    const signData = ZODIAC[sign];
-    const hour     = getHour(dob);
-    const month    = new Date(dob).getMonth();
-    const birthstone = BIRTHSTONES_BY_MONTH[month];
-
-    // Show loading page immediately, then redirect to reading
-    // (For simplicity, we generate reading synchronously — Render handles it fine)
-
-    // Generate AI reading
-    let reading = '';
-    try {
-      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type':      'application/json',
-          'x-api-key':         process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model:      'claude-opus-4-5',
-          max_tokens: 900,
-          messages: [{
-            role: 'user',
-            content: `You are Auraspanse, a mystical aura reader. Generate a full spectrum aura reading for a ${signCap} (${signData.label}) born in month ${month + 1} at hour ${hour}.
-
-Their aura color is ${signData.color}, birth stone is ${signData.stone}, month stone is ${birthstone}.
-Core traits: ${signData.traits.join(', ')}.
-
-Write a personal, vivid, 4–6 paragraph reading. Cover:
-1. Their dominant aura frequency and what it reveals right now
-2. How their ${signData.traits[0]} and ${signData.traits[1]} energies are expressing this season
-3. The shadow work around their ${signData.traits[2]} tendency
-4. What their ${birthstone} and ${signData.stone} stones are amplifying together
-5. A closing guidance message for the next 30 days
-
-Use **bold** for key phrases. Speak directly to them as "you". Be specific, not generic.`
-          }],
-        }),
-      });
-      const aiJson = await aiRes.json();
-      reading = aiJson?.content?.[0]?.text || '';
-    } catch (aiErr) {
-      console.error('AI error:', aiErr.message);
-      reading = `Your ${signCap} aura pulses with ${signData.color} frequency — a signature of **${signData.traits[0].slice(1)}** and **${signData.traits[1].slice(1)}**. This reading could not be fully generated at this time. Please contact support for a full reading.`;
-    }
-
-    // Send email
-    let emailSent = false;
-    if (email && process.env.RESEND_API_KEY) {
-      try {
-        const emailHtml = `
-<div style="background:#06030f;color:#e2d9f3;padding:40px 24px;font-family:sans-serif;max-width:600px;margin:0 auto">
-  <h1 style="font-size:1.4rem;color:${signData.color};margin-bottom:4px">Your ${signCap} Aura Reading</h1>
-  <p style="color:#7c6fa0;font-size:.8rem;margin-bottom:32px">${signData.label} · ${signData.stone}</p>
-  <div style="background:#0d0820;border:1px solid #2a1f4a;border-radius:16px;padding:28px;margin-bottom:20px">
-    <h2 style="color:#c084fc;font-size:.9rem;letter-spacing:.08em;margin-bottom:16px">CORE TRAITS</h2>
-    <p style="line-height:2;font-size:.9rem">${signData.traits.map(t => `<span style="background:${t[0]==='+'?signData.color+'25':'#f4727225'};padding:4px 12px;border-radius:20px;margin-right:8px">${t}</span>`).join('')}</p>
-  </div>
-  <div style="background:#0d0820;border:1px solid #2a1f4a;border-radius:16px;padding:28px">
-    <h2 style="color:#c084fc;font-size:.9rem;letter-spacing:.08em;margin-bottom:20px">FULL SPECTRUM READING</h2>
-    <div style="line-height:2;font-size:.9rem;color:#d1c8e8">
-      ${reading.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#fff">$1</strong>').replace(/\n/g,'<br>')}
-    </div>
-  </div>
-  <p style="text-align:center;margin-top:28px;font-size:.75rem;color:#3d3050">Auraspanse · Your personal energy decoded</p>
-</div>`;
-
-        await resend.emails.send({
-          from:    process.env.FROM_EMAIL || 'Auraspanse <reading@auraspanse.com>',
-          to:      email,
-          subject: `✦ Your ${signCap} Aura Reading`,
-          html:    emailHtml,
-        });
-        emailSent = true;
-      } catch (emailErr) {
-        console.error('Email error:', emailErr.message);
-        // Don't fail the page — just note it wasn't sent
-      }
-    }
-
-    res.send(successPage(reading, email, signCap, sign, dob, emailSent));
-
-  } catch (err) {
-    console.error('Success route error:', err.message);
-    res.status(500).send(`<h2 style="color:#f87171;font-family:sans-serif;padding:40px">Something went wrong: ${err.message}</h2>`);
-  }
-});
-
-// Health check
-app.get('/health', (req, res) => res.json({ ok: true }));
-
-// ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✦ Auraspanse running on port ${PORT}`));
+app.listen(PORT, () => console.log("Aurascope running on port", PORT));
