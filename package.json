@@ -1,29 +1,14 @@
 {
-  "name": "aurascope-server",
+  "name": "auraspanse",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "stripe": "^16.0.0",
+    "node-fetch": "^3.3.2",
+    "resend": "^3.4.0"
   }
 }
-Then run:
-
-npm install
-2. Minimal working server
-Start with this tiny server first so you know deploys will work before adding aura logic:
-
-// server.js
-const express = require('express');
-const app = express();
-
-app.get('/', (req, res) => {
-  res.send('Aurascope backend is alive');
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log('Aurascope running on port', PORT);
-});
