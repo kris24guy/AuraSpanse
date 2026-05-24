@@ -1,167 +1,202 @@
+// server.js
 require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
+const cors = require('cors');
+const axios = require('axios');
 const path = require('path');
 
 const app = express();
-app.use(express.json({ limit: '5mb' }));
-app.use(express.static('public'));
+const PORT = process.env.PORT || 3000;
 
-const DATA_FILE = path.join(__dirname, 'data.json');
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Init data file ──────────────────────────────────────────────────────────
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify({
-    metaAds: [],
-    emailFunnel: [],
-    revenue: [],
-    lastUpdated: null
-  }, null, 2));
+// --- Simple zodiac lookup from birthdate ---
+function getZodiacSign(dateString) {
+  const date = new Date(dateString);
+  const day = date.getUTCDate();
+  const month = date.getUTCMonth() + 1; // 1–12
+
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Aries';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'Taurus';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'Gemini';
+  if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return 'Cancer';
+  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return 'Leo';
+  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return 'Virgo';
+  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return 'Libra';
+  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return 'Scorpio';
+  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return 'Sagittarius';
+  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return 'Capricorn';
+  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return 'Aquarius';
+  return 'Pisces';
 }
 
-function readData() {
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-}
-
-function writeData(data) {
-  data.lastUpdated = new Date().toISOString();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-// ── GET all data ─────────────────────────────────────────────────────────────
-app.get('/api/data', (req, res) => {
-  res.json(readData());
-});
-
-// ── POST add a record ─────────────────────────────────────────────────────────
-app.post('/api/data', (req, res) => {
-  const { section, record } = req.body;
-  if (!['metaAds', 'emailFunnel', 'revenue'].includes(section)) {
-    return res.status(400).json({ error: 'Invalid section' });
+// --- Aura map for each sign ---
+const auraMap = {
+  Aries: {
+    color: 'Crimson Gold',
+    traits: ['fearless', 'impulsive', 'protective'],
+    message:
+      'You carry initiating fire energy. You move first, then understand later.'
+  },
+  Taurus: {
+    color: 'Emerald Bronze',
+    traits: ['grounded', 'loyal', 'resistant'],
+    message:
+      'Your aura stabilizes emotional environments and absorbs pressure slowly.'
+  },
+  Gemini: {
+    color: 'Silver Yellow',
+    traits: ['curious', 'adaptive', 'restless'],
+    message:
+      'Your frequency moves through language, perception, and emotional duality.'
+  },
+  Cancer: {
+    color: 'Moon Blue',
+    traits: ['intuitive', 'protective', 'absorbing'],
+    message:
+      'You process emotional weather before most people notice it exists.'
+  },
+  Leo: {
+    color: 'Solar Gold',
+    traits: ['magnetic', 'creative', 'prideful'],
+    message:
+      'Your aura naturally pulls attention and emotional intensity toward itself.'
+  },
+  Virgo: {
+    color: 'Muted Jade',
+    traits: ['observant', 'precise', 'overthinking'],
+    message:
+      'Your energy constantly scans environments looking for alignment and correction.'
+  },
+  Libra: {
+    color: 'Rose Quartz',
+    traits: ['harmonic', 'social', 'indecisive'],
+    message:
+      'Your aura seeks emotional balance but often carries other people’s weight.'
+  },
+  Scorpio: {
+    color: 'Obsidian Crimson',
+    traits: ['intense', 'private', 'transformative'],
+    message:
+      'Your frequency moves through emotional depth, secrecy, and inner rebirth.'
+  },
+  Sagittarius: {
+    color: 'Royal Violet',
+    traits: ['expansive', 'visionary', 'untethered'],
+    message:
+      'Your aura expands through movement, philosophy, and emotional freedom.'
+  },
+  Capricorn: {
+    color: 'Stone Silver',
+    traits: ['disciplined', 'strategic', 'guarded'],
+    message:
+      'Your frequency builds structure slowly and carries heavy endurance energy.'
+  },
+  Aquarius: {
+    color: 'Electric Cyan',
+    traits: ['innovative', 'detached', 'unpredictable'],
+    message:
+      'Your aura processes reality differently than most people around you.'
+  },
+  Pisces: {
+    color: 'Opalescent Violet',
+    traits: ['sensitive', 'porous', 'dreamlike'],
+    message:
+      'Your frequency blends boundaries and absorbs the emotional tones around you.'
   }
-  const data = readData();
-  record.id = Date.now();
-  record.date = record.date || new Date().toISOString().split('T')[0];
-  data[section].unshift(record);
-  writeData(data);
-  res.json({ success: true, record });
-});
+};
 
-// ── POST bulk import (CSV parsed records) ─────────────────────────────────────
-app.post('/api/data/bulk', (req, res) => {
-  const { section, records } = req.body;
-  if (!['metaAds', 'emailFunnel', 'revenue'].includes(section)) {
-    return res.status(400).json({ error: 'Invalid section' });
-  }
-  const data = readData();
-  const stamped = records.map((r, i) => ({
-    ...r,
-    id: Date.now() + i,
-    date: r.date || new Date().toISOString().split('T')[0]
-  }));
-  data[section] = [...stamped, ...data[section]];
-  writeData(data);
-  res.json({ success: true, count: stamped.length });
-});
+function generateAura(birthdate) {
+  const zodiac = getZodiacSign(birthdate);
+  const base = auraMap[zodiac];
 
-// ── DELETE a record ───────────────────────────────────────────────────────────
-app.delete('/api/data/:section/:id', (req, res) => {
-  const { section, id } = req.params;
-  const data = readData();
-  data[section] = data[section].filter(r => r.id !== parseInt(id));
-  writeData(data);
-  res.json({ success: true });
-});
-
-// ── POST parse raw CSV text ───────────────────────────────────────────────────
-app.post('/api/parse-csv', (req, res) => {
-  const { csv } = req.body;
-  const lines = csv.trim().split('\n').filter(l => l.trim());
-  const headers = lines[0].split(',').map(h =>
-    h.trim().replace(/^"|"$/g, '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
-  );
-  const records = lines.slice(1).map(line => {
-    const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-    const record = {};
-    headers.forEach((h, i) => { record[h] = values[i] ?? ''; });
-    return record;
-  }).filter(r => Object.values(r).some(v => v !== ''));
-  res.json({ headers, records, count: records.length });
-});
-
-// ── POST generate Daily Pulse via Claude API ──────────────────────────────────
-app.post('/api/pulse', async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(400).json({ error: 'Set ANTHROPIC_API_KEY in your .env file' });
+  if (!base) {
+    return {
+      zodiac: 'Unknown',
+      aura: {
+        color: 'Ghost Light',
+        traits: ['undefined'],
+        message: 'Your frequency sits outside the current AuraScope map.'
+      }
+    };
   }
 
-  const data = readData();
-  const recent = {
-    metaAds: data.metaAds.slice(0, 10),
-    emailFunnel: data.emailFunnel.slice(0, 10),
-    revenue: data.revenue.slice(0, 10)
+  return {
+    zodiac,
+    aura: base
   };
+}
 
-  const prompt = `You are a performance marketing analyst for the Aurascope 90-Day funnel.
-  
-Here is the most recent data:
+// --- Routes ---
 
-META ADS (recent ${recent.metaAds.length} entries):
-${JSON.stringify(recent.metaAds, null, 2)}
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
 
-EMAIL FUNNEL (recent ${recent.emailFunnel.length} entries):
-${JSON.stringify(recent.emailFunnel, null, 2)}
+// Aura-only endpoint (no email, just instant result)
+app.post('/aura', (req, res) => {
+  const { birthdate } = req.body;
 
-REVENUE (recent ${recent.revenue.length} entries):
-${JSON.stringify(recent.revenue, null, 2)}
+  if (!birthdate) {
+    return res.status(400).json({ success: false, error: 'Birthdate is required.' });
+  }
 
-Generate a Daily Pulse report. Use this structure exactly:
+  const result = generateAura(birthdate);
+  return res.json({ success: true, ...result });
+});
 
-## 🔥 Wins
-[2-3 bullet points of top positive metrics]
+// Subscribe endpoint: generate aura + send to Beehiiv
+app.post('/subscribe', async (req, res) => {
+  const { email, birthdate } = req.body;
 
-## ⚠️ Watch
-[2-3 bullet points of things needing attention]
+  if (!email || !birthdate) {
+    return res
+      .status(400)
+      .json({ success: false, error: 'Email and birthdate are required.' });
+  }
 
-## 💡 Actions (Top 3)
-[3 specific, actionable recommendations]
-
-## 📊 Quick Numbers
-[Key metrics table: Spend | Revenue | ROAS | Email CTR | Conversions]
-
-Keep it under 300 words. Be direct and specific. If data is empty, say so and suggest what to add first.`;
+  const { zodiac, aura } = generateAura(birthdate);
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      return res.status(500).json({ error: err.error?.message || 'Claude API error' });
+    if (process.env.BEEHIIV_API_KEY && process.env.BEEHIIV_PUBLICATION_ID) {
+      await axios.post(
+        `https://api.beehiiv.com/v2/publications/${process.env.BEEHIIV_PUBLICATION_ID}/subscriptions`,
+        {
+          email,
+          reactivate_existing: true,
+          send_welcome_email: true,
+          utm_source: 'aurascope_mvp',
+          custom_fields: {
+            zodiac,
+            aura_color: aura.color,
+            aura_traits: aura.traits.join(','),
+            aura_message: aura.message
+          }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-ApiKey': process.env.BEEHIIV_API_KEY
+          }
+        }
+      );
     }
 
-    const result = await response.json();
-    res.json({ pulse: result.content[0].text, generated: new Date().toISOString() });
+    return res.json({ success: true, zodiac, aura });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Beehiiv error:', err.response?.data || err.message);
+    return res.status(500).json({ success: false, error: 'Subscription failed.' });
   }
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
+// Fallback to index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`✅  Aurascope Dashboard → http://localhost:${PORT}`);
-  console.log(`📁  Data file: ${DATA_FILE}`);
+  console.log(`AuraScope server running on port ${PORT}`);
 });
