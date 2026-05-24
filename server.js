@@ -99,6 +99,7 @@ app.post('/subscribe', async (req, res) => {
     }
 
     const date = new Date(birthdate);
+
     const month = date.getMonth() + 1;
     const day = date.getDate();
 
