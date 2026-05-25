@@ -10,12 +10,12 @@ app.use(bodyParser.json());
 // Resend client (make sure RESEND_API_KEY is set in Render → Environment)
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Simple health / root route so you see something at /
+// Root route so AuraSpanse shows something
 app.get("/", (req, res) => {
-  res.send("Aurascope server is running.");
+  res.send("AuraSpanse server is running.");
 });
 
-// Unlock route that sends an email
+// Example email route for AuraSpanse (if you don't need this, you can delete the whole /unlock block)
 app.post("/unlock", async (req, res) => {
   try {
     const { summary, full, to } = req.body;
@@ -26,11 +26,9 @@ app.post("/unlock", async (req, res) => {
       });
     }
 
-    // Build HTML content safely. Newlines in `full` become   
- tags.
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-        <h2>New Aurascope Capture</h2>
+        <h2>New AuraSpanse Capture</h2>
 
         <h3>Summary</h3>
         <p>${summary}</p>
@@ -42,9 +40,9 @@ app.post("/unlock", async (req, res) => {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: "Aurascope <noreply@aurascope.app>",
+      from: "AuraSpanse <noreply@auraspanse.app>",
       to,
-      subject: "New Aurascope Capture",
+      subject: "New AuraSpanse Capture",
       html: htmlContent,
     });
 
