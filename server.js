@@ -1,59 +1,67 @@
-// server.js
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { Resend } = require('resend');
+const express = require("express");
+const bodyParser = require("body-parser");
+const { Resend } = require("resend");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// CORS + JSON parsing
-app.use(cors());
+// Middleware
 app.use(bodyParser.json());
 
-// Init Resend with API key from env
-const resendApiKey = process.env.RESEND_API_KEY;
-if (!resendApiKey) {
-  console.error('Missing RESEND_API_KEY in environment variables');
-}
-const resend = new Resend(resendApiKey);
+// Resend client (make sure RESEND_API_KEY is set in Render → Environment)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Simple health check
-app.get('/', (req, res) => {
-  res.send('AuraSpanse / Aurascope server is running');
+// Simple health / root route so you see something at /
+app.get("/", (req, res) => {
+  res.send("Aurascope server is running.");
 });
 
-// POST /email
-// Expects JSON like: { "from": "AuraSpanse <noreply@auraspanse.com>", "to": "you@email.com", "subject": "Hi", "text": "Message" }
-app.post('/email', async (req, res) => {
+// Unlock route that sends an email
+app.post("/unlock", async (req, res) => {
   try {
-    const { from, to, subject, text, html } = req.body;
+    const { summary, full, to } = req.body;
 
-    if (!to) {
-      return res.status(400).json({ error: 'Missing "to" address' });
+    if (!summary || !full || !to) {
+      return res.status(400).json({
+        error: "Missing required fields: summary, full, or to",
+      });
     }
 
-    const emailFrom = from || 'AuraSpanse <onboarding@auraspanse.com>'; // adjust as needed
-    const emailSubject = subject || 'Message from AuraSpanse';
-    const emailText = text || 'Hello from AuraSpanse.';
-    const emailHtml = html || `<p>${emailText}</p>`;
+    // Build HTML content safely. Newlines in `full` become   
+ tags.
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+        <h2>New Aurascope Capture</h2>
 
-    const data = await resend.emails.send({
-      from: emailFrom,
+        <h3>Summary</h3>
+        <p>${summary}</p>
+
+        <h3>Full Text</h3>
+        <p>${full.replace(/\n/g, "  
+")}</p>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: "Aurascope <noreply@aurascope.app>",
       to,
-      subject: emailSubject,
-      text: emailText,
-      html: emailHtml,
+      subject: "New Aurascope Capture",
+      html: htmlContent,
     });
 
-    return res.status(200).json({ success: true, data });
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Email failed' });
+    if (error) {
+      console.error("Resend email error:", error);
+      return res.status(500).json({ error: "Failed to send email" });
+    }
+
+    return res.json({ success: true, data });
+  } catch (err) {
+    console.error("/unlock route error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
+// Use Render's assigned PORT
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
