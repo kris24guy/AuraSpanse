@@ -48,7 +48,6 @@ function buildReading(dob, name) {
 
 app.post("/api/reading", (req, res) => {
   try {
-
     const { birthDate, name } = req.body;
 
     if (!birthDate) {
@@ -57,15 +56,11 @@ app.post("/api/reading", (req, res) => {
       });
     }
 
-    const reading = buildReading(
-      birthDate,
-      name || "You"
-    );
+    const reading = buildReading(birthDate, name || "You");
 
     return res.json(reading);
 
   } catch (err) {
-
     console.error(err);
 
     return res.status(500).json({
