@@ -128,10 +128,8 @@ app.post("/api/unlock", (req, res) => {
 
     return res.json({
       success: true,
-      full_reading:
-        "This is your unlocked premium Aurascope reading.",
-      mantra:
-        "I trust the timing of my own frequency.",
+      full_reading: "This is your unlocked premium Aurascope reading.",
+      mantra: "I trust the timing of my own frequency.",
     });
   } catch (err) {
     console.error("UNLOCK ERROR:", err);
