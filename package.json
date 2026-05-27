@@ -1,16 +1,15 @@
 {
-  "name": "aurascope",
-  "version": "2.0.0",
-  "description": "AuraScope — cinematic spectral identity experience",
-  "main": "server.js",
+  "name": "auraspanse",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "start": "node server.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -p $PORT"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
-    "express": "^4.19.2",
-    "resend": "^3.2.0",
-    "stripe": "^14.25.0"
-  },
-  "engines": { "node": ">=18" }
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  }
 }
