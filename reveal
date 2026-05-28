@@ -1,0 +1,71 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+
+export default function Home() {
+  const router = useRouter()
+  const [birthdate, setBirthdate] = useState('')
+
+  const handleReveal = () => {
+    if (!birthdate) return
+
+    localStorage.setItem('birthdate', birthdate)
+
+    router.push('/reveal')
+  }
+
+  return (
+    <main
+      style={{
+        minHeight: '100vh',
+        background: 'black',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '20px',
+      }}
+    >
+      <h1
+        style={{
+          fontSize: '4rem',
+          letterSpacing: '0.2em',
+        }}
+      >
+        AURASPANSE
+      </h1>
+
+      <input
+        id="birthdate"
+        name="birthdate"
+        type="date"
+        value={birthdate}
+        onChange={(e) => setBirthdate(e.target.value)}
+        style={{
+          padding: '12px',
+          borderRadius: '12px',
+          background: '#111',
+          color: 'white',
+          border: '1px solid #333',
+        }}
+      />
+
+      <button
+        onClick={handleReveal}
+        style={{
+          padding: '14px 28px',
+          borderRadius: '999px',
+          border: 'none',
+          background: 'linear-gradient(to right, cyan, violet)',
+          color: 'white',
+          cursor: 'pointer',
+          fontSize: '1rem',
+        }}
+      >
+        Reveal My Aura
+      </button>
+    </main>
+  )
+}
