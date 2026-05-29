@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-On the client, hit it like this:
 
 await fetch("/api/send-email", {
   method: "POST",
