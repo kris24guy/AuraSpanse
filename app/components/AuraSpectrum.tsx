@@ -2,21 +2,19 @@
 
 import React from "react";
 
-interface AuraVortexProps {
-  birthSeed: number;    // year*10000 + month*100 + day — locked forever
-  dayOfYear: number;    // drives the hidden breathe rate
+interface AuraSpectrumProps {
+  birthSeed: number;
+  dayOfYear: number;
 }
 
-const AuraVortex: React.FC<AuraVortexProps> = ({ birthSeed, dayOfYear }) => {
-  // TODO: replace this placeholder with your real visualization logic
-
+const AuraSpectrum: React.FC<AuraSpectrumProps> = ({ birthSeed, dayOfYear }) => {
   return (
     <div>
-      AuraVortex component
+      AuraSpectrum component
       <div>birthSeed: {birthSeed}</div>
       <div>dayOfYear: {dayOfYear}</div>
     </div>
   );
 };
 
-export default AuraVortex;
+export default AuraSpectrum;
