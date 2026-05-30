@@ -1,4 +1,4 @@
-// app/components/AuraVortex.tsx
+// app/components/AuraSpectrum.tsx
 
 import React from "react";
 
