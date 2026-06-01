@@ -1,0 +1,560 @@
+/* ── AuraSpanse · Spirit Board Aesthetic ── */
+
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold:    #c9a84c;
+  --gold2:   #e8c96a;
+  --cream:   #f0e8d0;
+  --smoke:   rgba(240,232,208,0.55);
+  --dim:     rgba(240,232,208,0.28);
+  --bg:      #0a0805;
+  --card-bg: rgba(8,6,4,0.92);
+  --border:  rgba(201,168,76,0.22);
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  font-family: 'IM Fell English', serif;
+  color: var(--cream);
+}
+
+/* ── Noise grain overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 180px;
+  opacity: 0.55;
+}
+
+.aurascope-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.aurascope-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+/* ── Card ── */
+.aurascope-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 40px 36px 36px;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 0 1px rgba(201,168,76,0.06),
+    0 0 60px rgba(0,0,0,0.9),
+    inset 0 0 80px rgba(201,168,76,0.02);
+}
+
+/* decorative corner marks */
+.aurascope-card::before,
+.aurascope-card::after {
+  content: '✦';
+  position: absolute;
+  font-size: 9px;
+  color: rgba(201,168,76,0.35);
+  line-height: 1;
+}
+.aurascope-card::before { top: 10px; left: 14px; }
+.aurascope-card::after  { bottom: 10px; right: 14px; }
+
+/* ── Brand ── */
+.aurascope-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  position: relative;
+}
+
+.aurascope-brand::before,
+.aurascope-brand::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(201,168,76,0.3));
+}
+.aurascope-brand::after {
+  background: linear-gradient(to left, transparent, rgba(201,168,76,0.3));
+}
+
+.brand-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--gold);
+}
+
+.brand-name {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 10px;
+  letter-spacing: 0.38em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+/* ── Screens ── */
+.screen { animation: fadeIn 0.5s ease-out; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Entry Screen ── */
+.entry-screen .headline {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 42px;
+  font-weight: 400;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  color: var(--cream);
+  text-shadow:
+    0 0 40px rgba(201,168,76,0.25),
+    0 2px 4px rgba(0,0,0,0.8);
+  letter-spacing: 0.02em;
+}
+
+.entry-screen .sub {
+  font-family: 'Cinzel', serif;
+  font-size: 8.5px;
+  color: var(--dim);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+}
+
+/* ── Fields ── */
+.field { margin-bottom: 22px; }
+
+label {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 0.26em;
+  color: rgba(201,168,76,0.6);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+input[type="date"],
+input[type="text"],
+input[type="email"] {
+  width: 100%;
+  background: rgba(201,168,76,0.03);
+  border: none;
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+  border-radius: 0;
+  color: var(--cream);
+  font-family: 'IM Fell English', serif;
+  font-size: 15px;
+  padding: 11px 4px;
+  outline: none;
+  transition: border-color 0.3s;
+  -webkit-appearance: none;
+  color-scheme: dark;
+  letter-spacing: 0.04em;
+}
+
+input:focus {
+  border-bottom-color: rgba(201,168,76,0.6);
+}
+
+input::placeholder { color: rgba(240,232,208,0.2); font-style: italic; }
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5) sepia(0.5);
+  opacity: 0.6;
+}
+
+/* ── Button ── */
+.btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 1px;
+  border: 1px solid rgba(201,168,76,0.3);
+  background: transparent;
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 9.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(201,168,76,0.06), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn:hover:not(:disabled)::before { opacity: 1; }
+.btn:hover:not(:disabled) { border-color: rgba(201,168,76,0.6); color: var(--gold2); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.error-text {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  color: #c06060;
+  margin-top: 5px;
+  letter-spacing: 0.1em;
+}
+
+/* ── Loading Screen ── */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 52px 0;
+  min-height: 300px;
+}
+
+.ld-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 32px;
+  position: relative;
+  animation: breathe 2.5s ease-in-out infinite alternate;
+}
+
+.ld-orb-r {
+  position: absolute;
+  border-radius: 50%;
+  animation: spin var(--s) linear infinite;
+  border: 1px solid rgba(201,168,76,0.25);
+}
+
+.ld-orb-c {
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.2), transparent);
+}
+
+@keyframes breathe {
+  from { transform: scale(0.9); }
+  to   { transform: scale(1.1); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ld-text {
+  font-family: 'Cinzel', serif;
+  font-size: 8.5px;
+  letter-spacing: 0.28em;
+  color: var(--dim);
+  text-transform: uppercase;
+  animation: fp 2s ease-in-out infinite;
+}
+
+@keyframes fp {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 1; }
+}
+
+/* ── Reveal Screen ── */
+.reveal-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reveal-step { animation: slideIn 0.6s ease-out; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Orb ── */
+.r-orb-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.r-orb {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.r-ring {
+  position: absolute;
+  border-radius: 50%;
+  animation: spin var(--s) linear infinite;
+}
+
+.r-core {
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  animation: breathe 3.5s ease-in-out infinite alternate;
+}
+
+/* ── Name / meta ── */
+.r-name {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 26px;
+  text-align: center;
+  margin-bottom: 5px;
+  color: var(--cream);
+  text-shadow: 0 0 30px rgba(201,168,76,0.2);
+  letter-spacing: 0.03em;
+}
+
+.r-meta {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  color: var(--dim);
+  text-align: center;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.r-epill {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.epill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 16px 5px 10px;
+  border-radius: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.edot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Spectrum ── */
+.spec-wrap { margin-bottom: 20px; }
+
+.spec-bar {
+  position: relative;
+  height: 4px;
+  background: linear-gradient(to right,
+    #fefefe, #e0d4ff, #b89cff, #3810c0,
+    #10c8c0, #20c010, #ffe000, #f06000,
+    #cc0010, #e00080, #c000c8, #080040, #000000
+  );
+  overflow: visible;
+}
+
+.spec-pin {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(240,232,208,0.9);
+  box-shadow: 0 0 8px rgba(0,0,0,0.9);
+  transition: left 1.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+.spec-ends {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  color: rgba(240,232,208,0.22);
+  margin-top: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Prose (typewriter) ── */
+.prose {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 2;
+  color: rgba(240,232,208,0.85);
+  margin-bottom: 18px;
+  min-height: 50px;
+  letter-spacing: 0.01em;
+}
+
+.cursor {
+  color: var(--gold);
+  animation: blink 0.7s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Affirmation ── */
+.aff-block {
+  border-top: 1px solid rgba(201,168,76,0.15);
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+  padding: 16px 0;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.aff-lbl {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  letter-spacing: 0.28em;
+  color: rgba(201,168,76,0.55);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.aff-text {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--smoke);
+}
+
+/* ── Nav ── */
+.reveal-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-next { width: 100%; }
+
+.btn-again {
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: block;
+  margin-left: auto;
+  transition: color 0.25s;
+  padding: 3px 0;
+}
+
+.btn-again:hover { color: var(--cream); }
+
+/* ── Email Modal ── */
+.email-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.email-modal {
+  background: rgba(8,6,4,0.97);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 36px;
+  max-width: 400px;
+  width: 90%;
+  backdrop-filter: blur(12px);
+  animation: slideIn 0.3s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.modal-header h2 {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 16px;
+  color: var(--cream);
+  margin: 0;
+  letter-spacing: 0.08em;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.modal-close:hover { color: var(--cream); }
+
+.modal-subtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  color: var(--dim);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+  margin-top: 0;
+}
