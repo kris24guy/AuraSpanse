@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { generateAura } from '../lib/auraEngine'
+import { generateAurascope } from '../lib/auracle'
 import AuraSpectrum from '../components/AuraSpectrum'
 
 export default function RevealPage() {
@@ -15,7 +16,7 @@ export default function RevealPage() {
     const birthdate = localStorage.getItem('birthdate')
     if (!birthdate) return
     const data = generateAura(birthdate)
-    setAuraData(data)
+    setAuraData({ ...data, aurascope: generateAurascope(data) })
   }, [])
 
   const handleSendEmail = async () => {
@@ -45,12 +46,13 @@ export default function RevealPage() {
   if (!auraData) return null
 
   const activeHues = auraData.hues.slice(0, stage).map((h: any) => h.hex)
+  const aurascope = auraData.aurascope
 
   return (
     <main
       style={{
         minHeight: '100vh',
-        background: 'black',
+        background: 'radial-gradient(circle at 50% 0%, rgba(156,116,255,0.18), transparent 30%), #05030a',
         color: 'white',
         padding: '20px',
         display: 'flex',
@@ -68,6 +70,7 @@ export default function RevealPage() {
         />
       </div>
 
+      <p style={{ letterSpacing: '0.28em', opacity: 0.55, margin: 0 }}>AURACLE REVEAL</p>
       <h1 style={{ fontSize: '2.5rem', margin: '0' }}>{auraData.zodiac.sign}</h1>
 
       {stage === 0 && (
@@ -88,9 +91,9 @@ export default function RevealPage() {
 
       {stage === 1 && (
         <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '600px', textAlign: 'center' }}>
-          <h2 style={{ color: auraData.hues[0].hex }}>Hue 1: {auraData.hues[0].name}</h2>
+          <h2 style={{ color: auraData.hues[0].hex }}>Hue 1: {auraData.hues[0].name.replace(/-/g, ' ')}</h2>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-            By blending your zodiac traits with the time of your birth, we've stabilized your first hue. 
+            By blending your zodiac traits with the time of your birth, we have stabilized your first hue. 
             This represents your <strong>External Projection</strong>.
           </p>
           <button 
@@ -104,7 +107,7 @@ export default function RevealPage() {
 
       {stage === 2 && (
         <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '600px', textAlign: 'center' }}>
-          <h2 style={{ color: auraData.hues[1].hex }}>Hue 2: {auraData.hues[1].name}</h2>
+          <h2 style={{ color: auraData.hues[1].hex }}>Hue 2: {auraData.hues[1].name.replace(/-/g, ' ')}</h2>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
             Your birthstone, <strong>{auraData.zodiac.birthstone}</strong>, provides properties of {auraData.zodiac.stoneTraits.join(', ')}. 
             Combined with your Life Path number <strong>{auraData.lifePath}</strong>, your second hue emerges.
@@ -119,12 +122,31 @@ export default function RevealPage() {
       )}
 
       {stage === 3 && (
-        <div className="card" style={{ background: '#111', padding: '40px', borderRadius: '32px', width: '100%', maxWidth: '600px', textAlign: 'center', border: '1px solid #333' }}>
-          <h2 style={{ color: auraData.hues[2].hex }}>The Balanced Hue: {auraData.hues[2].name}</h2>
-          <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '30px' }}>
-            Your spectrum is now balanced. The competition between your external projection and inner stone properties 
-            has harmonized into a final signature frequency.
+        <div className="card" style={{ background: '#111', padding: '34px', borderRadius: '32px', width: '100%', maxWidth: '720px', textAlign: 'center', border: '1px solid #333' }}>
+          <p style={{ letterSpacing: '0.2em', opacity: 0.6, marginTop: 0 }}>HUE 3 GENERATED</p>
+          <h2 style={{ color: auraData.hues[2].hex, fontSize: '2rem', marginBottom: '8px' }}>{aurascope.title}</h2>
+          <p style={{ fontSize: '1.1rem', lineHeight: '1.7', marginBottom: '24px', opacity: 0.9 }}>
+            {aurascope.reading}
           </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', margin: '26px 0' }}>
+            {aurascope.hueSummary.map((hue: any) => (
+              <div key={hue.label} style={{ border: `1px solid ${hue.hex}55`, background: `${hue.hex}14`, borderRadius: '18px', padding: '16px', textAlign: 'left' }}>
+                <p style={{ margin: '0 0 8px', fontSize: '0.75rem', opacity: 0.65 }}>{hue.label}</p>
+                <strong style={{ color: hue.hex, fontSize: '1.05rem' }}>{hue.name}</strong>
+                <p style={{ margin: '10px 0 0', fontSize: '0.9rem', lineHeight: 1.5, opacity: 0.78 }}>{hue.meaning}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: '#05030a', borderRadius: '24px', padding: '22px', marginBottom: '24px' }}>
+            <p style={{ margin: '0 0 8px', opacity: 0.55 }}>Auracle focus</p>
+            <p style={{ margin: 0, fontSize: '1.08rem', lineHeight: 1.6 }}>{aurascope.focus}</p>
+            <p style={{ margin: '18px 0 8px', opacity: 0.55 }}>Mantra</p>
+            <p style={{ margin: 0, fontStyle: 'italic', color: auraData.hues[2].hex }}>{aurascope.mantra}</p>
+            <p style={{ margin: '18px 0 8px', opacity: 0.55 }}>Action</p>
+            <p style={{ margin: 0, lineHeight: 1.6 }}>{aurascope.action}</p>
+          </div>
           
           {!sent ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
