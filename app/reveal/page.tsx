@@ -1,23 +1,24 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
 import { generateAura } from '../lib/auraEngine'
 import { generateAurascope } from '../lib/auracle'
 import AuraSpectrum from '../components/AuraSpectrum'
 
-const shellStyle = {
+const shellStyle: CSSProperties = {
   minHeight: '100vh',
   background:
     'radial-gradient(circle at 50% 0%, rgba(156,116,255,0.24), transparent 28%), radial-gradient(circle at 15% 25%, rgba(16,200,192,0.12), transparent 28%), radial-gradient(circle at 85% 40%, rgba(255,224,0,0.08), transparent 24%), #05030a',
   color: 'white',
   padding: '22px',
   display: 'flex',
-  flexDirection: 'column' as const,
+  flexDirection: 'column',
   alignItems: 'center',
   gap: '20px'
 }
 
-function cardStyle(borderColor = 'rgba(255,255,255,0.12)') {
+function cardStyle(borderColor = 'rgba(255,255,255,0.12)'): CSSProperties {
   return {
     background: 'linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.035))',
     border: `1px solid ${borderColor}`,
@@ -27,14 +28,14 @@ function cardStyle(borderColor = 'rgba(255,255,255,0.12)') {
     borderRadius: '30px',
     width: '100%',
     maxWidth: '760px',
-    textAlign: 'center' as const
+    textAlign: 'center'
   }
 }
 
-function labelStyle() {
+function labelStyle(): CSSProperties {
   return {
     letterSpacing: '0.26em',
-    textTransform: 'uppercase' as const,
+    textTransform: 'uppercase',
     opacity: 0.56,
     fontSize: '0.72rem',
     margin: 0
