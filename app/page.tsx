@@ -31,8 +31,8 @@ export default function Home() {
     >
       <p style={{ letterSpacing: '0.34em', opacity: 0.72, margin: 0 }}>AURASPANSE PRESENTS</p>
       <h1 style={{ fontSize: 'clamp(3rem, 12vw, 7rem)', lineHeight: 0.88, margin: 0 }}>AURACLE</h1>
-      <p style={{ maxWidth: '620px', fontSize: '1.1rem', lineHeight: 1.7, opacity: 0.82, margin: 0 }}>
-        Generate three aura hues from your zodiac, birthstone, and numerology, then receive the aurascope reading that forms after Hue 3 balances the spectrum.
+      <p style={{ maxWidth: '680px', fontSize: '1.1rem', lineHeight: 1.7, opacity: 0.84, margin: 0 }}>
+        Reveal your digital aura through three living hues: zodiac traits, birthstone resonance, and a 365-day time factor. The blend becomes your uniquely positioned AuraScope inside AuraSpanse.
       </p>
 
       <div
@@ -78,9 +78,13 @@ export default function Home() {
             letterSpacing: '0.04em',
           }}
         >
-          Generate My Auracle
+          Reveal My AuraScope
         </button>
       </div>
+
+      <p style={{ maxWidth: '560px', fontSize: '0.82rem', lineHeight: 1.6, opacity: 0.52, margin: 0 }}>
+        AuraScope readings are generated for entertainment and personal reflection. They are not medical, psychological, financial, or professional advice.
+      </p>
     </main>
   )
 }

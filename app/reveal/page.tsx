@@ -15,7 +15,14 @@ export default function RevealPage() {
   useEffect(() => {
     const birthdate = localStorage.getItem('birthdate')
     if (!birthdate) return
-    const data = generateAura(birthdate)
+
+    let registeredAt = localStorage.getItem('auracle_registered_at')
+    if (!registeredAt) {
+      registeredAt = new Date().toISOString()
+      localStorage.setItem('auracle_registered_at', registeredAt)
+    }
+
+    const data = generateAura(birthdate, registeredAt)
     setAuraData({ ...data, aurascope: generateAurascope(data) })
   }, [])
 
@@ -33,6 +40,8 @@ export default function RevealPage() {
           hue1: auraData.hues[0].name,
           hue2: auraData.hues[1].name,
           hue3: auraData.hues[2].name,
+          finalAuraName: auraData.finalAuraName,
+          finalFrequency: auraData.finalFrequency,
         }),
       })
       if (res.ok) setSent(true)
@@ -43,7 +52,17 @@ export default function RevealPage() {
     }
   }
 
-  if (!auraData) return null
+  if (!auraData) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#05030a', color: 'white', display: 'grid', placeItems: 'center', padding: '24px', textAlign: 'center' }}>
+        <div>
+          <p style={{ letterSpacing: '0.28em', opacity: 0.55 }}>AURACLE REVEAL</p>
+          <h1>No birth date found</h1>
+          <a href="/" style={{ color: '#9c74ff' }}>Return to start</a>
+        </div>
+      </main>
+    )
+  }
 
   const activeHues = auraData.hues.slice(0, stage).map((h: any) => h.hex)
   const aurascope = auraData.aurascope
@@ -62,69 +81,61 @@ export default function RevealPage() {
       }}
     >
       <div style={{ width: '100%', maxWidth: '500px' }}>
-        <AuraSpectrum 
-          birthSeed={auraData.lifePath * 111} 
-          dayOfYear={auraData.dayOfYear} 
+        <AuraSpectrum
+          birthSeed={auraData.lifePath * 111}
+          dayOfYear={auraData.currentAuraDay}
           activeHues={activeHues}
           scanMode={stage < 3}
         />
       </div>
 
       <p style={{ letterSpacing: '0.28em', opacity: 0.55, margin: 0 }}>AURACLE REVEAL</p>
-      <h1 style={{ fontSize: '2.5rem', margin: '0' }}>{auraData.zodiac.sign}</h1>
+      <h1 style={{ fontSize: '2.5rem', margin: '0', textAlign: 'center' }}>{auraData.zodiac.sign}</h1>
 
       {stage === 0 && (
-        <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '600px', textAlign: 'center' }}>
-          <h2 style={{ color: auraData.zodiac.color }}>Phase 1: The Celestial Origin</h2>
+        <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '660px', textAlign: 'center' }}>
+          <h2 style={{ color: auraData.hues[0].hex }}>Hue 1: Zodiac Triad</h2>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-            As a {auraData.zodiac.sign}, your core frequency is built on: 
-            <strong> {auraData.zodiac.traits.join(', ')}</strong>.
+            Your {auraData.zodiac.sign} reveals three emotional traits: <strong>{auraData.zodiac.traits.join(' / ')}</strong>.
+            Together, they stabilize into <strong style={{ color: auraData.hues[0].hex }}> {auraData.hues[0].name.replace(/-/g, ' ')}</strong>.
           </p>
-          <button 
-            onClick={() => setStage(1)}
-            style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.zodiac.color, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Blend Traits to Hue 1
+          <button onClick={() => setStage(1)} style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.hues[0].hex, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+            Reveal Hue 1
           </button>
         </div>
       )}
 
       {stage === 1 && (
-        <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '600px', textAlign: 'center' }}>
-          <h2 style={{ color: auraData.hues[0].hex }}>Hue 1: {auraData.hues[0].name.replace(/-/g, ' ')}</h2>
+        <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '660px', textAlign: 'center' }}>
+          <h2 style={{ color: auraData.hues[1].hex }}>Hue 2: Birthstone Resonance</h2>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-            By blending your zodiac traits with the time of your birth, we have stabilized your first hue. 
-            This represents your <strong>External Projection</strong>.
+            Your birthstone, <strong>{auraData.zodiac.birthstone}</strong>, carries {auraData.zodiac.stoneTraits.join(' / ')}.
+            It fades into the AuraSpectrum at <strong>{Math.round(auraData.stoneOpacity * 100)}% opacity</strong>, becoming <strong style={{ color: auraData.hues[1].hex }}> {auraData.hues[1].name.replace(/-/g, ' ')}</strong>.
           </p>
-          <button 
-            onClick={() => setStage(2)}
-            style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.hues[0].hex, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Add Birthstone & Numerology
+          <button onClick={() => setStage(2)} style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.hues[1].hex, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+            Reveal Hue 2
           </button>
         </div>
       )}
 
       {stage === 2 && (
-        <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '600px', textAlign: 'center' }}>
-          <h2 style={{ color: auraData.hues[1].hex }}>Hue 2: {auraData.hues[1].name.replace(/-/g, ' ')}</h2>
+        <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '660px', textAlign: 'center' }}>
+          <h2 style={{ color: auraData.hues[2].hex }}>Hue 3: 365-Day Time Hue</h2>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-            Your birthstone, <strong>{auraData.zodiac.birthstone}</strong>, provides properties of {auraData.zodiac.stoneTraits.join(', ')}. 
-            Combined with your Life Path number <strong>{auraData.lifePath}</strong>, your second hue emerges.
+            Your time factor moves through Aura Day <strong>{auraData.currentAuraDay}</strong> of the 365-day cycle.
+            That living position creates <strong style={{ color: auraData.hues[2].hex }}> {auraData.hues[2].name.replace(/-/g, ' ')}</strong>.
           </p>
-          <button 
-            onClick={() => setStage(3)}
-            style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.hues[1].hex, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Balance the Spectrum
+          <button onClick={() => setStage(3)} style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.hues[2].hex, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+            Blend Final Aura
           </button>
         </div>
       )}
 
       {stage === 3 && (
-        <div className="card" style={{ background: '#111', padding: '34px', borderRadius: '32px', width: '100%', maxWidth: '720px', textAlign: 'center', border: '1px solid #333' }}>
-          <p style={{ letterSpacing: '0.2em', opacity: 0.6, marginTop: 0 }}>HUE 3 GENERATED</p>
-          <h2 style={{ color: auraData.hues[2].hex, fontSize: '2rem', marginBottom: '8px' }}>{aurascope.title}</h2>
+        <div className="card" style={{ background: '#111', padding: '34px', borderRadius: '32px', width: '100%', maxWidth: '760px', textAlign: 'center', border: '1px solid #333' }}>
+          <p style={{ letterSpacing: '0.2em', opacity: 0.6, marginTop: 0 }}>FINAL AURA POSITIONED</p>
+          <h2 style={{ color: auraData.finalEmotion.hex, fontSize: '2rem', marginBottom: '8px' }}>{auraData.finalAuraName}</h2>
+          <p style={{ marginTop: 0, opacity: 0.7 }}>{auraData.finalFrequency}hz · {auraData.finalEmotion.name.replace(/-/g, ' ')}</p>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.7', marginBottom: '24px', opacity: 0.9 }}>
             {aurascope.reading}
           </p>
@@ -143,43 +154,22 @@ export default function RevealPage() {
             <p style={{ margin: '0 0 8px', opacity: 0.55 }}>Auracle focus</p>
             <p style={{ margin: 0, fontSize: '1.08rem', lineHeight: 1.6 }}>{aurascope.focus}</p>
             <p style={{ margin: '18px 0 8px', opacity: 0.55 }}>Mantra</p>
-            <p style={{ margin: 0, fontStyle: 'italic', color: auraData.hues[2].hex }}>{aurascope.mantra}</p>
+            <p style={{ margin: 0, fontStyle: 'italic', color: auraData.finalEmotion.hex }}>{aurascope.mantra}</p>
             <p style={{ margin: '18px 0 8px', opacity: 0.55 }}>Action</p>
             <p style={{ margin: 0, lineHeight: 1.6 }}>{aurascope.action}</p>
           </div>
-          
+
           {!sent ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <input 
-                type="email" 
-                placeholder="Enter email for full 12-page reading"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ padding: '15px', borderRadius: '12px', border: '1px solid #444', background: '#000', color: 'white' }}
-              />
-              <button 
-                onClick={handleSendEmail}
-                disabled={sending}
-                style={{ padding: '15px', borderRadius: '99px', border: 'none', background: 'white', color: 'black', fontWeight: 'bold', cursor: 'pointer' }}
-              >
-                {sending ? 'Sending...' : 'Send Full Reading'}
+              <input type="email" placeholder="Enter email for full AuraScope reading" value={email} onChange={(e) => setEmail(e.target.value)} style={{ padding: '15px', borderRadius: '12px', border: '1px solid #444', background: '#000', color: 'white' }} />
+              <button onClick={handleSendEmail} disabled={sending} style={{ padding: '15px', borderRadius: '99px', border: 'none', background: 'white', color: 'black', fontWeight: 'bold', cursor: 'pointer' }}>
+                {sending ? 'Sending...' : 'Send My Full Reading'}
               </button>
+              <p style={{ fontSize: '0.78rem', opacity: 0.55, margin: 0 }}>For entertainment and personal reflection only.</p>
             </div>
           ) : (
             <p style={{ color: '#4caf50', fontWeight: 'bold' }}>Reading sent! Check your inbox.</p>
           )}
-
-          <div style={{ marginTop: '40px', borderTop: '1px solid #222', paddingTop: '20px' }}>
-            <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Support the project & get priority readings:</p>
-            <a 
-              href="https://github.com/sponsors/kris24guy" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{ display: 'inline-block', marginTop: '10px', padding: '10px 20px', borderRadius: '8px', background: '#24292e', color: 'white', textDecoration: 'none', fontWeight: 'bold' }}
-            >
-              ❤ Donate via GitHub
-            </a>
-          </div>
         </div>
       )}
     </main>
