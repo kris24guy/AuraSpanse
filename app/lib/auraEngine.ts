@@ -250,6 +250,9 @@ export function generateAura(dateString: string, registeredDateString?: string) 
   const primaryAuraName = makeAuraName(zodiacHue)
   const secondaryAuraName = makeAuraName(birthstoneHue)
   const finalAuraName = `${primaryAuraName} with ${secondaryAuraName} whispers`
+  const daysAlive = Math.max(1, daysBetween(birthDate, now))
+  const tenureDays = daysBetween(registeredDate, now)
+  const timeFactor = tenureDays / daysAlive
 
   const polarities: Array<'positive' | 'neutral' | 'shadow'> = ['positive', 'neutral', 'shadow']
   const zodiac: ZodiacData = {
@@ -296,8 +299,9 @@ export function generateAura(dateString: string, registeredDateString?: string) 
     primaryAuraName,
     secondaryAuraName,
     stoneOpacity,
-    daysAlive: Math.max(1, daysBetween(birthDate, now)),
-    tenureDays: daysBetween(registeredDate, now),
+    daysAlive,
+    tenureDays,
+    timeFactor,
     currentAuraDay
   }
 }
