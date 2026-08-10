@@ -90,8 +90,8 @@ const birthstones: Record<number, BirthstoneData[]> = {
   ],
   10: [
     { name: 'Golden Citrine', color: '#e4a11b', pos: findEmotion('Optimism'), neu: findEmotion('Warmth'), neg: findEmotion('Ambition') },
-    { name: 'Imperial Topaz', color: '#e67722', pos: findEmotion('Creativity'), neu: findEmotion('Confidence'), neg: findEmotion('Desire') },
-    { name: 'Tiger Eye', color: '#b87822', pos: findEmotion('Courage'), neu: findEmotion('Focus'), neg: findEmotion('Authority') }
+    { name: 'Imperial Topaz', color: '#e67722', pos: findEmotion('Creativity'), neu: findEmotion('Clarity'), neg: findEmotion('Desire') },
+    { name: 'Tiger Eye', color: '#b87822', pos: findEmotion('Courage'), neu: findEmotion('Insight'), neg: findEmotion('Authority') }
   ],
   11: [
     { name: 'Sky Turquoise', color: '#40e0d0', pos: findEmotion('Empathy'), neu: findEmotion('Connection'), neg: findEmotion('Restlessness') },
