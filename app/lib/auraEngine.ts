@@ -1,4 +1,4 @@
-import { getEmotionByFreq, EmotionColor } from './emotionColors'
+import { emotionColors, getEmotionByFreq, EmotionColor } from './emotionColors'
 import { getZodiacSign, zodiacMap } from './zodiacMap'
 
 export interface ZodiacData {
@@ -18,90 +18,96 @@ interface BirthstoneData {
   neg: EmotionColor
 }
 
+const findEmotion = (name: string): EmotionColor => {
+  const found = emotionColors.find((color) => color.name.toLowerCase() === name.toLowerCase())
+  if (!found) throw new Error(`Emotion not in spectrum: ${name}`)
+  return found
+}
+
 const birthstones: Record<number, BirthstoneData> = {
   0: {
     name: 'Garnet',
     color: '#730800',
-    pos: getEmotionByFreq(237),
-    neu: getEmotionByFreq(347),
-    neg: getEmotionByFreq(837)
+    pos: findEmotion('Constancy'),
+    neu: findEmotion('Faith'),
+    neg: findEmotion('Intensity')
   },
   1: {
     name: 'Amethyst',
     color: '#9966cc',
-    pos: getEmotionByFreq(152),
-    neu: getEmotionByFreq(132),
-    neg: getEmotionByFreq(980)
+    pos: findEmotion('Wisdom'),
+    neu: findEmotion('Spirituality'),
+    neg: findEmotion('Dissolution')
   },
   2: {
     name: 'Aquamarine',
     color: '#7EDDD3',
-    pos: getEmotionByFreq(396),
-    neu: getEmotionByFreq(362),
-    neg: getEmotionByFreq(307)
+    pos: findEmotion('Communication'),
+    neu: findEmotion('Flow'),
+    neg: findEmotion('Sorrow')
   },
   3: {
     name: 'Diamond',
     color: '#E8E8E8',
-    pos: getEmotionByFreq(20),
-    neu: getEmotionByFreq(11),
-    neg: getEmotionByFreq(162)
+    pos: findEmotion('Clarity'),
+    neu: findEmotion('Purity'),
+    neg: findEmotion('Authority')
   },
   4: {
     name: 'Emerald',
     color: '#50c878',
-    pos: getEmotionByFreq(510),
-    neu: getEmotionByFreq(862),
-    neg: getEmotionByFreq(842)
+    pos: findEmotion('Growth'),
+    neu: findEmotion('Memory'),
+    neg: findEmotion('Desire')
   },
   5: {
     name: 'Pearl',
     color: '#f0ead6',
-    pos: getEmotionByFreq(11),
-    neu: getEmotionByFreq(152),
-    neg: getEmotionByFreq(78)
+    pos: findEmotion('Purity'),
+    neu: findEmotion('Serenity'),
+    neg: findEmotion('Shyness')
   },
   6: {
     name: 'Ruby',
     color: '#e0115f',
-    pos: getEmotionByFreq(827),
-    neu: getEmotionByFreq(852),
-    neg: getEmotionByFreq(842)
+    pos: findEmotion('Passion'),
+    neu: findEmotion('Vitality-fire'),
+    neg: findEmotion('Desire')
   },
   7: {
     name: 'Peridot',
     color: '#A4BE7B',
-    pos: getEmotionByFreq(462),
-    neu: getEmotionByFreq(647),
-    neg: getEmotionByFreq(638)
+    pos: findEmotion('Healing'),
+    neu: findEmotion('Vitality'),
+    neg: findEmotion('Restlessness')
   },
   8: {
     name: 'Sapphire',
     color: '#0f52ba',
-    pos: getEmotionByFreq(232),
-    neu: getEmotionByFreq(152),
-    neg: getEmotionByFreq(162)
+    pos: findEmotion('Integrity'),
+    neu: findEmotion('Wisdom'),
+    neg: findEmotion('Authority')
   },
   9: {
     name: 'Opal',
     color: '#e8f1d4',
-    pos: getEmotionByFreq(342),
-    neu: getEmotionByFreq(117),
-    neg: getEmotionByFreq(137)
+    pos: findEmotion('Hope'),
+    neu: findEmotion('Imagination'),
+    neg: findEmotion('Mystery')
   },
   10: {
     name: 'Citrine',
     color: '#e4a11b',
-    pos: getEmotionByFreq(692),
-    neu: getEmotionByFreq(697),
-    neg: getEmotionByFreq(797)
+    pos: findEmotion('Optimism'),
+    neu: findEmotion('Warmth'),
+    neg: findEmotion('Ambition')
   },
   11: {
     name: 'Turquoise',
     color: '#40e0d0',
-    pos: getEmotionByFreq(420),
-    neu: getEmotionByFreq(444),
-    neg: getEmotionByFreq(638)
+    pos: findEmotion('Empathy'),
+    neu: findEmotion('Connection'),
+    neg: findEmotion('Restlessness')
   }
 }
 
@@ -111,6 +117,71 @@ function averageFreq(colors: EmotionColor[]): number {
 
 function clamp(freq: number): number {
   return Math.max(0, Math.min(1000, Math.round(freq)))
+}
+
+function hexToRgb(hex: string) {
+  const clean = hex.replace('#', '')
+  return {
+    r: parseInt(clean.slice(0, 2), 16),
+    g: parseInt(clean.slice(2, 4), 16),
+    b: parseInt(clean.slice(4, 6), 16)
+  }
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map((value) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, '0')).join('')
+}
+
+function blendHex(colors: EmotionColor[]): string {
+  const rgbs = colors.map((color) => hexToRgb(color.hex))
+  const total = rgbs.length
+  return rgbToHex(
+    rgbs.reduce((sum, color) => sum + color.r, 0) / total,
+    rgbs.reduce((sum, color) => sum + color.g, 0) / total,
+    rgbs.reduce((sum, color) => sum + color.b, 0) / total
+  )
+}
+
+function cleanName(name: string): string {
+  return name.replace(/^The-/, '').replace(/-/g, ' ')
+}
+
+function colorWordFromEmotion(emotion: EmotionColor): string {
+  const freq = emotion.freq
+  if (freq < 45) return 'Luminous'
+  if (freq < 130) return 'Violet'
+  if (freq < 220) return 'Indigo'
+  if (freq < 320) return 'Sapphire'
+  if (freq < 415) return 'Azure'
+  if (freq < 510) return 'Teal'
+  if (freq < 640) return 'Emerald'
+  if (freq < 735) return 'Golden'
+  if (freq < 825) return 'Crimson'
+  if (freq < 935) return 'Rose'
+  return 'Shadow'
+}
+
+function timeStateWord(auraDay: number): string {
+  const states = [
+    'Origin',
+    'Veil',
+    'Mirror',
+    'Current',
+    'Gate',
+    'Field',
+    'Bloom',
+    'Flame',
+    'Crown',
+    'Threshold',
+    'Void',
+    'Orbit'
+  ]
+  const index = Math.min(states.length - 1, Math.floor(((auraDay - 1) / 365) * states.length))
+  return states[index]
+}
+
+function makeFinalAuraName(zodiacHue: EmotionColor, birthstoneHue: EmotionColor, auraDay: number): string {
+  return `${colorWordFromEmotion(zodiacHue)} ${cleanName(birthstoneHue.name).split(' ')[0]} ${timeStateWord(auraDay)}`
 }
 
 export function calculateLifePath(dateString: string): number {
@@ -135,42 +206,6 @@ export function daysBetween(start: Date, end: Date): number {
   return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000))
 }
 
-function makeFinalAuraName(finalEmotion: EmotionColor, sourceEmotion: EmotionColor, finalFreq: number): string {
-  const firstWords = [
-    'Luminous',
-    'Violet',
-    'Indigo',
-    'Sapphire',
-    'Azure',
-    'Teal',
-    'Emerald',
-    'Golden',
-    'Crimson',
-    'Rose',
-    'Shadow'
-  ]
-
-  const lastWords = [
-    'Origin',
-    'Veil',
-    'Mirror',
-    'Current',
-    'Gate',
-    'Field',
-    'Bloom',
-    'Flame',
-    'Crown',
-    'Threshold',
-    'Void'
-  ]
-
-  const index = Math.min(10, Math.floor(clamp(finalFreq) / 91))
-  const middle = sourceEmotion.name.replace(/^The-/, '').replace(/-/g, ' ')
-  const cleanMiddle = middle.split(' ')[0] || finalEmotion.name.replace(/-/g, ' ')
-
-  return `${firstWords[index]} ${cleanMiddle} ${lastWords[index]}`
-}
-
 export function generateAura(dateString: string, registeredDateString?: string) {
   const birthDate = new Date(`${dateString}T00:00:00Z`)
   const now = new Date()
@@ -185,23 +220,25 @@ export function generateAura(dateString: string, registeredDateString?: string) 
   const zodiacTriad = [sign.pos, sign.neu, sign.neg]
   const birthstoneTriad = [stone.pos, stone.neu, stone.neg]
 
-  const zodiacHue = getEmotionByFreq(averageFreq(zodiacTriad))
-  const birthstoneHue = getEmotionByFreq(averageFreq(birthstoneTriad))
+  const zodiacAverage = getEmotionByFreq(averageFreq(zodiacTriad))
+  const birthstoneAverage = getEmotionByFreq(averageFreq(birthstoneTriad))
+
+  const zodiacHue = sign.pos
+  const birthstoneHue = stone.neu
 
   const daysAlive = Math.max(1, daysBetween(birthDate, now))
   const tenureDays = daysBetween(registeredDate, now)
   const timeFactor = tenureDays / daysAlive
   const currentAuraDay = ((getDayOfYear(now) + daysAlive + tenureDays) % 365) || 365
-  const timeHue = getEmotionByFreq(Math.round(((currentAuraDay - 1) / 364) * 1000))
+  const dayFreq = Math.round(((currentAuraDay - 1) / 364) * 1000)
+  const timeHue = getEmotionByFreq(dayFreq)
+  const timeState = timeStateWord(currentAuraDay)
 
   const stoneOpacity = Math.min(1, Math.max(0.15, 0.15 + (birthstoneHue.freq / 1000) * 0.85))
-  const finalFreq = clamp(
-    zodiacHue.freq * 0.42 +
-    birthstoneHue.freq * (0.32 + stoneOpacity * 0.12) +
-    timeHue.freq * (0.26 + Math.min(timeFactor, 0.1))
-  )
-  const finalEmotion = getEmotionByFreq(finalFreq)
-  const finalAuraName = makeFinalAuraName(finalEmotion, birthstoneHue, finalFreq)
+  const finalFrequency = clamp((zodiacHue.freq + birthstoneHue.freq + timeHue.freq) / 3 + Math.min(timeFactor * 100, 33))
+  const finalEmotion = getEmotionByFreq(finalFrequency)
+  const finalHex = blendHex([zodiacHue, birthstoneHue, timeHue])
+  const finalAuraName = makeFinalAuraName(zodiacHue, birthstoneHue, currentAuraDay)
 
   const zodiac: ZodiacData = {
     sign: sign.sign,
@@ -219,10 +256,19 @@ export function generateAura(dateString: string, registeredDateString?: string) 
     hues: [zodiacHue, birthstoneHue, timeHue],
     zodiacTriad,
     birthstoneTriad,
+    zodiacAverage,
+    birthstoneAverage,
     timeHue,
+    timeState,
     finalEmotion,
-    finalFrequency: finalFreq,
+    finalFrequency,
+    finalHex,
     finalAuraName,
+    finalNameParts: {
+      zodiacColor: colorWordFromEmotion(zodiacHue),
+      birthstoneEmotion: cleanName(birthstoneHue.name).split(' ')[0],
+      timeState
+    },
     stoneOpacity,
     daysAlive,
     tenureDays,

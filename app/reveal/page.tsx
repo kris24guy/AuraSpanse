@@ -23,7 +23,7 @@ export default function RevealPage() {
     }
 
     const data = generateAura(birthdate, registeredAt)
-    setAuraData({ ...data, aurascope: generateAurascope(data) })
+    setAuraData({ ...data, aurascope: generateAurascope(data), registeredAt })
   }, [])
 
   const handleSendEmail = async () => {
@@ -36,12 +36,7 @@ export default function RevealPage() {
         body: JSON.stringify({
           email,
           birthDate: localStorage.getItem('birthdate'),
-          zodiac: auraData.zodiac.sign,
-          hue1: auraData.hues[0].name,
-          hue2: auraData.hues[1].name,
-          hue3: auraData.hues[2].name,
-          finalAuraName: auraData.finalAuraName,
-          finalFrequency: auraData.finalFrequency,
+          registeredAt: auraData.registeredAt,
         }),
       })
       if (res.ok) setSent(true)
@@ -66,6 +61,7 @@ export default function RevealPage() {
 
   const activeHues = auraData.hues.slice(0, stage).map((h: any) => h.hex)
   const aurascope = auraData.aurascope
+  const finalColor = auraData.finalHex || auraData.finalEmotion.hex
 
   return (
     <main
@@ -97,7 +93,7 @@ export default function RevealPage() {
           <h2 style={{ color: auraData.hues[0].hex }}>Hue 1: Zodiac Triad</h2>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
             Your {auraData.zodiac.sign} reveals three emotional traits: <strong>{auraData.zodiac.traits.join(' / ')}</strong>.
-            Together, they stabilize into <strong style={{ color: auraData.hues[0].hex }}> {auraData.hues[0].name.replace(/-/g, ' ')}</strong>.
+            The first aura word comes through <strong style={{ color: auraData.hues[0].hex }}> {auraData.hues[0].name.replace(/-/g, ' ')}</strong>.
           </p>
           <button onClick={() => setStage(1)} style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.hues[0].hex, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
             Reveal Hue 1
@@ -120,10 +116,10 @@ export default function RevealPage() {
 
       {stage === 2 && (
         <div className="card" style={{ background: '#111', padding: '30px', borderRadius: '24px', width: '100%', maxWidth: '660px', textAlign: 'center' }}>
-          <h2 style={{ color: auraData.hues[2].hex }}>Hue 3: 365-Day Time Hue</h2>
+          <h2 style={{ color: auraData.hues[2].hex }}>Hue 3: {auraData.timeState}</h2>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
             Your time factor moves through Aura Day <strong>{auraData.currentAuraDay}</strong> of the 365-day cycle.
-            That living position creates <strong style={{ color: auraData.hues[2].hex }}> {auraData.hues[2].name.replace(/-/g, ' ')}</strong>.
+            That living position creates the state <strong style={{ color: auraData.hues[2].hex }}> {auraData.timeState}</strong> from {auraData.hues[2].name.replace(/-/g, ' ')}.
           </p>
           <button onClick={() => setStage(3)} style={{ marginTop: '20px', padding: '12px 30px', borderRadius: '99px', border: 'none', background: auraData.hues[2].hex, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
             Blend Final Aura
@@ -134,8 +130,8 @@ export default function RevealPage() {
       {stage === 3 && (
         <div className="card" style={{ background: '#111', padding: '34px', borderRadius: '32px', width: '100%', maxWidth: '760px', textAlign: 'center', border: '1px solid #333' }}>
           <p style={{ letterSpacing: '0.2em', opacity: 0.6, marginTop: 0 }}>FINAL AURA POSITIONED</p>
-          <h2 style={{ color: auraData.finalEmotion.hex, fontSize: '2rem', marginBottom: '8px' }}>{auraData.finalAuraName}</h2>
-          <p style={{ marginTop: 0, opacity: 0.7 }}>{auraData.finalFrequency}hz · {auraData.finalEmotion.name.replace(/-/g, ' ')}</p>
+          <h2 style={{ color: finalColor, fontSize: '2rem', marginBottom: '8px' }}>{auraData.finalAuraName}</h2>
+          <p style={{ marginTop: 0, opacity: 0.7 }}>{auraData.finalFrequency}hz · {auraData.finalEmotion.name.replace(/-/g, ' ')} · {finalColor}</p>
           <p style={{ fontSize: '1.1rem', lineHeight: '1.7', marginBottom: '24px', opacity: 0.9 }}>
             {aurascope.reading}
           </p>
@@ -154,7 +150,7 @@ export default function RevealPage() {
             <p style={{ margin: '0 0 8px', opacity: 0.55 }}>Auracle focus</p>
             <p style={{ margin: 0, fontSize: '1.08rem', lineHeight: 1.6 }}>{aurascope.focus}</p>
             <p style={{ margin: '18px 0 8px', opacity: 0.55 }}>Mantra</p>
-            <p style={{ margin: 0, fontStyle: 'italic', color: auraData.finalEmotion.hex }}>{aurascope.mantra}</p>
+            <p style={{ margin: 0, fontStyle: 'italic', color: finalColor }}>{aurascope.mantra}</p>
             <p style={{ margin: '18px 0 8px', opacity: 0.55 }}>Action</p>
             <p style={{ margin: 0, lineHeight: 1.6 }}>{aurascope.action}</p>
           </div>
