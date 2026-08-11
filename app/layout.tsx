@@ -25,6 +25,7 @@ export default function RootLayout({
         >
           <p style={{ margin: '0 0 12px' }}>AuraSpanse and Auracle are for entertainment and personal reflection only.</p>
           <nav style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <a href="/aura-guide" style={{ color: 'rgba(255,255,255,0.72)' }}>Aura Guide</a>
             <a href="/privacy" style={{ color: 'rgba(255,255,255,0.72)' }}>Privacy</a>
             <a href="/terms" style={{ color: 'rgba(255,255,255,0.72)' }}>Terms</a>
             <a href="/disclaimer" style={{ color: 'rgba(255,255,255,0.72)' }}>Disclaimer</a>
