@@ -108,7 +108,7 @@ export default function RevealPage() {
       eyebrow: 'PRIMARY AURA',
       title: aurascope.primaryAura,
       color: auraData.hues[0].hex,
-      body: `Your ${auraData.zodiac.sign} trait triad opens through ${auraData.zodiac.selectedTrait.name}. Registration time lands at ${auraData.timeWeight}/1000, pulling the field toward the ${auraData.zodiac.selectedTrait.polarity} channel.`,
+      body: `Your ${auraData.zodiac.sign} trait triad opens through ${auraData.zodiac.selectedTrait.name}. The placement mechanism lands at ${auraData.timeWeight}/1000, pulling the field toward the ${auraData.zodiac.selectedTrait.polarity} channel.`,
       button: 'Reveal secondary aura'
     },
     {
@@ -119,11 +119,11 @@ export default function RevealPage() {
       button: 'Reveal combined hue'
     },
     {
-      eyebrow: 'THIRD COLOR',
+      eyebrow: 'THIRD HUE',
       title: cleanName(auraData.hues[2].name),
       color: auraData.hues[2].hex,
-      body: 'This third color is created by blending the primary zodiac hue with the secondary birthstone hue, then preparing it for the final time-weighted aura.',
-      button: 'Blend final AuraScope'
+      body: 'This third hue is created where the primary zodiac hue and secondary birthstone hue blend, then the placement mechanism positions the final Aura Identity inside the AuraSpectrum.',
+      button: 'Reveal Aura Identity'
     }
   ]
 
@@ -166,7 +166,7 @@ export default function RevealPage() {
 
       {stage === 3 && (
         <div style={cardStyle(finalColor + '77')}>
-          <p style={labelStyle()}>FINAL AURASCOPE</p>
+          <p style={labelStyle()}>AURA IDENTITY</p>
           <h1 style={{ color: finalColor, fontSize: '2.35rem', margin: '12px 0 6px', lineHeight: 1.1 }}>{aurascope.title}</h1>
           <p style={{ letterSpacing: '0.18em', opacity: 0.7, margin: '0 0 28px', fontSize: '0.78rem' }}>
             {auraData.zodiac.sign.toUpperCase()} · {aurascope.subtitleTraits.map((trait: string) => trait.toUpperCase()).join(' · ')}
@@ -216,7 +216,7 @@ export default function RevealPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '13px', margin: '28px auto 0', maxWidth: '420px' }}>
               <input type="email" placeholder="Enter email for full AuraScope reading" value={email} onChange={(e) => setEmail(e.target.value)} style={{ padding: '15px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(0,0,0,0.36)', color: 'white' }} />
               <button onClick={handleSendEmail} disabled={sending} style={{ padding: '15px', borderRadius: '99px', border: 'none', background: 'white', color: 'black', fontWeight: 'bold', cursor: 'pointer' }}>
-                {sending ? 'Sending...' : 'Send My Full Reading'}
+                {sending ? 'Sending...' : 'Send My Full AuraScope'}
               </button>
               <p style={{ fontSize: '0.78rem', opacity: 0.55, margin: 0 }}>For entertainment and personal reflection only.</p>
             </div>
