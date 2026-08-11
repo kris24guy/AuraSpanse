@@ -138,16 +138,19 @@ export function generateAurascope(input: AuraScopeInput): AurascopeReading {
   const subtitleTraits = input.zodiac.traits.slice(0, 3).map(traitLabel)
   const timeWeight = input.timeWeight ?? 0
   const opacity = Math.round((input.stoneOpacity || 0.5) * 100)
+  const placementZone = input.timeState || 'the living field'
+  const placementTint = cleanName((hue4 || finalEmotion).name).toLowerCase()
+  const combinedHue = cleanName(hue3.name)
 
   const paragraphs = [
     pick(openers, traitSeed),
     `Your ${input.zodiac.sign} current opens through ${traitLabel(selectedTrait).toLowerCase()}, giving your primary aura its first signature: ${primaryAura}. This is the part of you that translates pressure into instinct and emotion into direction.`,
-    `${input.zodiac.birthstone} enters as ${secondaryAura}, carrying ${cleanName(stoneGift).toLowerCase()} through ${opacity}% opacity. It softens, deepens, or sharpens the zodiac field depending on where your registration time lands on the 0–1000 AuraSpectrum scale.`,
-    `The third color is not chosen separately; it is born from the first two hues blending together. That merged color becomes ${cleanName(hue3.name).toLowerCase()}, the bridge between what you came in with and what your field is becoming.`,
-    `Your registration-time weight is ${timeWeight}/1000, moving through ${input.timeState || 'the living field'} and tinting the final aura with ${cleanName((hue4 || finalEmotion).name).toLowerCase()}. Trust the ebb and flow of these internal tides, because they reveal how your timing, traits, and stones combine into one AuraScope identity.`
+    `${input.zodiac.birthstone} steps into your field as ${secondaryAura}, carrying ${cleanName(stoneGift).toLowerCase()} at ${opacity}% opacity. It does not simply sit beside ${primaryAura}; it moves through it, shifting the edges, sharpening the signal, and giving your ${input.zodiac.sign} aura a more specific emotional depth.`,
+    `Your third hue is not randomly assigned. It is created where ${primaryAura} and ${secondaryAura} collide, forming ${combinedHue}: the color of ${focus}.`,
+    `Your registration-time placement mechanism lands at ${timeWeight}/1000, moving through the ${placementZone} zone and tinting the final Aura Identity with ${placementTint}. This placement does not define you; it positions ${title} inside the AuraSpectrum, revealing how your timing, traits, and stones combine into one personalized AuraScope.`
   ]
 
-  const mantra = `I let ${primaryAura}, ${secondaryAura}, and ${cleanName(hue3.name)} become one honest field.`
+  const mantra = `I let ${primaryAura}, ${secondaryAura}, and ${combinedHue} become one honest field.`
   const reading = paragraphs.join(' ')
 
   return {
@@ -166,7 +169,7 @@ export function generateAurascope(input: AuraScopeInput): AurascopeReading {
         label: 'Hue 1 · Zodiac trait channel',
         name: primaryAura,
         hex: hue1.hex,
-        meaning: `Your ${input.zodiac.sign} positive, neutral, and shadow traits are weighted by the registration-time scale.`
+        meaning: `Your ${input.zodiac.sign} positive, neutral, and shadow traits are weighted by the placement mechanism.`
       },
       {
         label: 'Hue 2 · Birthstone opacity',
@@ -176,15 +179,15 @@ export function generateAurascope(input: AuraScopeInput): AurascopeReading {
       },
       {
         label: 'Hue 3 · Combined hue',
-        name: cleanName(hue3.name),
+        name: combinedHue,
         hex: hue3.hex,
-        meaning: 'This color is created by blending the zodiac hue and birthstone hue together.'
+        meaning: `This color is created where ${primaryAura} and ${secondaryAura} blend together.`
       },
       {
-        label: 'Final aura · Time-weighted blend',
+        label: 'Final aura · Placement mechanism',
         name: title,
         hex: input.finalHex || finalEmotion.hex,
-        meaning: `The final identity is shaped by the ${timeWeight}/1000 registration-time weight.`
+        meaning: `The Aura Identity is positioned by the ${timeWeight}/1000 registration-time placement mechanism.`
       }
     ]
   }
