@@ -18,9 +18,10 @@ After the user enters a birth date and receives an AuraSpanse digital aura readi
 - [x] Located the personalized reading generator: `app/lib/auracle.ts`.
 - [x] Located the user-facing reveal flow: `app/reveal/page.tsx`.
 - [x] Confirmed the reveal page calls `generateAura()` and `generateAurascope()`.
-- [ ] Add a dedicated aura-responsive horoscope section to the generated reading.
-- [ ] Verify the horoscope references the user's zodiac sign, primary/secondary aura, blended hue, and balancing focus.
-- [ ] Confirm that different aura inputs can produce meaningfully different horoscope text.
+- [x] Added `app/lib/horoscope.ts`, a dedicated aura-responsive horoscope generator.
+- [x] Connected the reveal page to display the horoscope after the Aura Identity reading.
+- [x] Horoscope content references zodiac sign, primary/secondary aura, blended hue, selected trait polarity, focus, balancing color, and next action.
+- [ ] Confirm that different aura inputs produce meaningfully different horoscope text through tests.
 - [ ] Run the production build and resolve any TypeScript/build errors.
 - [ ] Verify the deployed Render service is connected to the intended repository and branch.
 - [ ] Test the full live journey: birth date → aura reveal → horoscope → email signup.
@@ -38,6 +39,12 @@ After the user enters a birth date and receives an AuraSpanse digital aura readi
 
 ### 2026-10-25 — Initial repository inspection
 Inspected `app/lib/auraEngine.ts`, `app/lib/auracle.ts`, `app/page.tsx`, `app/reveal/page.tsx`, and `package.json`. The project is a Next.js application. The aura-reading UI exists in source; the live deployment and end-to-end integrations remain unverified.
+
+### 2026-10-25 — Horoscope feature committed
+- Added `app/lib/horoscope.ts` with `generateAuraHoroscope()`.
+- Updated `app/reveal/page.tsx` to show a dedicated horoscope section after the generated Aura Identity.
+- Commits: `7dda589` (horoscope generator), `3a8f7a2` (reveal UI), and `ba73964` (mission log).
+- Not yet verified: production build, Render deployment, live browser flow, email delivery, and paid reading.
 
 ## Release Gate
 
