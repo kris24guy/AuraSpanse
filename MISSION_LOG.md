@@ -73,4 +73,10 @@ Do not label the mission complete until the code change is committed, the produc
 - HTML asset commit: `10fa846` — `public/aura-scope-mechanism.html`
 - Homepage redirect commit: `857e582` — `app/page.tsx`
 
+### 2026-10-26 — CI blocker made explicit
+
+- [x] Updated `.github/workflows/datadog-synthetics.yml` so the Datadog Synthetic step runs when both `DD_API_KEY` and `DD_APP_KEY` repository secrets are present, and is clearly skipped with a warning when either is missing.
+- [!] This is not a passing application build or end-to-end test. It only prevents a missing optional Datadog integration from falsely presenting as an application-code failure; Render's own `npm install && npm run build` remains the key deployment gate.
+- [ ] Check the latest GitHub Actions result after the workflow change.
+- [ ] Check Render deployment status and visit the deployed root/static URL when the host becomes accessible.
 
