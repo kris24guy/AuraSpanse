@@ -103,7 +103,7 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 ### 2026-10-26 — Added a real production-build check
 
 - [x] Added .github/workflows/next-build.yml to run npm ci and npm run build under Node.js 24 on pushes and pull requests to main.
-- [ ] Await this new workflow result. Unlike the Datadog workflow, this job actually runs the Next.js production build and can confirm whether TypeScript passes after the redirect fix.
+- [x] The separate Next.js production-build workflow now passes on the latest main commit tested at that time; it runs npm ci and npm run build, unlike the Datadog workflow.
 - [ ] Render auto-deployment for the latest main commit still needs confirmation in the Render dashboard; GitHub Actions success alone does not prove the Render deployment succeeded.
 
 
@@ -113,7 +113,7 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [!] The build then failed while collecting page data because app/api/subscribe/route.ts instantiated Resend at module load, when the CI environment did not have an email API key.
 - [x] Moved Resend initialization inside the subscribe request handler after checking the configured API key.
 - [x] Applied the same lazy initialization pattern to app/api/send-email/route.ts so importing the route does not require a secret during build; the handler returns a configuration error if the key is absent at runtime.
-- [ ] Re-run production build on the newest main commit and inspect the result. These commits target the discovered build-time initialization issue; successful build is not yet confirmed.
+- [x] Re-ran the production build after moving Resend initialization into request handlers; the latest main commit tested (44f15f2) passes the actual npm run build step: https://github.com/kris24guy/AuraSpanse/actions/runs/40277787026.
 - [ ] Confirm Render deploys the new commit, then validate both the uploaded root page and email endpoints on the live service. Do not share or expose environment-variable values.
 
 
@@ -127,3 +127,9 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [ ] Open https://auraspanse.onrender.com and verify it lands on the uploaded Aura-Scope page; also test /aura-scope-mechanism.html directly.
 - [ ] Test email sending with the configured Render RESEND_API_KEY and a valid recipient. A successful build does not prove actual delivery.
 
+
+### 2026-10-26 — Latest validation snapshot
+
+- [x] Actual Next.js production build passes on commit 44f15f2f3cc51be9dbdb39e8206a9efed240a67d (workflow run 40277787026).
+- [ ] Render dashboard must still show a successful deploy for this commit or newer; GitHub build success and Render deployment are separate checks.
+- [ ] Live UI and email delivery tests remain outstanding.
