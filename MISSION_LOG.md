@@ -60,3 +60,17 @@ Do not label the mission complete until the code change is committed, the produc
 - [!] GitHub Actions run for commit `2cb9b0b` failed in the Datadog Synthetic step because the required Datadog API/app keys were not supplied. This is a CI configuration/secrets failure, not evidence that the horoscope code itself failed to compile.
 - [ ] Next test: run `npm install` and `npm run build` in an environment with repository dependencies available, then test a real browser journey on the deployed service.
 
+### 2026-10-26 — Uploaded prototype made the canonical homepage
+
+- [x] Added the user's uploaded self-contained HTML to `public/aura-scope-mechanism.html`. Its embedded React runtime, styles, and mechanism UI are served as a static asset; the document title was updated from the generic `React Artifact` title to `AuraSpanse — Aura-Scope Origin Protocol`.
+- [x] Changed `app/page.tsx` so visiting the site root redirects to `/aura-scope-mechanism.html`. Existing Next.js routes, including `/reveal`, remain in the repository.
+- [x] Confirmed GitHub accepted both source changes on `main`.
+- [ ] Render deployment is pending/unverified; the hosting URL could not be accessed from this verification environment. Do not claim the live service is updated until the deployment finishes and the route is tested in a browser.
+- [ ] Production build is still unverified. Render's configured build command is `npm install && npm run build`; confirm its result in Render after the commit is detected.
+- [ ] Test the root URL, direct static URL, birth-date entry, all seven vessels/mechanism results, mobile layout, and any final Aura-Scope assisted-reading output.
+
+**Changes for this update:**
+- HTML asset commit: `10fa846` — `public/aura-scope-mechanism.html`
+- Homepage redirect commit: `857e582` — `app/page.tsx`
+
+
