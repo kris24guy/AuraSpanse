@@ -47,5 +47,100 @@ Error generating stack: `+u.message+`
 </script>
   <script>(function(){function m(a){var h=a.getAttribute("href");if(!h)return;try{var u=new URL(h,document.baseURI);if((u.protocol==="http:"||u.protocol==="https:")&&u.host!==location.host){a.target="_blank";a.rel="noopener noreferrer";}}catch(e){}}function s(){document.querySelectorAll("a[href]").forEach(m);}if(document.readyState!=="loading"){s();}else{document.addEventListener("DOMContentLoaded",s);}document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a){m(a);}},true);})();</script>
   <script type="application/json" data-clippy-inline-media-manifest="1">{"version":1,"slots":[]}</script>
+
+  <!-- Daily Aurascope reminder signup -->
+  <style>
+    #as-daily-reminders-launcher, #as-daily-reminders-panel, #as-daily-reminders-panel * { box-sizing: border-box; }
+    #as-daily-reminders-launcher { position: fixed; z-index: 10000; right: 18px; bottom: 18px; }
+    #as-daily-reminders-open { border: 1px solid rgba(220,208,255,.36); border-radius: 999px; padding: 13px 18px; color: #f8f5ff; background: linear-gradient(135deg,#6c4fc2,#38265f); box-shadow: 0 12px 42px rgba(0,0,0,.38); font: 600 13px/1.2 system-ui,sans-serif; letter-spacing: .01em; cursor: pointer; }
+    #as-daily-reminders-panel { position: fixed; z-index: 10001; right: 18px; bottom: 18px; width: min(390px,calc(100vw - 36px)); padding: 26px; border: 1px solid rgba(212,197,255,.25); border-radius: 22px; color: #f8f5ff; background: radial-gradient(ellipse at top right,rgba(119,82,190,.25),transparent 55%),#100d1c; box-shadow: 0 24px 80px rgba(0,0,0,.58); font: 14px/1.55 system-ui,sans-serif; }
+    #as-daily-reminders-panel[hidden], #as-daily-reminders-launcher[hidden] { display: none !important; }
+    #as-daily-reminders-close { float: right; border: 0; background: transparent; color: #c6bbdf; font-size: 25px; line-height: 1; cursor: pointer; padding: 0 0 8px 12px; }
+    #as-daily-reminders-panel .as-eyebrow { color: #c5b1ff; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin: 0 30px 12px 0; }
+    #as-daily-reminders-panel h2 { color: #fbf9ff; font: 500 28px/1.12 Georgia,serif; letter-spacing: -.025em; margin: 0 0 12px; }
+    #as-daily-reminders-panel .as-copy { color: #c9c1da; margin: 0 0 18px; font-size: 13px; }
+    #as-daily-reminders-panel label.as-email-label { display:block; margin: 12px 0 6px; color: #e8e1f8; font-size: 12px; }
+    #as-daily-reminders-panel input[type=email] { display:block; width:100%; border:1px solid #51466d; border-radius:10px; padding:12px; background:#171324; color:#fff; font:14px system-ui,sans-serif; outline:none; }
+    #as-daily-reminders-panel input[type=email]:focus { border-color:#c1a9ff; box-shadow:0 0 0 3px rgba(193,169,255,.14); }
+    #as-daily-reminders-panel .as-consent { display:flex; gap:9px; align-items:flex-start; color:#c9c1da; font-size:11px; margin:14px 0; }
+    #as-daily-reminders-panel .as-consent input { margin-top:3px; accent-color:#b8a2ff; flex:0 0 auto; }
+    #as-daily-reminders-submit { width:100%; border:0; border-radius:999px; padding:13px 16px; background:#c0aaff; color:#1a142a; font-weight:700; font-size:13px; cursor:pointer; }
+    #as-daily-reminders-submit:disabled { opacity:.58; cursor:wait; }
+    #as-daily-reminders-status { min-height:20px; margin:12px 0 0; color:#d9d0ee; font-size:12px; }
+    #as-daily-reminders-legal { margin:10px 0 0; color:#88809d; font-size:10px; }
+    @media (max-width: 500px) { #as-daily-reminders-launcher { right:12px; bottom:12px; } #as-daily-reminders-panel { right:12px; bottom:12px; width:calc(100vw - 24px); padding:22px; } }
+  </style>
+  <div id="as-daily-reminders-launcher">
+    <button id="as-daily-reminders-open" type="button" aria-expanded="false" aria-controls="as-daily-reminders-panel">☼ Get daily aura reminders</button>
+  </div>
+  <section id="as-daily-reminders-panel" role="region" aria-label="Daily Aurascope email reminders" hidden>
+    <button id="as-daily-reminders-close" type="button" aria-label="Close daily reminder signup">×</button>
+    <p class="as-eyebrow">AuraSpanse · a small daily ritual</p>
+    <h2>Make room for your daily aura check-in.</h2>
+    <p class="as-copy">A gentle email reminder to come back, check your aura, and notice what feels different today.</p>
+    <form id="as-daily-reminders-form">
+      <label class="as-email-label" for="as-daily-reminders-email">Email address</label>
+      <input id="as-daily-reminders-email" type="email" name="email" autocomplete="email" maxlength="254" required placeholder="you@example.com">
+      <label class="as-consent"><input id="as-daily-reminders-consent" type="checkbox" required><span>Yes, email me one Daily Aurascope reminder each day. I understand I can unsubscribe at any time.</span></label>
+      <button id="as-daily-reminders-submit" type="submit">Join daily reminders</button>
+    </form>
+    <p id="as-daily-reminders-status" role="status" aria-live="polite"></p>
+    <p id="as-daily-reminders-legal">We’ll send a confirmation link first. Daily emails start after you confirm.</p>
+  </section>
+  <script>
+    (function () {
+      var launcher = document.getElementById("as-daily-reminders-launcher");
+      var openButton = document.getElementById("as-daily-reminders-open");
+      var panel = document.getElementById("as-daily-reminders-panel");
+      var closeButton = document.getElementById("as-daily-reminders-close");
+      var form = document.getElementById("as-daily-reminders-form");
+      var emailInput = document.getElementById("as-daily-reminders-email");
+      var consentInput = document.getElementById("as-daily-reminders-consent");
+      var submitButton = document.getElementById("as-daily-reminders-submit");
+      var status = document.getElementById("as-daily-reminders-status");
+      var legal = document.getElementById("as-daily-reminders-legal");
+      function openPanel() {
+        launcher.hidden = true;
+        panel.hidden = false;
+        openButton.setAttribute("aria-expanded", "true");
+        emailInput.focus();
+      }
+      function closePanel() {
+        panel.hidden = true;
+        launcher.hidden = false;
+        openButton.setAttribute("aria-expanded", "false");
+        openButton.focus();
+      }
+      openButton.addEventListener("click", openPanel);
+      closeButton.addEventListener("click", closePanel);
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !panel.hidden) closePanel();
+      });
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        submitButton.disabled = true;
+        submitButton.textContent = "Adding you…";
+        status.textContent = "Sending your confirmation email…";
+        try {
+          var response = await fetch("/api/newsletter/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailInput.value.trim(), consent: consentInput.checked })
+          });
+          var result = await response.json();
+          if (!response.ok) throw new Error(result.error || "We couldn't complete your signup. Please try again.");
+          form.hidden = true;
+          status.textContent = result.message || "Check your inbox to confirm your daily reminders.";
+          legal.textContent = "No daily reminders are sent until you confirm by email.";
+        } catch (error) {
+          status.textContent = error && error.message ? error.message : "We couldn't complete your signup. Please try again.";
+          submitButton.disabled = false;
+          submitButton.textContent = "Join daily reminders";
+        }
+      });
+    })();
+  </script>
+
 </body>
 </html>

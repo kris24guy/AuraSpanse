@@ -1,17 +1,21 @@
 # AuraSpanse Mission Log
 
 **Project:** AuraSpanse  
-**Mission:** Aura-responsive horoscope  
+**Mission:** Daily Aurascope reminder email loop — confirmed opt-in, recurring reminders, and unsubscribe.  
 **Log opened:** 2026-10-25  
 **Repository:** https://github.com/kris24guy/AuraSpanse  
 **Deployment target:** https://auraspanse.onrender.com  
-**Status:** In progress — source inspected; horoscope integration and deployment verification pending.
+**Status:** Daily reminder flow added to source; Supabase schema and deployment secrets still require setup before email delivery is live.
 
 ## Mission Objective
 
-After the user enters a birth date and receives an AuraSpanse digital aura reading, provide a distinct horoscope-style interpretation that uses the actual generated aura profile and zodiac sign. The horoscope must not be a generic zodiac paragraph that ignores the aura results.
+Build a consent-based daily Aurascope reminder loop. Visitors can opt in, confirm their email, receive one daily reminder that links back to AuraSpanse to check their aura, and unsubscribe at any time. This is a return-to-site notification, not a one-time email containing the older aura reading.
 
-## Current Findings
+## Earlier Horoscope Integration Work (Historical)
+
+The earlier aura-responsive horoscope work and its build history are retained below as project history. The current implementation focus is the daily reminder email list.
+
+## Earlier Horoscope Integration Findings (Historical)
 
 - [x] Located the main AuraSpanse repository and confirmed the default branch is `main`.
 - [x] Located the aura calculation engine: `app/lib/auraEngine.ts`.
@@ -133,3 +137,19 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [x] Actual Next.js production build passes on commit 44f15f2f3cc51be9dbdb39e8206a9efed240a67d (workflow run 40277787026).
 - [ ] Render dashboard must still show a successful deploy for this commit or newer; GitHub build success and Render deployment are separate checks.
 - [ ] Live UI and email delivery tests remain outstanding.
+
+
+### 2026-10-26 — Daily Aurascope reminder email loop
+
+- [x] Added a styled, responsive signup panel to the current Aura-Scope prototype.
+- [x] Added explicit consent, email validation, a confirmation email, and confirmation-link handling.
+- [x] Added daily reminder sending for confirmed subscribers, including a return-to-site link and unsubscribe links/headers.
+- [x] Added an unsubscribe endpoint and a Supabase migration that enables row-level security without public read/write policies.
+- [x] Added a daily GitHub Actions workflow at 16:00 UTC with a manual dispatch option.
+- [ ] Apply `supabase/migrations/20261026_daily_aurascope_reminders.sql` in the Supabase SQL Editor before testing signup.
+- [ ] Set `CRON_SECRET` in Render and set the same value as the GitHub repository secret `AURASPANSE_CRON_SECRET`.
+- [ ] Verify `SUPABASE_URL`, a server-side `SUPABASE_SERVICE_KEY` (or service-role equivalent), `RESEND_API_KEY`, and a valid `EMAIL_FROM` are configured.
+- [ ] Confirm a test subscription, confirmation, unsubscribe, and at least one daily delivery on the deployed Render service.
+- [ ] Verify the newest Render deploy. GitHub commits/build success do not by themselves establish live email delivery.
+
+**Important:** Daily reminders are not operational until the SQL migration and matching scheduler secrets are configured. The cron workflow intentionally skips with a warning if the GitHub secret is missing; it does not send mail in that state.
