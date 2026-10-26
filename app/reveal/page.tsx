@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { generateAura } from '../lib/auraEngine'
 import { generateAurascope } from '../lib/auracle'
 import AuraSpectrum from '../components/AuraSpectrum'
+import { generateAuraHoroscope } from '../lib/horoscope'
 
 const shellStyle: CSSProperties = {
   minHeight: '100vh',
@@ -102,6 +103,15 @@ export default function RevealPage() {
 
   const activeHues = auraData.hues.slice(0, Math.min(stage + 1, auraData.hues.length)).map((h: any) => h.hex)
   const aurascope = auraData.aurascope
+  const horoscope = generateAuraHoroscope({
+    zodiac: auraData.zodiac,
+    primaryAura: aurascope.primaryAura,
+    secondaryAura: aurascope.secondaryAura,
+    blendedHue: auraData.blendedHue,
+    finalEmotion: auraData.finalEmotion,
+    focus: aurascope.focus,
+    action: aurascope.action
+  })
   const finalColor = auraData.finalHex || auraData.finalEmotion.hex
   const stages = [
     {
@@ -188,6 +198,24 @@ export default function RevealPage() {
               <p key={index} style={{ fontSize: '1.08rem', lineHeight: 1.82, opacity: 0.9, margin: '0 0 18px' }}>{paragraph}</p>
             ))}
           </div>
+
+          <section aria-labelledby="aura-horoscope-title" style={{ textAlign: 'left', maxWidth: '660px', margin: '28px auto', padding: '24px', borderRadius: '24px', border: `1px solid ${finalColor}66`, background: 'rgba(255,255,255,0.035)' }}>
+            <p style={labelStyle()}>PERSONALIZED REFLECTION</p>
+            <h2 id="aura-horoscope-title" style={{ color: finalColor, fontSize: '1.8rem', textAlign: 'center' }}>{horoscope.title}</h2>
+            <p style={{ lineHeight: 1.8 }}>{horoscope.overview}</p>
+            <h3>Strength in focus</h3>
+            <p style={{ lineHeight: 1.8 }}>{horoscope.strength}</p>
+            <h3>Balance to consider</h3>
+            <p style={{ lineHeight: 1.8 }}>{horoscope.balance}</p>
+            <h3>Relationships and connection</h3>
+            <p style={{ lineHeight: 1.8 }}>{horoscope.relationships}</p>
+            <h3>Direction and purpose</h3>
+            <p style={{ lineHeight: 1.8 }}>{horoscope.direction}</p>
+            <p><strong>Balancing color:</strong> <span style={{ color: finalColor }}>{horoscope.balancingColor}</span></p>
+            <h3>Your next step</h3>
+            <p style={{ lineHeight: 1.8 }}>{horoscope.nextStep}</p>
+            <p style={{ fontSize: '0.78rem', opacity: 0.55 }}>Astrology-inspired entertainment and self-reflection; not a scientific aura measurement or a guaranteed prediction.</p>
+          </section>
 
           <div style={{ margin: '28px auto', padding: '22px', borderRadius: '24px', background: 'rgba(0,0,0,0.28)', maxWidth: '660px' }}>
             <p style={labelStyle()}>YOUR BIRTHSTONES</p>
