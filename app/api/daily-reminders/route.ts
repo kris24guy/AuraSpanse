@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { getAppBaseUrl, getSupabaseAdminConfig, supabaseAdminFetch, type DailyReminderSubscriber } from "../../../lib/dailyReminderStore";
+import { getAppBaseUrl, getSupabaseAdminConfig, supabaseAdminFetch, type DailyReminderSubscriber } from "../../lib/dailyReminderStore";
 
 export const maxDuration = 300;
 function authorized(req: NextRequest, expected: string): boolean {
