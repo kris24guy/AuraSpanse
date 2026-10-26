@@ -106,3 +106,13 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [ ] Await this new workflow result. Unlike the Datadog workflow, this job actually runs the Next.js production build and can confirm whether TypeScript passes after the redirect fix.
 - [ ] Render auto-deployment for the latest main commit still needs confirmation in the Render dashboard; GitHub Actions success alone does not prove the Render deployment succeeded.
 
+
+### 2026-10-26 — Follow-up production-build fix for email configuration
+
+- [x] GitHub production build confirmed the homepage/legacy-route TypeScript issue was resolved: compilation and TypeScript type checking passed at commit 4aeaf3b.
+- [!] The build then failed while collecting page data because app/api/subscribe/route.ts instantiated Resend at module load, when the CI environment did not have an email API key.
+- [x] Moved Resend initialization inside the subscribe request handler after checking the configured API key.
+- [x] Applied the same lazy initialization pattern to app/api/send-email/route.ts so importing the route does not require a secret during build; the handler returns a configuration error if the key is absent at runtime.
+- [ ] Re-run production build on the newest main commit and inspect the result. These commits target the discovered build-time initialization issue; successful build is not yet confirmed.
+- [ ] Confirm Render deploys the new commit, then validate both the uploaded root page and email endpoints on the live service. Do not share or expose environment-variable values.
+
