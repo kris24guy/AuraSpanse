@@ -88,3 +88,14 @@ Do not label the mission complete until the code change is committed, the produc
 - [ ] No local Next.js production build was possible in this environment because GitHub/network access for cloning or dependency installation is blocked.
 - [ ] Render-side deployment has not been confirmed. The public host was inaccessible from this verification environment; inspect the connected Render service and deploy event before marking this released.
 
+
+### 2026-10-26 — Fix for reported Render TypeScript build failure
+
+- [x] Reproduced the issue from Render's supplied log: app/auracle/page.tsx was attempting to render the root Home function, which returned no JSX because its only operation was a server redirect().
+- [x] Added app/components/PrototypeRedirect.tsx, a typed client component that navigates to /aura-scope-mechanism.html and provides a fallback link.
+- [x] Updated both app/page.tsx and app/auracle/page.tsx to render the redirect component instead of treating a void-returning function as JSX.
+- [ ] Await a fresh Render build for the newest main commit. This code change is intended to fix the exact TypeScript error shown in the log; it is not marked verified until Render completes the build.
+- [ ] If the next build fails, inspect the next reported error; dependency audit warnings are separate from the TypeScript failure and were not the cause shown in the supplied log.
+
+Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (legacy /auracle route).
+
