@@ -99,3 +99,10 @@ Do not label the mission complete until the code change is committed, the produc
 
 Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (legacy /auracle route).
 
+
+### 2026-10-26 — Added a real production-build check
+
+- [x] Added .github/workflows/next-build.yml to run npm ci and npm run build under Node.js 24 on pushes and pull requests to main.
+- [ ] Await this new workflow result. Unlike the Datadog workflow, this job actually runs the Next.js production build and can confirm whether TypeScript passes after the redirect fix.
+- [ ] Render auto-deployment for the latest main commit still needs confirmation in the Render dashboard; GitHub Actions success alone does not prove the Render deployment succeeded.
+
