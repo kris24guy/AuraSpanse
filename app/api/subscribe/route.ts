@@ -4,7 +4,6 @@ import { generateAura } from '../../lib/auraEngine'
 import { generateAurascope } from '../../lib/auracle'
 import { getAuraLore } from '../../lib/auraLore'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -31,12 +30,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!process.env.RESEND_API_KEY) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
       return NextResponse.json(
         { error: 'Missing RESEND_API_KEY' },
         { status: 500 }
       )
     }
+
+    // Initialize the email client only for a request. This avoids failing the
+    // Next.js production build when optional secrets are unavailable at build time.
+    const resend = new Resend(apiKey)
 
     const aura = generateAura(birthDate, registeredAt)
     const aurascope = generateAurascope(aura)
