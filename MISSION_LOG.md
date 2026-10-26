@@ -116,3 +116,14 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [ ] Re-run production build on the newest main commit and inspect the result. These commits target the discovered build-time initialization issue; successful build is not yet confirmed.
 - [ ] Confirm Render deploys the new commit, then validate both the uploaded root page and email endpoints on the live service. Do not share or expose environment-variable values.
 
+
+### 2026-10-26 — Production build passed after fixes
+
+- [x] GitHub Actions production build passed at commit d026608399ae240dc51115774dbf7aff4789b209. Run: https://github.com/kris24guy/AuraSpanse/actions/runs/40277723060
+- [x] Confirmed the passing job completed dependency installation and the actual `npm run build` step successfully, including TypeScript and Next.js page-data collection.
+- [x] The reported `Home cannot be used as a JSX component` error is resolved in the current source.
+- [x] The build-time Resend constructor errors were resolved by moving client initialization inside the two email request handlers.
+- [ ] Render must deploy the latest main commit d026608 or a later commit and report Live/Deploy successful.
+- [ ] Open https://auraspanse.onrender.com and verify it lands on the uploaded Aura-Scope page; also test /aura-scope-mechanism.html directly.
+- [ ] Test email sending with the configured Render RESEND_API_KEY and a valid recipient. A successful build does not prove actual delivery.
+
