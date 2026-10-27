@@ -183,3 +183,20 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [ ] End-to-end birthdate → aura → horoscope remains unverified in the browser. Source tracing shows the canonical root sends visitors to the standalone prototype; the `/reveal` horoscope route has not been wired into that prototype's birthdate submission.
 
 **Release gate remains open.** The source integration, generator regression test, and production build are verified. The homepage-to-horoscope connection, deployed Render version, live browser journey, and actual email delivery are not verified and must remain unchecked.
+
+
+### 2026-10-27 — Birthdate-driven, age-weighted AuraSpectrum placement
+
+- [x] Added `app/lib/ageSpectrum.ts` to calculate the exact number of days lived, divide it by the exact `emotionColors.length`, and use a deterministic bounded modular exponent as part of the first-hue calculation.
+- [x] Defined the first-hue index as the bounded residue of `N^daysAlive`, reduced to the spectrum, combined with the days-lived remainder and zodiac index. The current placement advances from the first hue using completed spectrum cycles and the current day of year.
+- [x] Removed direct registration-time weighting of the zodiac triad from `app/lib/auraEngine.ts`. Positive, neutral, and shadow zodiac traits now contribute equally to the base zodiac-trait average; the rotating selected trait is a reflective focus rather than a heavier vote.
+- [x] Added traditional element, modality, and planetary ruler metadata for all twelve signs in `app/lib/zodiacMap.ts`, using the traditional planetary rulers for Scorpio, Aquarius, and Pisces.
+- [x] Integrated the first hue and current placement into the final aura frequency and color blend, so age-derived placement affects the reading itself.
+- [x] Connected the canonical static birthdate form to validate the entered date, store `birthdate` in local storage, and navigate to `/reveal`.
+- [x] Added a repeatable age-spectrum test and wired it into the existing GitHub Actions production-build workflow before `npm run build`.
+- [x] Added an on-page explanation and display of days alive, spectrum point count, quotient/cycles, first hue, current placement, and traditional zodiac frame.
+- [ ] GitHub Actions result for the latest code change has not been confirmed in this session. The commit-status query returned no status entries; this is not evidence of a passing build.
+- [ ] Render deployment and the live browser journey remain unverified. The code landing on `main` does not establish that the live site has deployed.
+- [ ] After GitHub Actions finishes, verify the age-spectrum tests and production build; then confirm Render deployed the latest `main` commit and test a birthdate through the root page to the reveal.
+
+**Implementation note:** Directly evaluating `N^daysAlive` is impractical at realistic ages. The implementation uses square-and-multiply modular arithmetic with modulus `1,000,003` and then wraps into the actual spectrum size. Taking the exponent modulo `N` would produce zero for positive exponents when the base is `N`, so the larger modulus preserves a useful bounded residue. This is a deterministic design rule for entertainment and reflection, not a scientifically validated measure of emotion.
