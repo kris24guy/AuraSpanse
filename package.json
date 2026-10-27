@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start -p $PORT",
-    "test:horoscope": "node scripts/test-horoscope.mjs"
+    "test:horoscope": "node scripts/test-horoscope.mjs",
+    "test:aura-engine": "npm run test:age-spectrum && npm run test:horoscope"
   },
   "dependencies": {
     "next": "latest",
