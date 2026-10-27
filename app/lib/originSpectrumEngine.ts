@@ -1,4 +1,4 @@
-import { getBirthstoneResonance, type BirthstoneResonance } from './birthstoneResonance'
+import type { BirthstoneResonance } from './birthstoneResonance'
 
 export interface OriginEmotionColor {
   name: string
@@ -176,9 +176,10 @@ export function generateOriginSpectrum(
     spectrum: OriginEmotionColor[]
     zodiacMap: object
     resolveZodiacSign: (date: Date) => string
+    getBirthstoneResonance: (month: number) => BirthstoneResonance
   }
 ): OriginSpectrumResult {
-  const { now, spectrum, zodiacMap, resolveZodiacSign } = dependencies
+  const { now, spectrum, zodiacMap, resolveZodiacSign, getBirthstoneResonance } = dependencies
   if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
     throw new Error('The current date must be valid')
   }
