@@ -22,8 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test aura-responsive horoscope generation
-        run: npm run test:horoscope
+      - name: Test age-weighted AuraSpectrum and horoscope generation
+        run: npm run test:aura-engine
 
       - name: Run production build
         run: npm run build
