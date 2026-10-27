@@ -1,10 +1,11 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { emotionColors } from '../lib/emotionColors'
 import { getZodiacSign, zodiacMap } from '../lib/zodiacMap'
 import { generateOriginSpectrum, type OriginSpectrumResult } from '../lib/originSpectrumEngine'
+import AuraSpectrumCylinder from '../components/AuraSpectrumCylinder'
 
 const shell: CSSProperties = {
   minHeight: '100vh',
@@ -75,23 +76,15 @@ export default function OriginPage() {
     }
   }, [retryKey])
 
-  const gradient = useMemo(() => {
-    const stops = emotionColors.map((emotion, index) => {
-      const position = (index / Math.max(1, emotionColors.length - 1)) * 100
-      return `${emotion.hex} ${position.toFixed(3)}%`
-    })
-    return `linear-gradient(90deg, ${stops.join(', ')})`
-  }, [])
-
   return (
     <main style={shell}>
       <header style={{ ...panel, textAlign: 'center', paddingTop: '42px', paddingBottom: '42px' }}>
-        <p style={eyebrow}>AURASPANSE · INDEPENDENT CALCULATION</p>
+        <p style={eyebrow}>AURASPANSE · THE AURA-SPECTRUM MECHANISM</p>
         <h1 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(2.4rem, 7vw, 4.3rem)', letterSpacing: '-0.035em', margin: '16px 0 12px' }}>
           Origin Engine
         </h1>
         <p style={{ ...muted, maxWidth: '670px', margin: '0 auto' }}>
-          One birthdate. Every emotion-color point. A balanced zodiac triad and an age-weighted path through a closed spectrum.
+          One birthdate. Every emotion-color point. A bright central origin; an upward cylindrical Fibonacci path that darkens with height; and a birthstone hue whose literal color is modulated by geographic deposit proximity.
         </p>
       </header>
 
@@ -139,14 +132,13 @@ export default function OriginPage() {
           <section style={panel}>
             <p style={eyebrow}>THE CLOSED SPECTRUM</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>First hue → current placement → composite</h2>
-            <div style={{ position: 'relative', height: '22px', margin: '30px 3px 12px', borderRadius: '99px', background: gradient, boxShadow: '0 0 28px rgba(255,255,255,0.08)' }} aria-label="Complete AuraSpanse emotion-color spectrum">
-              <div title={`First hue: ${result.firstHue.name}`} style={{ position: 'absolute', left: `${(result.firstHueIndex / Math.max(1, result.spectrumPointCount - 1)) * 100}%`, top: '-7px', width: '3px', height: '36px', background: '#fff', boxShadow: '0 0 0 2px rgba(0,0,0,0.7)', borderRadius: '4px' }} />
-              <div title={`Current placement: ${result.currentPlacement.name}`} style={{ position: 'absolute', left: `${(result.currentPlacementIndex / Math.max(1, result.spectrumPointCount - 1)) * 100}%`, top: '-4px', width: '7px', height: '30px', border: '2px solid #fff', background: result.currentPlacement.hex, boxShadow: '0 0 14px rgba(0,0,0,0.9)', borderRadius: '3px', transform: 'translateX(-2px)' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', ...muted, fontSize: '0.85rem' }}>
-              <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: '#fff', marginRight: '7px' }} />First hue marker</span>
-              <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: result.currentPlacement.hex, border: '1px solid white', marginRight: '7px' }} />Current-placement marker</span>
-            </div>
+            <AuraSpectrumCylinder
+              spectrum={emotionColors}
+              firstHueIndex={result.firstHueIndex}
+              currentPlacementIndex={result.currentPlacementIndex}
+              birthstoneHex={result.birthstone.hex}
+              birthstoneOpacity={result.birthstone.opacity}
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '24px' }}>
               <div style={{ border: `1px solid ${result.firstHue.hex}88`, background: `${result.firstHue.hex}18`, borderRadius: '18px', padding: '20px' }}>
@@ -161,6 +153,38 @@ export default function OriginPage() {
                 <h3 style={{ color: result.currentPlacement.hex, margin: '0 0 5px' }}>{readableName(result.currentPlacement.name)}</h3>
                 <p style={muted}>{result.currentPlacement.hex} · frequency {result.currentPlacement.freq}/1000</p>
               </div>
+            </div>
+          </section>
+
+          <section style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
+            <p style={eyebrow}>SECOND HUE · GEOGRAPHIC BIRTHSTONE RESONANCE</p>
+            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Literal stone color first. Name second.</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(125px, 0.7fr) minmax(210px, 1.5fr)', gap: '20px', alignItems: 'stretch', marginTop: '18px' }}>
+              <div style={{ borderRadius: '18px', background: result.birthstone.hex, minHeight: '170px', boxShadow: `0 0 38px ${result.birthstone.hex}35`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', boxSizing: 'border-box', color: ['#EAF5FF','#F6F0E5','#C9D8D6','#E3A341','#A5C639'].includes(result.birthstone.hex) ? '#15151a' : '#ffffff' }}>
+                <p style={{ fontSize: '0.65rem', letterSpacing: '0.16em', margin: 0 }}>RAW SWATCH</p>
+                <div>
+                  <strong style={{ fontSize: '1.1rem' }}>{result.birthstone.hex}</strong>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.75rem' }}>Base color input</p>
+                </div>
+              </div>
+              <div>
+                <h3 style={{ color: result.birthstone.hex, fontSize: '1.5rem', margin: '0 0 9px', fontWeight: 500 }}>{result.birthstone.name}</h3>
+                <p style={muted}>{result.birthstone.sourceNote}</p>
+                <p style={muted}><strong>Deposit reference:</strong> {result.birthstone.deposit}</p>
+                <p style={muted}><strong>Geographic distance:</strong> {Math.round(result.birthstone.distanceKm).toLocaleString('en-US')} km from {result.birthstone.origin.name}</p>
+              </div>
+            </div>
+            <div style={{ marginTop: '20px', padding: '16px', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '16px', background: 'rgba(0,0,0,0.15)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                <strong>Geographic opacity point</strong>
+                <strong style={{ fontSize: '1.4rem', color: result.birthstone.hex, fontVariantNumeric: 'tabular-nums' }}>{result.birthstone.opacityPercent.toFixed(1)}%</strong>
+              </div>
+              <div style={{ height: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '99px', overflow: 'hidden', margin: '12px 0' }}>
+                <div style={{ height: '100%', width: `${result.birthstone.opacityPercent}%`, background: result.birthstone.hex, boxShadow: `0 0 14px ${result.birthstone.hex}88` }} />
+              </div>
+              <p style={{ ...muted, fontSize: '0.88rem', marginBottom: 0 }}>
+                Existing mechanism rule: clamp(100 − distance in km ÷ 150, 25, 100). That opacity overlays the gemstone’s literal hex on the emotion-color points; as the cylindrical Fibonacci path rises, its points progressively darken. The gemstone name never generates the hue.
+              </p>
             </div>
           </section>
 
@@ -189,14 +213,14 @@ export default function OriginPage() {
             <h2 style={{ color: result.composite.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.7rem)', margin: '12px 0' }}>{result.composite.name}</h2>
             <p style={muted}>{result.composite.hex} · blended frequency {result.composite.frequency}/1000 · nearest spectrum emotion: {readableName(result.composite.nearestEmotion.name)}</p>
             <p style={{ ...muted, fontSize: '1rem' }}>{result.composite.definition}</p>
-            <h3 style={{ fontWeight: 500, marginTop: '26px' }}>Five equal source colors</h3>
+            <h3 style={{ fontWeight: 500, marginTop: '26px' }}>Balanced spectrum plus proximity-weighted birthstone</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '10px' }}>
               {result.composite.sourceWeights.map((source) => (
                 <div key={source.source} style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: '13px', padding: '12px' }}>
                   <div style={{ height: '30px', borderRadius: '7px', background: source.hex, marginBottom: '10px' }} />
                   <p style={{ ...muted, fontSize: '0.78rem', margin: 0 }}>{source.source}</p>
                   <strong style={{ display: 'block', fontSize: '0.87rem', marginTop: '6px' }}>{readableName(source.name)}</strong>
-                  <p style={{ ...muted, fontSize: '0.75rem', margin: '5px 0 0' }}>{source.hex} · 20%</p>
+                  <p style={{ ...muted, fontSize: '0.75rem', margin: '5px 0 0' }}>{source.hex} · {Math.round(source.weight * 100)}%</p>
                 </div>
               ))}
             </div>
@@ -205,7 +229,7 @@ export default function OriginPage() {
       )}
 
       <footer style={{ ...panel, textAlign: 'center', padding: '22px' }}>
-        <p style={eyebrow}>ORIGIN ENGINE · VERSION 1</p>
+        <p style={eyebrow}>AURA-SPECTRUM · CYLINDRICAL FIBONACCI MECHANISM</p>
         <p style={{ ...muted, fontSize: '0.82rem' }}>
           A custom symbolic model for entertainment and self-reflection, not a scientifically validated measure of personality, emotion, or destiny.
         </p>
