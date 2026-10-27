@@ -118,7 +118,7 @@ export default function RevealPage() {
       eyebrow: 'PRIMARY AURA',
       title: aurascope.primaryAura,
       color: auraData.hues[0].hex,
-      body: `Your ${auraData.zodiac.sign} trait triad opens through ${auraData.zodiac.selectedTrait.name}. The placement mechanism lands at ${auraData.timeWeight}/1000, pulling the field toward the ${auraData.zodiac.selectedTrait.polarity} channel.`,
+      body: `Traditional ${auraData.zodiac.sign} symbolism combines ${auraData.zodiac.element}, ${auraData.zodiac.modality}, and its traditional ruler, ${auraData.zodiac.traditionalRuler}. Positive, neutral, and shadow traits each contribute one-third to the base zodiac average. ${auraData.daysAlive} days alive divided by ${auraData.spectrumPointCount} emotion-color points equals ${auraData.ageSpectrumRatio.toFixed(3)} spectrum cycles. First hue: ${auraData.firstHue.name} (${auraData.firstHue.hex}); current placement: ${auraData.currentPlacement.name} at ${auraData.currentPlacement.freq}/1000.`,
       button: 'Reveal secondary aura'
     },
     {
@@ -132,7 +132,7 @@ export default function RevealPage() {
       eyebrow: 'THIRD HUE',
       title: cleanName(auraData.hues[2].name),
       color: auraData.hues[2].hex,
-      body: 'This third hue is created where the primary zodiac hue and secondary birthstone hue blend, then the placement mechanism positions the final Aura Identity inside the AuraSpectrum.',
+      body: `The third hue blends the balanced zodiac hue, birthstone hue, and age-derived first hue. The final placement also includes ${auraData.currentPlacement.name} (${auraData.currentPlacement.hex}), selected from ${auraData.spectrumPointCount} spectrum points using ${auraData.daysAlive} days lived.`,
       button: 'Reveal Aura Identity'
     }
   ]
@@ -198,6 +198,33 @@ export default function RevealPage() {
               <p key={index} style={{ fontSize: '1.08rem', lineHeight: 1.82, opacity: 0.9, margin: '0 0 18px' }}>{paragraph}</p>
             ))}
           </div>
+
+          <section aria-labelledby="age-spectrum-title" style={{ textAlign: 'left', maxWidth: '660px', margin: '28px auto', padding: '24px', borderRadius: '24px', border: `1px solid ${auraData.currentPlacement.hex}66`, background: 'rgba(255,255,255,0.035)' }}>
+            <p style={labelStyle()}>AGE-WEIGHTED AURASPECTRUM</p>
+            <h2 id="age-spectrum-title" style={{ color: auraData.currentPlacement.hex, fontSize: '1.65rem', textAlign: 'center' }}>Your first hue and current placement</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px', margin: '18px 0' }}>
+              <div style={{ border: `1px solid ${auraData.firstHue.hex}66`, background: `${auraData.firstHue.hex}18`, borderRadius: '18px', padding: '16px' }}>
+                <p style={labelStyle()}>FIRST HUE · POINT {auraData.firstHueIndex + 1}</p>
+                <h3 style={{ color: auraData.firstHue.hex, marginBottom: '6px' }}>{cleanName(auraData.firstHue.name)}</h3>
+                <p style={{ fontSize: '0.86rem', opacity: 0.75, margin: 0 }}>{auraData.firstHue.hex} · {auraData.firstHue.freq}/1000</p>
+              </div>
+              <div style={{ border: `1px solid ${auraData.currentPlacement.hex}66`, background: `${auraData.currentPlacement.hex}18`, borderRadius: '18px', padding: '16px' }}>
+                <p style={labelStyle()}>CURRENT PLACEMENT · POINT {auraData.currentPlacementIndex + 1}</p>
+                <h3 style={{ color: auraData.currentPlacement.hex, marginBottom: '6px' }}>{cleanName(auraData.currentPlacement.name)}</h3>
+                <p style={{ fontSize: '0.86rem', opacity: 0.75, margin: 0 }}>{auraData.currentPlacement.hex} · {auraData.currentPlacement.freq}/1000</p>
+              </div>
+            </div>
+            <p style={{ lineHeight: 1.75, marginBottom: '10px' }}>
+              <strong>{auraData.daysAlive.toLocaleString()} days alive ÷ {auraData.spectrumPointCount} named emotion-color points = {auraData.ageSpectrumRatio.toFixed(3)} spectrum cycles.</strong>
+              {' '}The remainder seeds the first hue; completed cycles and the current day-of-year advance the current placement.
+            </p>
+            <p style={{ lineHeight: 1.75, opacity: 0.78, marginBottom: '10px' }}>
+              The first-hue seed uses the bounded modular residue of {auraData.spectrumPointCount}^{auraData.daysAlive} (mod 1,000,003), then combines it with the age remainder and zodiac index. Modular arithmetic preserves the intended exponent rule without constructing an astronomically large integer.
+            </p>
+            <p style={{ lineHeight: 1.75, opacity: 0.78, margin: 0 }}>
+              Traditional zodiac frame: {auraData.zodiac.element} · {auraData.zodiac.modality} · ruler {auraData.zodiac.traditionalRuler}. The positive, neutral, and shadow channels each contribute one-third to the underlying zodiac-trait average. This is a symbolic reflection system, not a scientific measurement of personality or emotion.
+            </p>
+          </section>
 
           <section aria-labelledby="aura-horoscope-title" style={{ textAlign: 'left', maxWidth: '660px', margin: '28px auto', padding: '24px', borderRadius: '24px', border: `1px solid ${finalColor}66`, background: 'rgba(255,255,255,0.035)' }}>
             <p style={labelStyle()}>PERSONALIZED REFLECTION</p>
