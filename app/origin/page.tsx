@@ -1,11 +1,12 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { emotionColors } from '../lib/emotionColors'
 import { getZodiacSign, zodiacMap } from '../lib/zodiacMap'
-import { generateOriginSpectrum, OriginSpectrumResult } from '../lib/originSpectrumEngine'
+import { generateOriginSpectrum, type OriginSpectrumResult } from '../lib/originSpectrumEngine'
 
-const shell: React.CSSProperties = {
+const shell: CSSProperties = {
   minHeight: '100vh',
   padding: '36px 18px 64px',
   background:
@@ -14,7 +15,7 @@ const shell: React.CSSProperties = {
   fontFamily: 'Inter, system-ui, sans-serif',
 }
 
-const panel: React.CSSProperties = {
+const panel: CSSProperties = {
   width: '100%',
   maxWidth: '920px',
   margin: '0 auto 18px',
@@ -26,7 +27,7 @@ const panel: React.CSSProperties = {
   boxShadow: '0 28px 90px rgba(0,0,0,0.26)',
 }
 
-const eyebrow: React.CSSProperties = {
+const eyebrow: CSSProperties = {
   margin: 0,
   fontSize: '0.68rem',
   letterSpacing: '0.24em',
@@ -34,7 +35,7 @@ const eyebrow: React.CSSProperties = {
   color: 'rgba(243,240,235,0.55)',
 }
 
-const muted: React.CSSProperties = {
+const muted: CSSProperties = {
   color: 'rgba(243,240,235,0.72)',
   lineHeight: 1.75,
 }
