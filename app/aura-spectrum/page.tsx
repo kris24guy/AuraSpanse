@@ -59,7 +59,7 @@ export default function OriginPage() {
     try {
       const birthDate = window.localStorage.getItem('birthdate')
       if (!birthDate) {
-        setError('No birthdate is saved in this browser. Enter a birthdate to initialize the Origin Engine.')
+        setError('No birthdate is saved in this browser. Enter a birthdate to initialize Aura-Spectrum.')
         return
       }
 
@@ -83,7 +83,7 @@ export default function OriginPage() {
       <header style={{ ...panel, textAlign: 'center', paddingTop: '42px', paddingBottom: '42px' }}>
         <p style={eyebrow}>AURASPANSE · THE AURA-SPECTRUM MECHANISM</p>
         <h1 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(2.4rem, 7vw, 4.3rem)', letterSpacing: '-0.035em', margin: '16px 0 12px' }}>
-          Origin Engine
+          Aura-Spectrum
         </h1>
         <p style={{ ...muted, maxWidth: '670px', margin: '0 auto' }}>
           One birthdate. Every emotion-color point. A bright central origin; an upward cylindrical Fibonacci path that darkens with height; and a birthstone hue whose literal color is modulated by geographic deposit proximity.
@@ -133,7 +133,7 @@ export default function OriginPage() {
 
           <section style={panel}>
             <p style={eyebrow}>THE CLOSED SPECTRUM</p>
-            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>First hue → current placement → composite</h2>
+            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Bright origin → current placement → composite</h2>
             <AuraSpectrumCylinder
               spectrum={emotionColors}
               firstHueIndex={result.firstHueIndex}
