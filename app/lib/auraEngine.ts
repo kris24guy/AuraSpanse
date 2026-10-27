@@ -202,7 +202,7 @@ export function daysBetween(start: Date, end: Date): number {
 }
 
 export function generateAura(dateString: string, registeredDateString?: string) {
-  const dateMatch = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(dateString)
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString)
   if (!dateMatch) throw new Error('Birthdate must use YYYY-MM-DD format')
 
   const birthYear = Number(dateMatch[1])
