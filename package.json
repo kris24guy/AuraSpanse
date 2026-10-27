@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p $PORT"
+    "start": "next start -p $PORT",
+    "test:horoscope": "node scripts/test-horoscope.mjs"
   },
   "dependencies": {
     "next": "latest",

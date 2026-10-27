@@ -1,15 +1,15 @@
 # AuraSpanse Mission Log
 
 **Project:** AuraSpanse  
-**Mission:** Daily Aurascope reminder email loop — confirmed opt-in, recurring reminders, and unsubscribe.  
+**Mission:** Aura-responsive horoscope and Daily Aurascope reminder launch verification.  
 **Log opened:** 2026-10-25  
 **Repository:** https://github.com/kris24guy/AuraSpanse  
 **Deployment target:** https://auraspanse.onrender.com  
-**Status:** Daily reminder flow added to source; Supabase schema and deployment secrets still require setup before email delivery is live.
+**Status:** Horoscope generator and reveal-page wiring are present in source; a repeatable generator test is being added to CI. The latest pre-test-instrumentation production build passed on commit `4dac643f493b335b3b58e3b34df61e0f750795d1`. The canonical homepage still redirects to the separate static prototype, which does not expose the horoscope or link to `/reveal`; Render deployment and the live end-to-end journey remain unverified. Daily email delivery still requires Supabase and scheduler configuration.
 
 ## Mission Objective
 
-Build a consent-based daily Aurascope reminder loop. Visitors can opt in, confirm their email, receive one daily reminder that links back to AuraSpanse to check their aura, and unsubscribe at any time. This is a return-to-site notification, not a one-time email containing the older aura reading.
+Release two connected experiences: (1) a birth-date-to-aura-to-personalized-horoscope journey that uses the actual generated aura profile, and (2) a consent-based daily Aurascope reminder loop. Visitors must be able to reach the horoscope from the canonical entry journey; daily reminder signup must use confirmed opt-in, recurring reminders, and unsubscribe. Do not mark the journey live until the canonical route, deployment, and browser flow are verified.
 
 ## Earlier Horoscope Integration Work (Historical)
 
@@ -153,3 +153,21 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [ ] Verify the newest Render deploy. GitHub commits/build success do not by themselves establish live email delivery.
 
 **Important:** Daily reminders are not operational until the SQL migration and matching scheduler secrets are configured. The cron workflow intentionally skips with a warning if the GitHub secret is missing; it does not send mail in that state.
+
+
+### 2026-10-27 — Horoscope source, build, and live-flow audit
+
+- [x] Verified `app/lib/horoscope.ts` exists on `main` and builds a horoscope from the actual sign, selected trait/polarity, primary and secondary aura, blended hue, final emotion/color, focus, and action.
+- [x] Verified `app/reveal/page.tsx` calls `generateAura(birthdate, registeredAt)`, builds the AuraScope with `generateAurascope(data)`, and passes those generated values into `generateAuraHoroscope()`.
+- [x] Added `scripts/test-horoscope.mjs`, which loads the current TypeScript source and checks that two materially different aura inputs produce different output across all eight horoscope fields, including a missing-selected-trait fallback.
+- [x] Added `npm run test:horoscope` and inserted it into the GitHub production-build workflow before `npm run build`.
+- [x] Verified the most recent completed production build before this test addition passed on commit `4dac643f493b335b3b58e3b34df61e0f750795d1`; run: https://github.com/kris24guy/AuraSpanse/actions/runs/40288490898.
+- [x] Inspected the canonical route: `app/page.tsx` renders `PrototypeRedirect`, which sends visitors to `public/aura-scope-mechanism.html`.
+- [x] Confirmed the static prototype contains a birthdate-entry interface and the seven-vessel mechanism, but no horoscope reference, no `localStorage` birthdate handoff, and no `/reveal` link. Therefore, the new horoscope is wired into the separate Next.js `/reveal` page but is not demonstrably reachable from the current homepage journey.
+- [x] Attempted live HTTP probes for the root, static prototype, `/reveal`, and newsletter endpoint. This environment returned DNS resolution errors (`Could not resolve host: auraspanse.onrender.com`), so no HTTP response or deployed version could be verified. This does not by itself establish that Render is down.
+- [ ] Verify the newly added horoscope test and production build on the next GitHub Actions run.
+- [ ] Confirm the Render service's latest deployment and deployed commit from Render's dashboard/API; no Render account connector or deployment record was available in this run.
+- [ ] Connect the canonical prototype's birthdate journey to the horoscope without silently replacing the user's preferred prototype, then test birth date → aura → horoscope in a real browser on the deployed service.
+- [ ] Test the full reading email and daily reminder signup/delivery separately; neither is verified by the production build.
+
+**Current conclusion:** The horoscope generator and `/reveal` integration are source-verified, and the prior production build passes. The full user journey is **not complete** because the canonical homepage currently routes to a separate prototype without a verified handoff to `/reveal`; live deployment and browser verification remain blocked by DNS/network access in this run.
