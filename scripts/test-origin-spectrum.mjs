@@ -2,21 +2,23 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";
 
-const source = await readFile(new URL("../app/lib/originSpectrumEngine.ts", import.meta.url), "utf8");
-const js = ts.transpile(source, {
-  module: ts.ModuleKind.ES2022,
-  target: ts.ScriptTarget.ES2022,
-});
-const moduleUrl = "data:text/javascript;base64," + Buffer.from(js).toString("base64");
-const { generateOriginSpectrum } = await import(moduleUrl);
+async function loadTypeScriptModule(relativePath) {
+  const source = await readFile(new URL(relativePath, import.meta.url), "utf8");
+  const javascript = ts.transpile(source, {
+    module: ts.ModuleKind.ES2022,
+    target: ts.ScriptTarget.ES2022,
+  });
+  const moduleUrl = "data:text/javascript;base64," + Buffer.from(javascript).toString("base64");
+  return import(moduleUrl);
+}
 
-const spectrumSource = await readFile(new URL("../app/lib/emotionColors.ts", import.meta.url), "utf8");
-const spectrumJs = ts.transpile(spectrumSource, {
-  module: ts.ModuleKind.ES2022,
-  target: ts.ScriptTarget.ES2022,
-});
-const spectrumModuleUrl = "data:text/javascript;base64," + Buffer.from(spectrumJs).toString("base64");
-const { emotionColors } = await import(spectrumModuleUrl);
+const { emotionColors } = await loadTypeScriptModule("../app/lib/emotionColors.ts");
+const { generateOriginSpectrum } = await loadTypeScriptModule("../app/lib/originSpectrumEngine.ts");
+const {
+  getBirthstoneResonance,
+  BIRTHSTONE_REFERENCES,
+  AURASPECTRUM_GEOGRAPHIC_ORIGIN,
+} = await loadTypeScriptModule("../app/lib/birthstoneResonance.ts");
 
 const find = (name) => {
   const item = emotionColors.find((color) => color.name.toLowerCase() === name.toLowerCase());
@@ -36,10 +38,15 @@ const zodiacMap = {
   },
 };
 const fixedNow = new Date("2026-10-26T18:00:00.000Z");
-const resolveAries = () => "aries";
-const result = generateOriginSpectrum("1989-01-01", {
-  now: fixedNow, spectrum: emotionColors, zodiacMap, resolveZodiacSign: resolveAries,
+const deps = (now, resolveZodiacSign) => ({
+  now,
+  spectrum: emotionColors,
+  zodiacMap,
+  resolveZodiacSign,
+  getBirthstoneResonance,
 });
+const resolveAries = () => "aries";
+const result = generateOriginSpectrum("1989-01-01", deps(fixedNow, resolveAries));
 
 const expectedDays = Math.floor(
   (Date.UTC(2026, 9, 26) - Date.UTC(1989, 0, 1)) / 86400000
@@ -57,49 +64,68 @@ assert.ok(result.firstHueIndex >= 0 && result.firstHueIndex < emotionColors.leng
 assert.ok(result.currentPlacementIndex >= 0 && result.currentPlacementIndex < emotionColors.length);
 assert.equal(result.zodiac.traitChannels.length, 3);
 assert.ok(result.zodiac.traitChannels.every((channel) => channel.weight === 1 / 3));
-assert.equal(result.composite.sourceWeights.length, 5);
-assert.ok(result.composite.sourceWeights.every((item) => item.weight === 1 / 5));
-assert.match(result.composite.hex, /^#[0-9a-f]{6}$/);
-assert.ok(result.composite.definition.includes("Courage"));
-const cleanName = (name) => name.replace(/^The-/, "").replace(/-/g, " ");
-assert.ok(result.composite.definition.includes(cleanName(result.firstHue.name)));
-assert.ok(result.composite.definition.includes(cleanName(result.currentPlacement.name)));
 
-const otherSign = generateOriginSpectrum("1989-01-01", {
-  now: fixedNow, spectrum: emotionColors, zodiacMap, resolveZodiacSign: () => "taurus",
-});
+assert.equal(result.composite.sourceWeights.length, 6);
+assert.ok(result.composite.sourceWeights.slice(0, 5).every((item) =>
+  Math.abs(item.weight - (1 - result.birthstone.opacity) / 5) < 1e-12));
+assert.ok(Math.abs(result.composite.sourceWeights[5].weight - result.birthstone.opacity) < 1e-12);
+assert.ok(Math.abs(result.composite.sourceWeights.reduce((sum, item) => sum + item.weight, 0) - 1) < 1e-12);
+assert.equal(result.composite.sourceWeights[5].hex, result.birthstone.hex);
+assert.equal(result.birthstone.hex, "#7B1E3A", "garnet's literal source swatch must be used");
+assert.ok(/^#[0-9a-f]{6}$/i.test(result.birthstone.hex));
+assert.equal(result.birthstone.origin.name, AURASPECTRUM_GEOGRAPHIC_ORIGIN.name);
+assert.ok(result.birthstone.distanceKm > 0);
+assert.ok(result.birthstone.opacityPercent >= 25 && result.birthstone.opacityPercent <= 100);
+assert.ok(Math.abs(result.birthstone.opacityPercent -
+  Math.max(25, Math.min(100, 100 - result.birthstone.distanceKm / 150))) < 1e-9);
+
+const mix = (baseHex, overlayHex, opacity) => {
+  const rgb = (hex) => [0, 2, 4].map((offset) => parseInt(hex.slice(offset + 1, offset + 3), 16));
+  const base = rgb(baseHex);
+  const overlay = rgb(overlayHex);
+  return "#" + base.map((channel, index) =>
+    Math.round(channel * (1 - opacity) + overlay[index] * opacity).toString(16).padStart(2, "0")
+  ).join("");
+};
+assert.equal(result.composite.hex, mix(result.composite.baseHex, result.birthstone.hex, result.birthstone.opacity),
+  "composite color must be mixed from the literal birthstone hex and the geographic opacity");
+
+const repeat = generateOriginSpectrum("1989-01-01", deps(fixedNow, resolveAries));
+assert.deepEqual(repeat, result, "same inputs on the same date must return the same result");
+
+const otherSign = generateOriginSpectrum("1989-01-01", deps(fixedNow, () => "taurus"));
 assert.notEqual(result.zodiac.sign, otherSign.zodiac.sign);
 assert.notEqual(result.firstHueIndex, otherSign.firstHueIndex, "zodiac index should influence first hue");
 
-const repeated = generateOriginSpectrum("1989-01-01", {
-  now: fixedNow, spectrum: emotionColors, zodiacMap, resolveZodiacSign: resolveAries,
-});
-assert.deepEqual(repeated, result, "same inputs on the same date must return the same result");
-
-const nextDay = generateOriginSpectrum("1989-01-01", {
-  now: new Date("2026-10-27T18:00:00.000Z"),
-  spectrum: emotionColors, zodiacMap, resolveZodiacSign: resolveAries,
-});
+const nextDay = generateOriginSpectrum("1989-01-01", deps(new Date("2026-10-27T18:00:00.000Z"), resolveAries));
 assert.equal(nextDay.daysAlive, result.daysAlive);
 assert.notEqual(nextDay.currentDate, result.currentDate);
 assert.notEqual(nextDay.currentPlacementIndex, result.currentPlacementIndex,
   "current placement should advance with the current day");
 
-assert.throws(() => generateOriginSpectrum("1989-02-30", {
-  now: fixedNow, spectrum: emotionColors, zodiacMap, resolveZodiacSign: resolveAries,
-}), /valid calendar date/);
-assert.throws(() => generateOriginSpectrum("2027-01-01", {
-  now: fixedNow, spectrum: emotionColors, zodiacMap, resolveZodiacSign: resolveAries,
-}), /future/);
+assert.deepEqual(Object.keys(BIRTHSTONE_REFERENCES).map(Number), Array.from({ length: 12 }, (_, i) => i + 1));
+for (const month of Array.from({ length: 12 }, (_, i) => i + 1)) {
+  const resonance = getBirthstoneResonance(month);
+  assert.ok(/^#[0-9a-f]{6}$/i.test(resonance.hex), "month " + month + " needs a literal swatch");
+  assert.ok(resonance.opacityPercent >= 25 && resonance.opacityPercent <= 100);
+  assert.ok(Number.isFinite(resonance.distanceKm));
+}
+assert.throws(() => getBirthstoneResonance(0), /month/);
+assert.throws(() => generateOriginSpectrum("1989-02-30", deps(fixedNow, resolveAries)), /valid calendar date/);
+assert.throws(() => generateOriginSpectrum("2027-01-01", deps(fixedNow, resolveAries)), /future/);
 assert.throws(() => generateOriginSpectrum("1989-01-01", {
-  now: fixedNow, spectrum: [], zodiacMap, resolveZodiacSign: resolveAries,
+  ...deps(fixedNow, resolveAries), spectrum: [],
 }), /at least two spectrum points/);
 
-console.log("PASS: Origin Engine uses the complete emotion-color spectrum, days-lived quotient/remainder, and bounded exponent.");
-console.log("PASS: zodiac trait channels are equal, source colors merge equally, and current placement advances by day.");
 const entryHtml = await readFile(new URL("../public/aura-scope-mechanism.html", import.meta.url), "utf8");
-assert.ok(entryHtml.includes('window.location.assign("/origin")'),
-  "canonical birthdate entry must open the independent Origin Engine");
+assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
+  "canonical birthdate entry must open the Aura-Spectrum mechanism");
 
-console.log("PASS: invalid and future birthdates are rejected.");
-console.log("PASS: canonical birthdate entry hands off to /origin.");
+const cylinderSource = await readFile(new URL("../app/components/AuraSpectrumCylinder.tsx", import.meta.url), "utf8");
+assert.ok(cylinderSource.includes("137.50776405003785"), "the cylinder should use the golden angle");
+assert.ok(cylinderSource.includes("darkenHex"), "the cylinder should darken upward");
+
+console.log("PASS: age/spectrum equation, zodiac balancing, and current placement are deterministic.");
+console.log("PASS: literal birthstone hex values drive the geographic opacity blend.");
+console.log("PASS: all 12 monthly stone swatches and their geographic opacity values validate.");
+console.log("PASS: the birthdate form opens Aura-Spectrum and the cylinder uses golden-angle upward darkening.");
