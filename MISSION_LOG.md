@@ -200,3 +200,16 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [ ] After GitHub Actions finishes, verify the age-spectrum tests and production build; then confirm Render deployed the latest `main` commit and test a birthdate through the root page to the reveal.
 
 **Implementation note:** Directly evaluating `N^daysAlive` is impractical at realistic ages. The implementation uses square-and-multiply modular arithmetic with modulus `1,000,003` and then wraps into the actual spectrum size. Taking the exponent modulo `N` would produce zero for positive exponents when the base is `N`, so the larger modulus preserves a useful bounded residue. This is a deterministic design rule for entertainment and reflection, not a scientifically validated measure of emotion.
+
+
+### 2026-10-27 — Independent Origin Engine implementation
+
+- [x] Created `app/lib/originSpectrumEngine.ts` as an independent implementation; it does not call the legacy `generateAura()` function.
+- [x] Created a dedicated `/origin` route that displays the birthdate, days lived, spectrum size, quotient/cycles, remainder, exponent residue, first hue, current placement, traditional zodiac metadata, equal trait channels, and the five-way composite.
+- [x] Defined composite color blending with five equal contributors: positive zodiac trait, neutral zodiac trait, shadow zodiac trait, age-derived first hue, and current placement. The generated composite includes a new explanatory definition and nearest named emotion.
+- [x] Changed the canonical static birthdate entry to route to `/origin`; preserved the classic `/reveal` route as a separate option.
+- [x] Added `scripts/test-origin-spectrum.mjs` and `npm run test:origin-spectrum`, checking age math, modular exponent bounds, equal weights, color output, zodiac effect, daily movement, and invalid/future dates.
+- [x] Updated the production-build workflow to run the new Origin Engine tests together with existing aura tests before `npm run build`.
+- [x] Documented the distinct engine and formula in `README.md`.
+- [ ] Automated test run and production build are pending confirmation in this session; do not treat the feature as build-verified until CI reports success.
+- [ ] Render deployment and the live birthdate-to-`/origin` route are pending verification.
