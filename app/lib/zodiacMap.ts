@@ -10,6 +10,8 @@ export const zodiacMap = {
   aries: {
     sign: 'Aries',
     element: 'Fire',
+    modality: 'Cardinal',
+    traditionalRuler: 'Mars',
     dates: 'Mar 21 - Apr 19',
     pos: e('Courage'),
     neu: e('Spontaneity'),
@@ -19,6 +21,8 @@ export const zodiacMap = {
   taurus: {
     sign: 'Taurus',
     element: 'Earth',
+    modality: 'Fixed',
+    traditionalRuler: 'Venus',
     dates: 'Apr 20 - May 20',
     pos: e('Groundedness'),
     neu: e('Patience'),
@@ -28,6 +32,8 @@ export const zodiacMap = {
   gemini: {
     sign: 'Gemini',
     element: 'Air',
+    modality: 'Mutable',
+    traditionalRuler: 'Mercury',
     dates: 'May 21 - Jun 20',
     pos: e('Communication'),
     neu: e('Wit'),
@@ -37,6 +43,8 @@ export const zodiacMap = {
   cancer: {
     sign: 'Cancer',
     element: 'Water',
+    modality: 'Cardinal',
+    traditionalRuler: 'Moon',
     dates: 'Jun 21 - Jul 22',
     pos: e('Nurturing'),
     neu: e('Nostalgia'),
@@ -46,6 +54,8 @@ export const zodiacMap = {
   leo: {
     sign: 'Leo',
     element: 'Fire',
+    modality: 'Fixed',
+    traditionalRuler: 'Sun',
     dates: 'Jul 23 - Aug 22',
     pos: e('Radiance'),
     neu: e('Playfulness'),
@@ -55,6 +65,8 @@ export const zodiacMap = {
   virgo: {
     sign: 'Virgo',
     element: 'Earth',
+    modality: 'Mutable',
+    traditionalRuler: 'Mercury',
     dates: 'Aug 23 - Sep 22',
     pos: e('Clarity'),
     neu: e('Patience'),
@@ -64,6 +76,8 @@ export const zodiacMap = {
   libra: {
     sign: 'Libra',
     element: 'Air',
+    modality: 'Cardinal',
+    traditionalRuler: 'Venus',
     dates: 'Sep 23 - Oct 22',
     pos: e('Harmony'),
     neu: e('Balance'),
@@ -73,6 +87,8 @@ export const zodiacMap = {
   scorpio: {
     sign: 'Scorpio',
     element: 'Water',
+    modality: 'Fixed',
+    traditionalRuler: 'Mars',
     dates: 'Oct 23 - Nov 21',
     pos: e('Depth'),
     neu: e('Intensity'),
@@ -82,6 +98,8 @@ export const zodiacMap = {
   sagittarius: {
     sign: 'Sagittarius',
     element: 'Fire',
+    modality: 'Mutable',
+    traditionalRuler: 'Jupiter',
     dates: 'Nov 22 - Dec 21',
     pos: e('Freedom'),
     neu: e('Optimism'),
@@ -91,6 +109,8 @@ export const zodiacMap = {
   capricorn: {
     sign: 'Capricorn',
     element: 'Earth',
+    modality: 'Cardinal',
+    traditionalRuler: 'Saturn',
     dates: 'Dec 22 - Jan 19',
     pos: e('Commitment'),
     neu: e('Endurance'),
@@ -100,6 +120,8 @@ export const zodiacMap = {
   aquarius: {
     sign: 'Aquarius',
     element: 'Air',
+    modality: 'Fixed',
+    traditionalRuler: 'Saturn',
     dates: 'Jan 20 - Feb 18',
     pos: e('Vision'),
     neu: e('Liberation'),
@@ -109,6 +131,8 @@ export const zodiacMap = {
   pisces: {
     sign: 'Pisces',
     element: 'Water',
+    modality: 'Mutable',
+    traditionalRuler: 'Jupiter',
     dates: 'Feb 19 - Mar 20',
     pos: e('Empathy'),
     neu: e('Dreaming'),
