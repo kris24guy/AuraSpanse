@@ -173,7 +173,7 @@ export function generateOriginSpectrum(
   const zodiacIndex = ZODIAC_ORDER.indexOf(zodiacKey as (typeof ZODIAC_ORDER)[number])
   if (zodiacIndex < 0) throw new Error(`Unrecognized zodiac sign: ${zodiacKey}`)
 
-  const zodiacRecord = (zodiacMap as Record<string, ZodiacEntry>)[zodiacKey]
+  const zodiacRecord = (zodiacMap as unknown as Record<string, ZodiacEntry>)[zodiacKey]
   if (!zodiacRecord?.pos || !zodiacRecord?.neu || !zodiacRecord?.neg) {
     throw new Error(`Zodiac trait channels are incomplete for ${zodiacKey}`)
   }
