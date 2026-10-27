@@ -1,6 +1,6 @@
 import type { EmotionColor } from './emotionColors'
 
-const MODULUS = 1_000_003n
+const MODULUS = 1_000_003
 
 const ZODIAC_ORDER = [
   'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
@@ -22,15 +22,16 @@ export interface AgeSpectrumPlacement {
 }
 
 /** Calculate base^exponent modulo a bounded prime without constructing the enormous integer. */
-function modularPower(base: bigint, exponent: bigint, modulus: bigint): bigint {
-  let result = 1n
+function modularPower(base: number, exponent: number, modulus: number): number {
+  let result = 1
   let factor = base % modulus
-  let power = exponent
+  let power = Math.floor(exponent)
 
-  while (power > 0n) {
-    if ((power & 1n) === 1n) result = (result * factor) % modulus
+  // Intermediate products stay below modulus² (< 10¹²), safely inside JS integer precision.
+  while (power > 0) {
+    if (power % 2 === 1) result = (result * factor) % modulus
     factor = (factor * factor) % modulus
-    power >>= 1n
+    power = Math.floor(power / 2)
   }
 
   return result
@@ -69,7 +70,6 @@ export function getAgeSpectrumPlacement(
   const daysAlive = Math.floor(daysAliveInput)
   const dayOfYear = Math.floor(currentDayOfYear)
   const spectrumPointCount = spectrum.length
-  const pointCountBigInt = BigInt(spectrumPointCount)
 
   const ageSpectrumRatio = daysAlive / spectrumPointCount
   const completedSpectrumCycles = Math.floor(ageSpectrumRatio)
@@ -77,7 +77,7 @@ export function getAgeSpectrumPlacement(
 
   // This is the bounded equivalent of spectrumPointCount^daysAlive. Do not change the
   // modulus to spectrumPointCount itself: that would make the residue zero every time.
-  const exponentResidue = Number(modularPower(pointCountBigInt, BigInt(daysAlive), MODULUS))
+  const exponentResidue = modularPower(spectrumPointCount, daysAlive, MODULUS)
   const exponentIndex = exponentResidue % spectrumPointCount
   const zodiacIndex = Math.max(0, ZODIAC_ORDER.indexOf(zodiacSign.toLowerCase()))
 
