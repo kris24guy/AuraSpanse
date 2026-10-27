@@ -50,7 +50,7 @@ function formatNumber(value: number): string {
   return Math.round(value).toLocaleString('en-US')
 }
 
-export default function OriginPage() {
+export default function AuraSpectrumPage() {
   const [result, setResult] = useState<OriginSpectrumResult | null>(null)
   const [error, setError] = useState('')
   const [retryKey, setRetryKey] = useState(0)
@@ -74,7 +74,7 @@ export default function OriginPage() {
       setError('')
     } catch (cause) {
       setResult(null)
-      setError(cause instanceof Error ? cause.message : 'The Origin Engine could not process this birthdate.')
+      setError(cause instanceof Error ? cause.message : 'Aura-Spectrum could not process this birthdate.')
     }
   }, [retryKey])
 
@@ -94,7 +94,7 @@ export default function OriginPage() {
         <section style={{ ...panel, borderColor: 'rgba(211,154,184,0.45)' }} aria-live="polite">
           <p style={eyebrow}>INPUT REQUIRED</p>
           <h2 style={{ color: '#d39ab8', fontWeight: 500 }}>{error}</h2>
-          <p style={muted}>Return to the birthdate entry, enter a valid date, and initialize the new engine.</p>
+          <p style={muted}>Return to the birthdate entry, enter a valid date, and initialize Aura-Spectrum.</p>
           <a href="/aura-scope-mechanism.html" style={{ color: '#d9c9ff', textUnderlineOffset: '4px' }}>Return to birthdate entry →</a>
         </section>
       )}
