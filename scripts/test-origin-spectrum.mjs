@@ -61,8 +61,9 @@ assert.equal(result.composite.sourceWeights.length, 5);
 assert.ok(result.composite.sourceWeights.every((item) => item.weight === 1 / 5));
 assert.match(result.composite.hex, /^#[0-9a-f]{6}$/);
 assert.ok(result.composite.definition.includes("Courage"));
-assert.ok(result.composite.definition.includes(result.firstHue.name.replace(/-/g, " ")));
-assert.ok(result.composite.definition.includes(result.currentPlacement.name.replace(/-/g, " ")));
+const cleanName = (name) => name.replace(/^The-/, "").replace(/-/g, " ");
+assert.ok(result.composite.definition.includes(cleanName(result.firstHue.name)));
+assert.ok(result.composite.definition.includes(cleanName(result.currentPlacement.name)));
 
 const otherSign = generateOriginSpectrum("1989-01-01", {
   now: fixedNow, spectrum: emotionColors, zodiacMap, resolveZodiacSign: () => "taurus",
