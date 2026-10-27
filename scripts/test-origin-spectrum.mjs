@@ -71,6 +71,11 @@ const otherSign = generateOriginSpectrum("1989-01-01", {
 assert.notEqual(result.zodiac.sign, otherSign.zodiac.sign);
 assert.notEqual(result.firstHueIndex, otherSign.firstHueIndex, "zodiac index should influence first hue");
 
+const repeated = generateOriginSpectrum("1989-01-01", {
+  now: fixedNow, spectrum: emotionColors, zodiacMap, resolveZodiacSign: resolveAries,
+});
+assert.deepEqual(repeated, result, "same inputs on the same date must return the same result");
+
 const nextDay = generateOriginSpectrum("1989-01-01", {
   now: new Date("2026-10-27T18:00:00.000Z"),
   spectrum: emotionColors, zodiacMap, resolveZodiacSign: resolveAries,
@@ -92,4 +97,9 @@ assert.throws(() => generateOriginSpectrum("1989-01-01", {
 
 console.log("PASS: Origin Engine uses the complete emotion-color spectrum, days-lived quotient/remainder, and bounded exponent.");
 console.log("PASS: zodiac trait channels are equal, source colors merge equally, and current placement advances by day.");
+const entryHtml = await readFile(new URL("../public/aura-scope-mechanism.html", import.meta.url), "utf8");
+assert.ok(entryHtml.includes('window.location.assign("/origin")'),
+  "canonical birthdate entry must open the independent Origin Engine");
+
 console.log("PASS: invalid and future birthdates are rejected.");
+console.log("PASS: canonical birthdate entry hands off to /origin.");
