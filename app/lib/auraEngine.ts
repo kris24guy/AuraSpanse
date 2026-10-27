@@ -1,8 +1,13 @@
 import { emotionColors, getEmotionByFreq, EmotionColor } from './emotionColors'
 import { getZodiacSign, zodiacMap } from './zodiacMap'
+import { getAgeSpectrumPlacement } from './ageSpectrum'
 
 export interface ZodiacData {
   sign: string
+  element: string
+  modality: string
+  traditionalRuler: string
+  description: string
   traits: string[]
   color: string
   birthstone: string
@@ -11,12 +16,14 @@ export interface ZodiacData {
   stoneTraits: string[]
   traitChannels: Array<{
     polarity: 'positive' | 'neutral' | 'shadow'
+    weight: number
     name: string
     hex: string
     freq: number
   }>
   selectedTrait: {
     polarity: 'positive' | 'neutral' | 'shadow'
+    weight: number
     name: string
     hex: string
     freq: number
@@ -168,17 +175,6 @@ function timeStateWord(weight: number): string {
   return states[Math.min(states.length - 1, Math.floor((weight / 1001) * states.length))]
 }
 
-function weightedRegistrationScale(date: Date): number {
-  const ms = date.getUTCHours() * 3600000 + date.getUTCMinutes() * 60000 + date.getUTCSeconds() * 1000 + date.getUTCMilliseconds()
-  return clamp((ms / 86400000) * 1000)
-}
-
-function channelIndex(weight: number): 0 | 1 | 2 {
-  if (weight < 334) return 0
-  if (weight < 667) return 1
-  return 2
-}
-
 function makeAuraName(emotion: EmotionColor, fallbackHex?: string): string {
   return `${colorWordFromEmotion(emotion)} ${auraMotionWord(emotion.freq || parseInt((fallbackHex || '#000000').slice(1, 3), 16))}`
 }
@@ -206,57 +202,109 @@ export function daysBetween(start: Date, end: Date): number {
 }
 
 export function generateAura(dateString: string, registeredDateString?: string) {
-  const birthDate = new Date(`${dateString}T00:00:00Z`)
+  const dateMatch = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(dateString)
+  if (!dateMatch) throw new Error('Birthdate must use YYYY-MM-DD format')
+
+  const birthYear = Number(dateMatch[1])
+  const birthMonth = Number(dateMatch[2])
+  const birthDay = Number(dateMatch[3])
+  const birthDate = new Date(Date.UTC(birthYear, birthMonth - 1, birthDay))
+  if (birthDate.toISOString().slice(0, 10) !== dateString) {
+    throw new Error('Birthdate is not a valid calendar date')
+  }
+
   const now = new Date()
-  const registeredDate = registeredDateString ? new Date(registeredDateString) : now
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  if (birthDate.getTime() > today.getTime()) {
+    throw new Error('Birthdate cannot be in the future')
+  }
+
+  const parsedRegistration = registeredDateString ? new Date(registeredDateString) : now
+  const registeredDate = Number.isNaN(parsedRegistration.getTime()) ? now : parsedRegistration
   const dayOfYear = getDayOfYear(birthDate)
+  const currentDayOfYear = getDayOfYear(today)
   const lifePath = calculateLifePath(dateString)
+  const daysAlive = daysBetween(birthDate, today)
 
   const signKey = getZodiacSign(birthDate)
   const sign = zodiacMap[signKey]
+  const agePlacement = getAgeSpectrumPlacement(daysAlive, signKey, currentDayOfYear, emotionColors)
+  const firstHue = agePlacement.firstHue
+  const currentPlacement = agePlacement.currentPlacement
+  const timeWeight = clamp(currentPlacement.freq)
+  const channel = (agePlacement.currentPlacementIndex % 3) as 0 | 1 | 2
   const stones = birthstones[birthDate.getUTCMonth()]
-  const timeWeight = weightedRegistrationScale(registeredDate)
-  const channel = channelIndex(timeWeight)
-  const selectedStone = stones[(lifePath + channel + dayOfYear) % stones.length]
+  const selectedStone = stones[(lifePath + channel + dayOfYear + agePlacement.firstHueIndex) % stones.length]
 
+  // Historical zodiac channel balancing: positive, neutral, and shadow traits each
+  // contribute exactly one third to the base zodiac average. The selected trait is
+  // a rotating reflective focus, not a heavier mathematical vote.
   const zodiacTriad = [sign.pos, sign.neu, sign.neg]
   const birthstoneTriad = [selectedStone.pos, selectedStone.neu, selectedStone.neg]
   const zodiacAverage = getEmotionByFreq(averageFreq(zodiacTriad))
   const birthstoneAverage = getEmotionByFreq(averageFreq(birthstoneTriad))
-
   const selectedTrait = zodiacTriad[channel]
   const selectedStoneTrait = birthstoneTriad[channel]
-  const traitInfluence = 0.45 + timeWeight / 2200
-  const stoneOpacity = Math.min(0.92, Math.max(0.25, 0.25 + timeWeight / 1500))
 
-  const zodiacHueFreq = clamp(zodiacAverage.freq * (1 - traitInfluence) + selectedTrait.freq * traitInfluence)
-  const birthstoneHueFreq = clamp(birthstoneAverage.freq * (1 - stoneOpacity) + selectedStoneTrait.freq * stoneOpacity)
+  const opacityRange = Math.max(1, agePlacement.spectrumPointCount - 1)
+  const stoneOpacity = Math.min(
+    0.92,
+    Math.max(0.25, 0.25 + (agePlacement.exponentIndex / opacityRange) * 0.67)
+  )
+
+  // The first hue influences, but does not replace, the equal-weight zodiac triad.
+  const zodiacHueFreq = clamp(zodiacAverage.freq * 0.8 + firstHue.freq * 0.2)
+  const birthstoneHueFreq = clamp(
+    birthstoneAverage.freq * (1 - stoneOpacity) + selectedStoneTrait.freq * stoneOpacity
+  )
   const zodiacHue = getEmotionByFreq(zodiacHueFreq)
   const birthstoneHue = getEmotionByFreq(birthstoneHueFreq)
 
-  const blendedHex = blendHex([zodiacHue.hex, birthstoneHue.hex], [1, stoneOpacity])
-  const blendedFreq = clamp((zodiacHue.freq + birthstoneHue.freq * stoneOpacity) / (1 + stoneOpacity))
+  const blendedHex = blendHex(
+    [zodiacHue.hex, birthstoneHue.hex, firstHue.hex],
+    [0.55, 0.30, 0.15]
+  )
+  const blendedFreq = clamp(
+    zodiacHue.freq * 0.55 + birthstoneHue.freq * 0.30 + firstHue.freq * 0.15
+  )
   const blendedHue: EmotionColor = {
-    name: `${cleanName(zodiacHue.name)} ${cleanName(birthstoneHue.name)} Blend`,
+    name: `${cleanName(zodiacHue.name)} ${cleanName(birthstoneHue.name)} ${cleanName(firstHue.name)} Blend`,
     hex: blendedHex,
     freq: blendedFreq
   }
 
-  const timeHue = getEmotionByFreq(timeWeight)
-  const currentAuraDay = ((getDayOfYear(now) + dayOfYear + lifePath + channel) % 365) || 365
-  const finalFrequency = clamp(blendedHue.freq * 0.55 + timeHue.freq * 0.25 + selectedTrait.freq * 0.2)
+  const daysInCurrentYear = new Date(Date.UTC(now.getUTCFullYear() + 1, 0, 1)).getTime() -
+    new Date(Date.UTC(now.getUTCFullYear(), 0, 1)).getTime() > 365 * 86400000 ? 366 : 365
+  const seasonalFreq = clamp(((currentDayOfYear - 1) / (daysInCurrentYear - 1)) * 1000)
+  const timeHue = getEmotionByFreq(seasonalFreq)
+  const currentAuraDay = ((currentDayOfYear + agePlacement.currentPlacementIndex + lifePath + channel) % daysInCurrentYear) || daysInCurrentYear
+
+  // The current placement and the first hue are both explicit contributors to the
+  // final blend, so the age/spectrum equation changes the actual reading, not only its copy.
+  const finalFrequency = clamp(
+    blendedHue.freq * 0.45 +
+    timeHue.freq * 0.10 +
+    firstHue.freq * 0.20 +
+    currentPlacement.freq * 0.25
+  )
   const finalEmotion = getEmotionByFreq(finalFrequency)
-  const finalHex = blendHex([blendedHue.hex, timeHue.hex, finalEmotion.hex], [0.5, 0.22, 0.28])
+  const finalHex = blendHex(
+    [blendedHue.hex, timeHue.hex, firstHue.hex, currentPlacement.hex, finalEmotion.hex],
+    [0.42, 0.10, 0.18, 0.15, 0.15]
+  )
   const primaryAuraName = makeAuraName(zodiacHue)
   const secondaryAuraName = makeAuraName(birthstoneHue)
   const finalAuraName = `${primaryAuraName} with ${secondaryAuraName} whispers`
-  const daysAlive = Math.max(1, daysBetween(birthDate, now))
   const tenureDays = daysBetween(registeredDate, now)
-  const timeFactor = tenureDays / daysAlive
+  const timeFactor = tenureDays / Math.max(1, daysAlive)
 
   const polarities: Array<'positive' | 'neutral' | 'shadow'> = ['positive', 'neutral', 'shadow']
   const zodiac: ZodiacData = {
     sign: sign.sign,
+    element: sign.element,
+    modality: sign.modality,
+    traditionalRuler: sign.traditionalRuler,
+    description: sign.description,
     traits: zodiacTriad.map((trait) => trait.name),
     color: zodiacHue.hex,
     birthstone: selectedStone.name,
@@ -265,12 +313,14 @@ export function generateAura(dateString: string, registeredDateString?: string) 
     stoneTraits: birthstoneTriad.map((trait) => trait.name),
     traitChannels: zodiacTriad.map((trait, index) => ({
       polarity: polarities[index],
+      weight: 1 / 3,
       name: trait.name,
       hex: trait.hex,
       freq: trait.freq
     })),
     selectedTrait: {
       polarity: polarities[channel],
+      weight: 1 / 3,
       name: selectedTrait.name,
       hex: selectedTrait.hex,
       freq: selectedTrait.freq
@@ -290,6 +340,15 @@ export function generateAura(dateString: string, registeredDateString?: string) 
     selectedStoneTrait,
     blendedHue,
     timeHue,
+    firstHue,
+    currentPlacement,
+    spectrumPointCount: agePlacement.spectrumPointCount,
+    ageSpectrumRatio: agePlacement.ageSpectrumRatio,
+    completedSpectrumCycles: agePlacement.completedSpectrumCycles,
+    exponentResidue: agePlacement.exponentResidue,
+    firstHueIndex: agePlacement.firstHueIndex,
+    currentPlacementIndex: agePlacement.currentPlacementIndex,
+    currentDayOfYear,
     timeState: timeStateWord(timeWeight),
     timeWeight,
     finalEmotion,
