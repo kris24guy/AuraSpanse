@@ -47,8 +47,6 @@ export async function POST(req: NextRequest) {
     const lore = getAuraLore({
       finalAuraName: aura.finalAuraName,
       finalEmotion: aura.finalEmotion,
-      finalHex: aura.finalHex,
-      finalFrequency: aura.finalFrequency,
       zodiacSign: aura.zodiac.sign,
       birthstone: aura.zodiac.birthstone,
       zodiacHue: aura.hues[0],
@@ -70,12 +68,12 @@ export async function POST(req: NextRequest) {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || 'AuraSpanse <onboarding@resend.dev>',
       to: email,
-      subject: `Your Aura is ${aura.finalAuraName} — ${aura.finalFrequency}hz`,
+      subject: `Your AuraSpanse reading: ${aura.finalAuraName}`,
       html: `
         <div style="background:#05030a;color:white;padding:38px;font-family:Arial,sans-serif;max-width:680px;margin:0 auto;">
           <p style="letter-spacing:3px;font-size:11px;color:#9c74ff;margin:0 0 22px;">AURASPANSE // AURACLE</p>
           <h1 style="font-size:34px;line-height:1.05;margin:0 0 14px;font-weight:700;">${finalAuraName}</h1>
-          <p style="margin:0 0 26px;color:rgba(255,255,255,0.68);">${aura.finalFrequency}hz · ${escapeHtml(cleanName(aura.finalEmotion.name))} · ${zodiac}</p>
+          <p style="margin:0 0 26px;color:rgba(255,255,255,0.68);">${escapeHtml(cleanName(aura.finalEmotion.name))} · ${zodiac}</p>
 
           <div style="width:164px;height:164px;border-radius:999px;background:${finalHex};box-shadow:0 0 90px ${finalHex};margin:26px auto;border:1px solid rgba(255,255,255,0.3);"></div>
 
@@ -88,18 +86,18 @@ export async function POST(req: NextRequest) {
           <div style="display:block;">
             <div style="border-left:4px solid ${escapeHtml(aura.hues[0].hex)};padding:12px 16px;margin:12px 0;background:#0d0d12;">
               <strong>Hue 1 · Zodiac</strong><br />
-              <span style="color:${escapeHtml(aura.hues[0].hex)};">${escapeHtml(cleanName(aura.hues[0].name))}</span> · ${aura.hues[0].freq}hz<br />
+              <span style="color:${escapeHtml(aura.hues[0].hex)};">${escapeHtml(cleanName(aura.hues[0].name))}</span><br />
               <span style="color:rgba(255,255,255,0.62);font-size:13px;">${zodiac} traits: ${escapeHtml(aura.zodiac.traits.join(' / '))}</span>
             </div>
             <div style="border-left:4px solid ${escapeHtml(aura.hues[1].hex)};padding:12px 16px;margin:12px 0;background:#0d0d12;">
               <strong>Hue 2 · Birthstone Resonance</strong><br />
-              <span style="color:${escapeHtml(aura.hues[1].hex)};">${escapeHtml(cleanName(aura.hues[1].name))}</span> · ${aura.hues[1].freq}hz · ${Math.round(aura.stoneOpacity * 100)}% opacity<br />
+              <span style="color:${escapeHtml(aura.hues[1].hex)};">${escapeHtml(cleanName(aura.hues[1].name))}</span> · ${Math.round(aura.stoneOpacity * 100)}% stone-color strength<br />
               <span style="color:rgba(255,255,255,0.62);font-size:13px;">${birthstone} properties: ${escapeHtml(aura.zodiac.stoneTraits.join(' / '))}</span>
             </div>
             <div style="border-left:4px solid ${escapeHtml(aura.hues[2].hex)};padding:12px 16px;margin:12px 0;background:#0d0d12;">
               <strong>Hue 3 · Time State</strong><br />
               <span style="color:${escapeHtml(aura.hues[2].hex)};">${escapeHtml(aura.timeState)}</span> · Aura Day ${aura.currentAuraDay}<br />
-              <span style="color:rgba(255,255,255,0.62);font-size:13px;">Time hue: ${escapeHtml(cleanName(aura.hues[2].name))} at ${aura.hues[2].freq}hz</span>
+              <span style="color:rgba(255,255,255,0.62);font-size:13px;">Time hue: ${escapeHtml(cleanName(aura.hues[2].name))}</span>
             </div>
           </div>
 
@@ -126,8 +124,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      finalAuraName: aura.finalAuraName,
-      finalFrequency: aura.finalFrequency
+      finalAuraName: aura.finalAuraName
     })
   } catch (err) {
     console.error('[Subscribe error]', err)
