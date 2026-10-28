@@ -225,7 +225,7 @@ export default function AuraSpectrumPage() {
             </p>
           </section>
 
-          <section style={panel}>
+          <section style={{ ...panel, maxWidth: '1180px', padding: '20px' }}>
             <p style={eyebrow}>THE 374-POINT EMOTION CAN</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Explore the emotional spectrum</h2>
             <p style={muted}>
@@ -236,7 +236,7 @@ export default function AuraSpectrumPage() {
                 title="AuraSpanse interactive emotion-color can"
                 src={'/aura-spectrum-cyclone.html?selected=' + encodeURIComponent(result.firstHue.name)}
                 loading="eager"
-                style={{ display: 'block', width: '100%', height: 'clamp(980px, 132vh, 1380px)', border: 0, background: '#0a0a12' }}
+                style={{ display: 'block', width: '100%', height: 'clamp(900px, 112vh, 1180px)', border: 0, background: '#0a0a12' }}
               />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '22px' }}>
