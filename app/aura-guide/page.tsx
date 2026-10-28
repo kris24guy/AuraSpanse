@@ -49,7 +49,7 @@ export default function AuraGuidePage() {
             <p style={{ opacity: 0.76 }}>Your birthstone contributes its natural color. A representative geological deposit closer to the model's fixed geographic reference creates a stronger tint; a farther deposit creates a lighter tint.</p>
           </article>
           <article style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '22px', padding: '20px' }}>
-            <h3 style={{ marginTop: 0 }}>3. Third Hue</h3>
+            <h3 style={{ marginTop: 0 }}>3. Subscriber Blend</h3>
             <p style={{ opacity: 0.76 }}>The starting emotion color and natural birthstone color stay separate until the email subscription is confirmed. Today's placement remains context for the reading, not an added blend color.</p>
           </article>
         </div>
