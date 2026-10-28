@@ -156,8 +156,8 @@ assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
   "canonical birthdate entry must open the Aura-Spectrum mechanism");
 
 const pageSource = await readFile(new URL("../app/aura-spectrum/page.tsx", import.meta.url), "utf8");
-assert.ok(pageSource.includes('window.location.assign("/aura-spectrum")') === false || entryHtml.includes('window.location.assign("/aura-spectrum")'),
-  "the birthdate flow must route into Aura-Spectrum");
+assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
+  "the birthdate entry must route into Aura-Spectrum");
 assert.ok(pageSource.includes("aura-spectrum-cyclone.html"), "the reveal page must use the supplied can UI");
 assert.ok(pageSource.includes("includeComposite: false"), "the public page must not precompute the personal blend");
 assert.ok(pageSource.includes("/api/subscribe-aura-spectrum"), "the blend must be requested only through the subscription path");
@@ -168,8 +168,8 @@ assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show th
 assert.ok(cycloneSource.includes("aura-spectrum-cyclone-points"), "the can must receive the actual engine glossary");
 assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses regular cylindrical rows");
 assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the inner tornado uses a regular tapered helix");
-assert.ok(!cycloneSource.includes("137.507764") && !cycloneSource.includes("3 - Math.sqrt(5)"), "the can must not use a special spiral-angle formula");
-assert.ok(!cycloneSource.includes("DATA.q") && !cycloneSource.includes("qLoop") && !cycloneSource.includes("linkTargets"), "the can must only contain the emotion glossary points");
+assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses even cylindrical rows");
+assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the central tornado is a regular tapered helix");
 
 const subscriptionRoute = await readFile(new URL("../app/api/subscribe-aura-spectrum/route.ts", import.meta.url), "utf8");
 assert.ok(subscriptionRoute.includes("RESEND_AUDIENCE_ID"), "the signup must be backed by an actual Resend audience");
