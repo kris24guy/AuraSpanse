@@ -101,27 +101,6 @@ export default function AuraSpectrumPage() {
     }
   }, [retryKey])
 
-  useEffect(() => {
-    if (!result) return
-    try {
-      const saved = window.localStorage.getItem('auraspanse-aura-spectrum-subscription')
-      const parsed = saved ? JSON.parse(saved) as { birthDate?: string; email?: string; subscribed?: boolean } : null
-      if (parsed?.subscribed && parsed.birthDate === result.birthDate) {
-        setIsSubscribed(true)
-        setEmail(parsed.email || '')
-        setUnlockedBlend({
-          hex: blendTwoHex(result.firstHue.hex, result.birthstone.hex),
-          name: readableName(result.firstHue.name) + ' × ' + result.birthstone.name,
-        })
-      } else {
-        setIsSubscribed(false)
-        setUnlockedBlend(null)
-      }
-    } catch {
-      setIsSubscribed(false)
-      setUnlockedBlend(null)
-    }
-  }, [result])
 
   async function handleSubscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -156,15 +135,6 @@ export default function AuraSpectrumPage() {
           ? 'Subscription confirmed. Your two-primary blend is revealed below, and the reading email was sent.'
           : 'Subscription confirmed. Your two-primary blend is revealed below. The email could not be sent, but the subscription is active.'
       )
-      try {
-        window.localStorage.setItem('auraspanse-aura-spectrum-subscription', JSON.stringify({
-          birthDate: result.birthDate,
-          email: email.trim(),
-          subscribed: true,
-        }))
-      } catch {
-        // Subscription and reveal are already confirmed by the server.
-      }
     } catch (cause) {
       setSubscriptionError(cause instanceof Error ? cause.message : 'The subscription could not be confirmed.')
     } finally {
