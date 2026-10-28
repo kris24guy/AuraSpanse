@@ -1,6 +1,6 @@
 // AuraSpanse emotion glossary: 374 labels and definitions supplied for the Aura-Spectrum cyclone.
 // Definitions remain verbatim. Exact palette-name matches inherit their existing swatch.
-// Unmatched labels get a deterministic frequency band inferred from their definition, then inherit the nearest palette color.
+// Other labels use deterministic word cues to select a position in the ordered palette.
 
 export const EMOTION_GLOSSARY_ROWS: ReadonlyArray<readonly [string, string]> = [
   ["Abandoneeism","The distinct, ongoing trauma response of feeling chronically cast aside or left behind."],
@@ -382,7 +382,6 @@ export const EMOTION_GLOSSARY_ROWS: ReadonlyArray<readonly [string, string]> = [
 export interface EmotionColorReference {
   name: string;
   hex: string;
-  freq: number;
 }
 
 export interface EmotionGlossaryPoint extends EmotionColorReference {
@@ -416,27 +415,28 @@ function stableHash(value: string): number {
   return hash >>> 0;
 }
 
-function inferFrequency(name: string, definition: string): number {
+function inferPaletteIndex(name: string, definition: string, paletteLength: number): number {
   const tokens = (normalizeName(name) + ' ' + normalizeName(definition)).split(/\s+/).filter(Boolean);
   const positive = tokens.filter((token) => POSITIVE_WORDS.has(token)).length;
   const negative = tokens.filter((token) => NEGATIVE_WORDS.has(token)).length;
   const intensity = tokens.filter((token) => INTENSITY_WORDS.has(token)).length;
-  const hash = stableHash(name);
-  let target: number;
-  if (positive > negative) target = 55 + (hash % 365);
-  else if (negative > positive) target = 610 + (hash % 360);
-  else target = 385 + (hash % 230);
-  if (negative > positive) target += Math.min(55, intensity * 7);
-  if (positive > negative) target -= Math.min(45, intensity * 6);
-  return Math.max(0, Math.min(1000, Math.round(target)));
+  const distribution = stableHash(name) / 0xffffffff;
+  const lastIndex = Math.max(0, paletteLength - 1);
+  let targetRatio: number;
+  if (positive > negative) targetRatio = 0.055 + distribution * 0.365;
+  else if (negative > positive) targetRatio = 0.61 + distribution * 0.36;
+  else targetRatio = 0.385 + distribution * 0.23;
+  if (negative > positive) targetRatio += Math.min(0.055, intensity * 0.007);
+  if (positive > negative) targetRatio -= Math.min(0.045, intensity * 0.006);
+  return Math.round(Math.max(0, Math.min(1, targetRatio)) * lastIndex);
 }
 
 /** Build one separately addressable, color-bearing point for every source entry. */
 export function buildEmotionGlossaryPoints(spectrum: EmotionColorReference[]): EmotionGlossaryPoint[] {
   if (!Array.isArray(spectrum) || spectrum.length === 0) throw new Error('The base emotion-color palette is empty.');
   for (const color of spectrum) {
-    if (!color || typeof color.name !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color.hex) || !Number.isFinite(color.freq) || color.freq < 0 || color.freq > 1000) {
-      throw new Error('Every palette color needs a name, a six-digit hex swatch, and a frequency from 0 to 1000.');
+    if (!color || typeof color.name !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color.hex)) {
+      throw new Error('Every palette color needs a name and a valid display color.');
     }
   }
   const exactByName = new Map<string, EmotionColorReference>();
@@ -447,13 +447,10 @@ export function buildEmotionGlossaryPoints(spectrum: EmotionColorReference[]): E
   return EMOTION_GLOSSARY_ROWS.map(([name, definition]) => {
     const exact = exactByName.get(normalizeName(name));
     if (exact) {
-      return { name, definition, hex: exact.hex, freq: exact.freq, colorSourceName: exact.name, colorAssignment: 'exact' as const };
+      return { name, definition, hex: exact.hex, colorSourceName: exact.name, colorAssignment: 'exact' as const };
     }
-    const targetFrequency = inferFrequency(name, definition);
-    const nearest = spectrum.reduce((best, candidate) =>
-      Math.abs(candidate.freq - targetFrequency) < Math.abs(best.freq - targetFrequency) ? candidate : best,
-      spectrum[0]
-    );
-    return { name, definition, hex: nearest.hex, freq: nearest.freq, colorSourceName: nearest.name, colorAssignment: 'inferred' as const };
+    const paletteIndex = inferPaletteIndex(name, definition, spectrum.length);
+    const nearest = spectrum[paletteIndex];
+    return { name, definition, hex: nearest.hex, colorSourceName: nearest.name, colorAssignment: 'inferred' as const };
   });
 }
