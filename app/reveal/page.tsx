@@ -118,7 +118,7 @@ export default function RevealPage() {
       eyebrow: 'PRIMARY AURA',
       title: aurascope.primaryAura,
       color: auraData.hues[0].hex,
-      body: `Traditional ${auraData.zodiac.sign} symbolism combines ${auraData.zodiac.element}, ${auraData.zodiac.modality}, and its traditional ruler, ${auraData.zodiac.traditionalRuler}. Positive, neutral, and shadow traits each contribute one-third to the base zodiac average. ${auraData.daysAlive} days alive divided by ${auraData.spectrumPointCount} emotion-color points equals ${auraData.ageSpectrumRatio.toFixed(3)} spectrum cycles. First hue: ${auraData.firstHue.name} (${auraData.firstHue.hex}); current placement: ${auraData.currentPlacement.name} at ${auraData.currentPlacement.freq}/1000.`,
+      body: `Traditional ${auraData.zodiac.sign} symbolism combines ${auraData.zodiac.element}, ${auraData.zodiac.modality}, and its traditional ruler, ${auraData.zodiac.traditionalRuler}. Positive, neutral, and shadow traits each contribute one-third to the base zodiac average. ${auraData.daysAlive} days lived cycle through ${auraData.spectrumPointCount} named emotion-color points to determine the birthdate-derived starting hue. First hue: ${cleanName(auraData.firstHue.name)}; today's contextual marker: ${cleanName(auraData.currentPlacement.name)}.`,
       button: 'Reveal secondary aura'
     },
     {
@@ -132,7 +132,7 @@ export default function RevealPage() {
       eyebrow: 'THIRD HUE',
       title: cleanName(auraData.hues[2].name),
       color: auraData.hues[2].hex,
-      body: `The third hue blends the balanced zodiac hue, birthstone hue, and age-derived first hue. The final placement also includes ${auraData.currentPlacement.name} (${auraData.currentPlacement.hex}), selected from ${auraData.spectrumPointCount} spectrum points using ${auraData.daysAlive} days lived.`,
+      body: `The third hue blends the balanced zodiac hue, birthstone hue, and age-derived first hue. Today's contextual marker is ${cleanName(auraData.currentPlacement.name)}, selected from the same ${auraData.spectrumPointCount}-point emotion-color palette using days lived and the current date.`,
       button: 'Reveal Aura Identity'
     }
   ]
@@ -206,12 +206,12 @@ export default function RevealPage() {
               <div style={{ border: `1px solid ${auraData.firstHue.hex}66`, background: `${auraData.firstHue.hex}18`, borderRadius: '18px', padding: '16px' }}>
                 <p style={labelStyle()}>FIRST HUE · POINT {auraData.firstHueIndex + 1}</p>
                 <h3 style={{ color: auraData.firstHue.hex, marginBottom: '6px' }}>{cleanName(auraData.firstHue.name)}</h3>
-                <p style={{ fontSize: '0.86rem', opacity: 0.75, margin: 0 }}>{auraData.firstHue.hex} · {auraData.firstHue.freq}/1000</p>
+                <p style={{ fontSize: '0.86rem', opacity: 0.75, margin: 0 }}>Birthdate-derived starting color</p>
               </div>
               <div style={{ border: `1px solid ${auraData.currentPlacement.hex}66`, background: `${auraData.currentPlacement.hex}18`, borderRadius: '18px', padding: '16px' }}>
                 <p style={labelStyle()}>CURRENT PLACEMENT · POINT {auraData.currentPlacementIndex + 1}</p>
                 <h3 style={{ color: auraData.currentPlacement.hex, marginBottom: '6px' }}>{cleanName(auraData.currentPlacement.name)}</h3>
-                <p style={{ fontSize: '0.86rem', opacity: 0.75, margin: 0 }}>{auraData.currentPlacement.hex} · {auraData.currentPlacement.freq}/1000</p>
+                <p style={{ fontSize: '0.86rem', opacity: 0.75, margin: 0 }}>Today's contextual color</p>
               </div>
             </div>
             <p style={{ lineHeight: 1.75, marginBottom: '10px' }}>
