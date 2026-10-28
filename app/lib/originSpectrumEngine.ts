@@ -275,7 +275,7 @@ export function generateOriginSpectrum(
       basePositionIndex * (1 - birthstone.opacity) + gemstonePositionIndex * birthstone.opacity
     )
     const compositeHex = blendHex(baseHex, birthstone.hex, birthstone.opacity)
-    const compositeNearestEmotion = nearestEmotionByColor(compositeHex, spectrum)
+    const compositeNearestEmotion = nearestEmotionAtIndex(compositePositionIndex, spectrum)
     const compositeName = `${zodiacRecord.sign} ${cleanEmotionName(firstHue.name)}–${cleanEmotionName(currentPlacement.name)} with ${birthstone.name} Resonance`
     const definition = `The Aura-Spectrum base balances ${zodiacRecord.pos.name} (constructive channel), ${zodiacRecord.neu.name} (steady channel), and ${zodiacRecord.neg.name} (shadow channel), each contributing one third within the zodiac triad. ${cleanEmotionName(firstHue.name)} establishes the age-derived first hue; ${cleanEmotionName(currentPlacement.name)} marks today's spectrum placement. The literal birthstone swatch ${birthstone.hex} for ${birthstone.name} is then overlaid at ${birthstone.opacityPercent.toFixed(1)}% opacity, based on the great-circle distance from ${birthstone.origin.name} to the representative ${birthstone.deposit} region (${Math.round(birthstone.distanceKm).toLocaleString('en-US')} km). This geographic resonance is a custom symbolic rule, not a physical force or scientific measurement.`
     composite = {
