@@ -3,14 +3,12 @@ import type { BirthstoneResonance } from './birthstoneResonance'
 export interface OriginEmotionColor {
   name: string
   hex: string
-  freq: number
 }
 
 export interface OriginTraitChannel {
   polarity: 'positive' | 'neutral' | 'shadow'
   name: string
   hex: string
-  freq: number
   weight: number
 }
 
@@ -29,10 +27,9 @@ export interface OriginSpectrumComposite {
   name: string
   hex: string
   baseHex: string
-  frequency: number
   nearestEmotion: OriginEmotionColor
   definition: string
-  sourceWeights: Array<{ source: string; name: string; hex: string; freq: number; weight: number }>
+  sourceWeights: Array<{ source: string; name: string; hex: string; weight: number }>
 }
 
 export interface OriginSpectrumResult {
@@ -58,7 +55,6 @@ export interface OriginSpectrumResult {
     traditionalRuler: string
     description: string
     traitChannels: OriginTraitChannel[]
-    averageFrequency: number
     averageEmotion: OriginEmotionColor
   }
   composite: OriginSpectrumComposite | null
@@ -100,10 +96,23 @@ function dayOfYear(date: Date): number {
   return Math.floor((date.getTime() - start) / DAY_MS) + 1
 }
 
-function nearestEmotion(freq: number, spectrum: OriginEmotionColor[]): OriginEmotionColor {
-  return spectrum.reduce((best, item) =>
-    Math.abs(item.freq - freq) < Math.abs(best.freq - freq) ? item : best
-  )
+function paletteIndex(color: Pick<OriginEmotionColor, 'name' | 'hex'>, spectrum: OriginEmotionColor[]): number {
+  const byName = spectrum.findIndex((item) => item.name === color.name)
+  if (byName >= 0) return byName
+  const channels = (value: string) => [0, 2, 4].map((offset) => Number.parseInt(value.replace('#', '').slice(offset, offset + 2), 16))
+  const target = channels(color.hex)
+  let bestIndex = 0
+  let bestDistance = Number.POSITIVE_INFINITY
+  spectrum.forEach((item, index) => {
+    const candidate = channels(item.hex)
+    const distance = candidate.reduce((sum, channel, i) => sum + (channel - target[i]) ** 2, 0)
+    if (distance < bestDistance) { bestDistance = distance; bestIndex = index }
+  })
+  return bestIndex
+}
+
+function nearestEmotionAtIndex(index: number, spectrum: OriginEmotionColor[]): OriginEmotionColor {
+  return spectrum[Math.max(0, Math.min(spectrum.length - 1, Math.round(index)))]
 }
 
 function averageHex(colors: string[]): string {
@@ -190,9 +199,8 @@ export function generateOriginSpectrum(
   if (!Array.isArray(spectrum) || spectrum.length < 2) {
     throw new Error('AuraSpanse needs at least two spectrum points')
   }
-  if (spectrum.some((item) => !item || typeof item.name !== 'string' ||
-      !Number.isFinite(item.freq) || item.freq < 0 || item.freq > 1000)) {
-    throw new Error('Every spectrum point must have a name and a frequency from 0 to 1000')
+  if (spectrum.some((item) => !item || typeof item.name !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(item.hex))) {
+    throw new Error('Every spectrum point must have a name and a valid display color')
   }
 
   const birthDate = parseBirthDate(birthDateString)
@@ -238,13 +246,12 @@ export function generateOriginSpectrum(
     polarity,
     name: color.name,
     hex: color.hex,
-    freq: color.freq,
     weight: 1 / 3
   }))
-  const zodiacAverageFrequency = Math.round(
-    rawChannels.reduce((sum, item) => sum + item.color.freq, 0) / rawChannels.length
+  const zodiacAveragePositionIndex = Math.round(
+    rawChannels.reduce((sum, item) => sum + paletteIndex(item.color, spectrum), 0) / rawChannels.length
   )
-  const zodiacAverageEmotion = nearestEmotion(zodiacAverageFrequency, spectrum)
+  const zodiacAverageEmotion = nearestEmotionAtIndex(zodiacAveragePositionIndex, spectrum)
 
   let composite: OriginSpectrumComposite | null = null
   if (includeComposite) {
@@ -258,13 +265,14 @@ export function generateOriginSpectrum(
       { source: 'Age-derived first hue', color: firstHue },
       { source: 'Current spectrum placement', color: currentPlacement }
     ]
-    const baseFrequency = Math.round(
-      sourceColors.reduce((sum, item) => sum + item.color.freq, 0) / sourceColors.length
+    const basePositionIndex = Math.round(
+      sourceColors.reduce((sum, item) => sum + paletteIndex(item.color, spectrum), 0) / sourceColors.length
     )
     const baseHex = averageHex(sourceColors.map((item) => item.color.hex))
     const gemstoneEmotion = nearestEmotionByColor(birthstone.hex, spectrum)
-    const compositeFrequency = Math.round(
-      baseFrequency * (1 - birthstone.opacity) + gemstoneEmotion.freq * birthstone.opacity
+    const gemstonePositionIndex = paletteIndex(gemstoneEmotion, spectrum)
+    const compositePositionIndex = Math.round(
+      basePositionIndex * (1 - birthstone.opacity) + gemstonePositionIndex * birthstone.opacity
     )
     const compositeHex = blendHex(baseHex, birthstone.hex, birthstone.opacity)
     const compositeNearestEmotion = nearestEmotionByColor(compositeHex, spectrum)
@@ -274,7 +282,6 @@ export function generateOriginSpectrum(
       name: compositeName,
       hex: compositeHex,
       baseHex,
-      frequency: compositeFrequency,
       nearestEmotion: compositeNearestEmotion,
       definition,
       sourceWeights: [
@@ -282,14 +289,12 @@ export function generateOriginSpectrum(
           source: item.source,
           name: item.color.name,
           hex: item.color.hex,
-          freq: item.color.freq,
           weight: (1 - birthstone.opacity) / sourceColors.length
         })),
         {
           source: `Birthstone swatch · ${birthstone.deposit}`,
           name: birthstone.name,
           hex: birthstone.hex,
-          freq: gemstoneEmotion.freq,
           weight: birthstone.opacity
         }
       ]
@@ -319,7 +324,7 @@ export function generateOriginSpectrum(
       traditionalRuler: zodiacRecord.traditionalRuler,
       description: zodiacRecord.description,
       traitChannels,
-      averageFrequency: zodiacAverageFrequency,
+      averagePositionIndex: zodiacAveragePositionIndex,
       averageEmotion: zodiacAverageEmotion
     },
     composite
