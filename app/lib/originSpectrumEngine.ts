@@ -25,6 +25,16 @@ interface ZodiacEntry {
   neg: OriginEmotionColor
 }
 
+export interface OriginSpectrumComposite {
+  name: string
+  hex: string
+  baseHex: string
+  frequency: number
+  nearestEmotion: OriginEmotionColor
+  definition: string
+  sourceWeights: Array<{ source: string; name: string; hex: string; freq: number; weight: number }>
+}
+
 export interface OriginSpectrumResult {
   birthDate: string
   currentDate: string
@@ -51,15 +61,7 @@ export interface OriginSpectrumResult {
     averageFrequency: number
     averageEmotion: OriginEmotionColor
   }
-  composite: {
-    name: string
-    hex: string
-    baseHex: string
-    frequency: number
-    nearestEmotion: OriginEmotionColor
-    definition: string
-    sourceWeights: Array<{ source: string; name: string; hex: string; freq: number; weight: number }>
-  }
+  composite: OriginSpectrumComposite | null
 }
 
 /**
@@ -177,9 +179,11 @@ export function generateOriginSpectrum(
     zodiacMap: object
     resolveZodiacSign: (date: Date) => string
     getBirthstoneResonance: (month: number) => BirthstoneResonance
+    includeComposite?: boolean
   }
 ): OriginSpectrumResult {
   const { now, spectrum, zodiacMap, resolveZodiacSign, getBirthstoneResonance } = dependencies
+  const includeComposite = dependencies.includeComposite !== false
   if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
     throw new Error('The current date must be valid')
   }
@@ -242,28 +246,55 @@ export function generateOriginSpectrum(
   )
   const zodiacAverageEmotion = nearestEmotion(zodiacAverageFrequency, spectrum)
 
-  // The five primary contributors remain equal in the base field.
-  // The actual gemstone hex is then layered over that base using the geographic
-  // proximity opacity. The stone's name is metadata; only its literal hex drives color.
-  const sourceColors = [
-    { source: 'Zodiac · positive', color: zodiacRecord.pos },
-    { source: 'Zodiac · neutral', color: zodiacRecord.neu },
-    { source: 'Zodiac · shadow', color: zodiacRecord.neg },
-    { source: 'Age-derived first hue', color: firstHue },
-    { source: 'Current spectrum placement', color: currentPlacement }
-  ]
-  const baseFrequency = Math.round(
-    sourceColors.reduce((sum, item) => sum + item.color.freq, 0) / sourceColors.length
-  )
-  const baseHex = averageHex(sourceColors.map((item) => item.color.hex))
-  const gemstoneEmotion = nearestEmotionByColor(birthstone.hex, spectrum)
-  const compositeFrequency = Math.round(
-    baseFrequency * (1 - birthstone.opacity) + gemstoneEmotion.freq * birthstone.opacity
-  )
-  const compositeHex = blendHex(baseHex, birthstone.hex, birthstone.opacity)
-  const compositeNearestEmotion = nearestEmotionByColor(compositeHex, spectrum)
-  const compositeName = `${zodiacRecord.sign} ${cleanEmotionName(firstHue.name)}–${cleanEmotionName(currentPlacement.name)} with ${birthstone.name} Resonance`
-  const definition = `The Aura-Spectrum base balances ${zodiacRecord.pos.name} (constructive channel), ${zodiacRecord.neu.name} (steady channel), and ${zodiacRecord.neg.name} (shadow channel), each contributing one third within the zodiac triad. ${cleanEmotionName(firstHue.name)} establishes the age-derived first hue; ${cleanEmotionName(currentPlacement.name)} marks today's spectrum placement. The literal birthstone swatch ${birthstone.hex} for ${birthstone.name} is then overlaid at ${birthstone.opacityPercent.toFixed(1)}% opacity, based on the great-circle distance from ${birthstone.origin.name} to the representative ${birthstone.deposit} region (${Math.round(birthstone.distanceKm).toLocaleString('en-US')} km). This geographic resonance is a custom symbolic rule, not a physical force or scientific measurement.`
+  let composite: OriginSpectrumComposite | null = null
+  if (includeComposite) {
+    // The five primary contributors remain equal in the base field.
+    // The actual gemstone hex is then layered over that base using the geographic
+    // proximity opacity. The stone's name is metadata; only its literal hex drives color.
+    const sourceColors = [
+      { source: 'Zodiac · positive', color: zodiacRecord.pos },
+      { source: 'Zodiac · neutral', color: zodiacRecord.neu },
+      { source: 'Zodiac · shadow', color: zodiacRecord.neg },
+      { source: 'Age-derived first hue', color: firstHue },
+      { source: 'Current spectrum placement', color: currentPlacement }
+    ]
+    const baseFrequency = Math.round(
+      sourceColors.reduce((sum, item) => sum + item.color.freq, 0) / sourceColors.length
+    )
+    const baseHex = averageHex(sourceColors.map((item) => item.color.hex))
+    const gemstoneEmotion = nearestEmotionByColor(birthstone.hex, spectrum)
+    const compositeFrequency = Math.round(
+      baseFrequency * (1 - birthstone.opacity) + gemstoneEmotion.freq * birthstone.opacity
+    )
+    const compositeHex = blendHex(baseHex, birthstone.hex, birthstone.opacity)
+    const compositeNearestEmotion = nearestEmotionByColor(compositeHex, spectrum)
+    const compositeName = `${zodiacRecord.sign} ${cleanEmotionName(firstHue.name)}–${cleanEmotionName(currentPlacement.name)} with ${birthstone.name} Resonance`
+    const definition = `The Aura-Spectrum base balances ${zodiacRecord.pos.name} (constructive channel), ${zodiacRecord.neu.name} (steady channel), and ${zodiacRecord.neg.name} (shadow channel), each contributing one third within the zodiac triad. ${cleanEmotionName(firstHue.name)} establishes the age-derived first hue; ${cleanEmotionName(currentPlacement.name)} marks today's spectrum placement. The literal birthstone swatch ${birthstone.hex} for ${birthstone.name} is then overlaid at ${birthstone.opacityPercent.toFixed(1)}% opacity, based on the great-circle distance from ${birthstone.origin.name} to the representative ${birthstone.deposit} region (${Math.round(birthstone.distanceKm).toLocaleString('en-US')} km). This geographic resonance is a custom symbolic rule, not a physical force or scientific measurement.`
+    composite = {
+      name: compositeName,
+      hex: compositeHex,
+      baseHex,
+      frequency: compositeFrequency,
+      nearestEmotion: compositeNearestEmotion,
+      definition,
+      sourceWeights: [
+        ...sourceColors.map((item) => ({
+          source: item.source,
+          name: item.color.name,
+          hex: item.color.hex,
+          freq: item.color.freq,
+          weight: (1 - birthstone.opacity) / sourceColors.length
+        })),
+        {
+          source: `Birthstone swatch · ${birthstone.deposit}`,
+          name: birthstone.name,
+          hex: birthstone.hex,
+          freq: gemstoneEmotion.freq,
+          weight: birthstone.opacity
+        }
+      ]
+    }
+  }
 
   return {
     birthDate: birthDateString,
@@ -291,29 +322,6 @@ export function generateOriginSpectrum(
       averageFrequency: zodiacAverageFrequency,
       averageEmotion: zodiacAverageEmotion
     },
-    composite: {
-      name: compositeName,
-      hex: compositeHex,
-      baseHex,
-      frequency: compositeFrequency,
-      nearestEmotion: compositeNearestEmotion,
-      definition,
-      sourceWeights: [
-        ...sourceColors.map((item) => ({
-          source: item.source,
-          name: item.color.name,
-          hex: item.color.hex,
-          freq: item.color.freq,
-          weight: (1 - birthstone.opacity) / sourceColors.length
-        })),
-        {
-          source: `Birthstone swatch · ${birthstone.deposit}`,
-          name: birthstone.name,
-          hex: birthstone.hex,
-          freq: gemstoneEmotion.freq,
-          weight: birthstone.opacity
-        }
-      ]
-    }
+    composite
   }
 }
