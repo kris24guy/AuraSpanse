@@ -183,7 +183,7 @@ export function generateOriginSpectrum(
   }
 ): OriginSpectrumResult {
   const { now, spectrum, zodiacMap, resolveZodiacSign, getBirthstoneResonance } = dependencies
-  const includeComposite = dependencies.includeComposite !== false
+  const includeComposite = dependencies.includeComposite === true
   if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
     throw new Error('The current date must be valid')
   }
