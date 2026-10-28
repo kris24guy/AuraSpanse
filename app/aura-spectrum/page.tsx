@@ -102,6 +102,39 @@ export default function AuraSpectrumPage() {
   }, [retryKey])
 
 
+  useEffect(() => {
+    if (!result) return
+    let cancelled = false
+
+    fetch('/api/subscribe-aura-spectrum?birthDate=' + encodeURIComponent(result.birthDate), {
+      method: 'GET',
+      cache: 'no-store',
+    })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (
+          cancelled ||
+          !data?.success ||
+          data.subscribed !== true ||
+          typeof data.blendHex !== 'string'
+        ) return
+
+        setUnlockedBlend({
+          hex: data.blendHex,
+          name: readableName(data.primaryHueName || result.firstHue.name) + ' × ' + (data.birthstoneName || result.birthstone.name),
+        })
+        setIsSubscribed(true)
+        setSubscriptionMessage('Your previous subscription has been verified. The two-primary blend is restored.')
+      })
+      .catch(() => {
+        // No signed subscription ticket: leave the combined hue locked.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [result])
+
   async function handleSubscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!result || !email.trim()) return
