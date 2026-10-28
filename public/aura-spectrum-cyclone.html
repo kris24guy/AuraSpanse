@@ -105,7 +105,7 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
   <div class="grid">
     <section class="frame" id="stage">
       <span class="tick a"></span><span class="tick b"></span><span class="tick c"></span><span class="tick d"></span>
-      <div class="tag"><span>374 emotion points // A to Z upward</span><i></i></div>
+      <div class="tag"><span>374 emotion points // A to Z upward</span><span id="stoneLayerText">COLOR POINTS</span><i></i></div>
       <canvas id="cv" role="img" aria-label="A rotating transparent can with a still black and white tornado inside. Each of the 374 colored wall points represents one defined emotion, ordered alphabetically from base to rim."></canvas>
       <div class="strip"><span>&gt; Cylinder // 374 pts // static b&amp;w</span><span id="stripSel"><em>●</em> Selected point</span></div>
     </section>
@@ -140,6 +140,31 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
       });
     }
   } catch (storageError) {}
+  var queryParams = new URLSearchParams(window.location.search);
+  var sourceStoneHex = queryParams.get('stone') || '';
+  var stoneHex = /^#[0-9a-fA-F]{6}$/.test(sourceStoneHex) ? sourceStoneHex : null;
+  var stoneOpacityInput = Number(queryParams.get('opacity'));
+  var stoneOpacity = Number.isFinite(stoneOpacityInput) ? Math.max(0, Math.min(1, stoneOpacityInput)) : 0;
+  var stoneLayerText = document.getElementById('stoneLayerText');
+  if (stoneLayerText) {
+    stoneLayerText.textContent = stoneHex
+      ? 'STONE HEX ' + stoneHex + ' · ' + Math.round(stoneOpacity * 100) + '%'
+      : 'COLOR POINTS';
+  }
+
+  function blendDisplayHex(baseHex, overlayHex, opacity) {
+    var cleanBase = baseHex.replace('#', ''), cleanOverlay = overlayHex.replace('#', '');
+    var base = [0, 2, 4].map(function (offset) { return parseInt(cleanBase.slice(offset, offset + 2), 16); });
+    var overlay = [0, 2, 4].map(function (offset) { return parseInt(cleanOverlay.slice(offset, offset + 2), 16); });
+    var alpha = Math.max(0, Math.min(1, opacity));
+    return '#' + base.map(function (value, index) {
+      return Math.round(value * (1 - alpha) + overlay[index] * alpha).toString(16).padStart(2, '0');
+    }).join('');
+  }
+  function darkenDisplayHex(baseHex, darkness) {
+    return blendDisplayHex(baseHex, '#07080c', darkness);
+  }
+
   var wall = DATA.wall;
   var W = 680, H = 700, CX = 340, R = 200, RY = 40, TOP = 70, BOT = 610, FUN_BOT = 490;
   var TAU = Math.PI * 2;
@@ -152,14 +177,18 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
 
   /* Each emotion gets an evenly spaced cylindrical wall position. */
   var nodes = [];
-  wall.forEach(function (w) { nodes.push({ kind: 'wall', name: w.n, def: w.d, hex: w.h, f: w.f, src: w.s, core: 4.6 }); });
+  wall.forEach(function (w) { nodes.push({ kind: 'wall', name: w.n, def: w.d, baseHex: w.h, hex: w.h, f: w.f, src: w.s, core: 4.6 }); });
   nodes.sort(function (x, y) { return x.name.localeCompare(y.name, 'en', { sensitivity: 'base', ignorePunctuation: true }); });
   var COLUMNS = 18, ROWS = Math.ceil(nodes.length / COLUMNS), byName = {};
   nodes.forEach(function (n, i) {
     n.id = i;
     n.theta = ((i % COLUMNS) / COLUMNS) * TAU;
     var row = Math.floor(i / COLUMNS);
-    n.y = BOT - 36 - (row / Math.max(1, ROWS - 1)) * (BOT - TOP - 72);
+    var heightRatio = row / Math.max(1, ROWS - 1);
+    n.y = BOT - 36 - heightRatio * (BOT - TOP - 72);
+    var overlayOpacity = stoneHex ? stoneOpacity * (1 - 0.23 * heightRatio) : 0;
+    var stoneLayered = blendDisplayHex(n.baseHex, stoneHex || n.baseHex, overlayOpacity);
+    n.hex = darkenDisplayHex(stoneLayered, 0.03 + 0.55 * heightRatio);
     byName[n.name] = n;
   });
 
@@ -378,10 +407,14 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     row.appendChild(sw); row.appendChild(el('h2', '', n.name)); insp.appendChild(row);
     var meta = el('div', 'meta');
     var place = 'letter ' + n.name.charAt(0).toUpperCase() + ' · point ' + (n.id + 1) + ' of ' + nodes.length;
-    meta.textContent = n.hex + ' · ' + place;
+    meta.textContent = n.baseHex + ' base → ' + n.hex + ' displayed · ' + place;
     insp.appendChild(meta);
     insp.appendChild(el('p', 'def', n.def));
-    insp.appendChild(el('p', 'prov', n.src === 'db' ? 'Hex taken from emotionColors.ts.' : 'No exact palette-name match; uses the nearest existing swatch at frequency ' + n.f + '/1000.'));
+    var provenance = n.src === 'db'
+      ? 'Base hex taken directly from emotionColors.ts.'
+      : 'No exact palette-name match; uses the nearest existing swatch at frequency ' + n.f + '/1000.';
+    if (stoneHex) provenance += ' Displayed color overlays literal stone hex ' + stoneHex + ' at ' + Math.round(stoneOpacity * 100) + '% model opacity, then fades darker toward the rim.';
+    insp.appendChild(el('p', 'prov', provenance));
   }
 
   var searchInput = document.getElementById('q'), countEl = document.getElementById('count'), listEl = document.getElementById('list');
