@@ -81,7 +81,7 @@ export default function AuraSpectrumPage() {
       // Supply the display-only can with the exact same point records used by the reveal engine.
       try {
         window.localStorage.setItem('aura-spectrum-cyclone-points', JSON.stringify(
-          emotionGlossaryPoints.map(({ name, definition, hex, freq, colorAssignment }) => ({ name, definition, hex, freq, colorAssignment }))
+          emotionGlossaryPoints.map(({ name, definition, hex, colorAssignment }) => ({ name, definition, hex, colorAssignment }))
         ))
       } catch {
         // The can iframe falls back to its bundled display data if storage is blocked.
@@ -240,7 +240,7 @@ export default function AuraSpectrumPage() {
             <p style={eyebrow}>THE 374-POINT EMOTION CAN</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Explore the emotional spectrum</h2>
             <p style={muted}>
-              The transparent can is the visual explorer, not a second calculation engine. It loads the same 374 names, definitions, base colors, and frequency positions used by the reveal model. Both the wall points and central tornado take a tint from Primary Hue 2's literal stone hex using the engine's geographic-opacity value. A nearer geological-deposit reference produces a stronger stone-color tint; a farther one leaves more of the black-and-white core visible. Height separately darkens the color toward the upper rim. The stored emotion color and definition remain inspectable for each point.
+              The transparent can is the visual explorer, not a second calculation engine. It loads the same 374 names, definitions, and original colors used by the reveal model. Both the wall points and central tornado take a tint from Primary Hue 2's natural-stone color using the deposit-proximity result. A nearer geological-deposit reference produces a stronger tint; a farther one leaves more of the black-and-white core visible. Height separately darkens the color toward the upper rim. The stored emotion color and definition remain inspectable for each point.
             </p>
             <div style={{ marginTop: '18px', border: '1px solid rgba(255,255,255,0.11)', borderRadius: '10px', overflow: 'hidden', background: '#0a0a12' }}>
               <iframe
@@ -255,14 +255,14 @@ export default function AuraSpectrumPage() {
                 <p style={eyebrow}>PRIMARY HUE 1 · AGE-DERIVED</p>
                 <div style={{ height: '58px', borderRadius: '8px', margin: '14px 0', background: result.firstHue.hex }} />
                 <h3 style={{ color: result.firstHue.hex, margin: '0 0 5px' }}>{readableName(result.firstHue.name)}</h3>
-                <p style={muted}>{result.firstHue.hex} · frequency {result.firstHue.freq}/1000</p>
+                <p style={muted}>Age-derived starting color from the emotional spectrum.</p>
                 <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>{emotionGlossaryPoints[result.firstHueIndex]?.definition}</p>
               </div>
               <div style={{ border: '1px solid ' + result.currentPlacement.hex + '88', background: result.currentPlacement.hex + '18', borderRadius: '12px', padding: '18px' }}>
                 <p style={eyebrow}>CURRENT PLACEMENT · CONTEXT MARKER</p>
                 <div style={{ height: '58px', borderRadius: '8px', margin: '14px 0', background: result.currentPlacement.hex }} />
                 <h3 style={{ color: result.currentPlacement.hex, margin: '0 0 5px' }}>{readableName(result.currentPlacement.name)}</h3>
-                <p style={muted}>{result.currentPlacement.hex} · frequency {result.currentPlacement.freq}/1000</p>
+                <p style={muted}>Today's contextual marker in the same emotional spectrum.</p>
                 <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>Today's marker in the same spectrum. It is contextual and is not a third ingredient in the two-primary blend.</p>
               </div>
             </div>
@@ -273,10 +273,10 @@ export default function AuraSpectrumPage() {
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Literal stone color first. Name second.</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(125px, 0.7fr) minmax(210px, 1.5fr)', gap: '20px', alignItems: 'stretch', marginTop: '18px' }}>
               <div style={{ borderRadius: '18px', background: result.birthstone.hex, minHeight: '170px', boxShadow: `0 0 38px ${result.birthstone.hex}35`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', boxSizing: 'border-box', color: ['#EAF5FF','#F6F0E5','#C9D8D6','#E3A341','#A5C639'].includes(result.birthstone.hex) ? '#15151a' : '#ffffff' }}>
-                <p style={{ fontSize: '0.65rem', letterSpacing: '0.16em', margin: 0 }}>RAW SWATCH</p>
+                <p style={{ fontSize: '0.65rem', letterSpacing: '0.16em', margin: 0 }}>NATURAL STONE COLOR</p>
                 <div>
-                  <strong style={{ fontSize: '1.1rem' }}>{result.birthstone.hex}</strong>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.75rem' }}>Base color input</p>
+                  <strong style={{ fontSize: '1.1rem' }}>Original stone color</strong>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.75rem' }}>Used as the second primary hue</p>
                 </div>
               </div>
               <div>
@@ -312,11 +312,11 @@ export default function AuraSpectrumPage() {
                   <p style={{ ...eyebrow, letterSpacing: '0.14em' }}>{trait.polarity} · ⅓ weight</p>
                   <div style={{ height: '38px', borderRadius: '8px', background: trait.hex, margin: '12px 0' }} />
                   <strong style={{ color: trait.hex }}>{readableName(trait.name)}</strong>
-                  <p style={{ ...muted, fontSize: '0.85rem', marginBottom: 0 }}>{trait.hex} · {trait.freq}/1000</p>
+                  <p style={{ ...muted, fontSize: '0.85rem', marginBottom: 0 }}>Symbolic {trait.polarity} channel</p>
                 </div>
               ))}
             </div>
-            <p style={muted}>Equal-trait mean: {result.zodiac.averageFrequency}/1000 · nearest spectrum label: <strong>{readableName(result.zodiac.averageEmotion.name)}</strong></p>
+            <p style={muted}>The three symbolic channels balance into the spectrum label <strong>{readableName(result.zodiac.averageEmotion.name)}</strong>.</p>
           </section>
 
           <section style={{ ...panel, borderColor: isSubscribed ? ((unlockedBlend?.hex || result.firstHue.hex) + '88') : 'rgba(201,224,216,0.36)' }} aria-live="polite">
@@ -325,7 +325,7 @@ export default function AuraSpectrumPage() {
                 <p style={eyebrow}>SUBSCRIBE TO REVEAL THE BLEND</p>
                 <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.4rem)', margin: '12px 0' }}>Two primaries. One personal color.</h2>
                 <p style={muted}>
-                  Primary Hue 1 is <strong style={{ color: result.firstHue.hex }}>{readableName(result.firstHue.name)}</strong> ({result.firstHue.hex}). Primary Hue 2 is <strong style={{ color: result.birthstone.hex }}>{result.birthstone.name}</strong> ({result.birthstone.hex}). Both are shown separately. The combined hue is calculated on the server only after your email subscription is confirmed.
+                  Primary Hue 1 is <strong style={{ color: result.firstHue.hex }}>{readableName(result.firstHue.name)}</strong>. Primary Hue 2 is <strong style={{ color: result.birthstone.hex }}>{result.birthstone.name}</strong>, represented by its natural-stone color. Both appear separately. The combined hue is calculated on the server only after your email subscription is confirmed.
                 </p>
                 <form onSubmit={handleSubscribe} style={{ display: 'grid', gap: '14px', marginTop: '22px' }}>
                   <label htmlFor="aura-spectrum-email" style={{ display: 'grid', gap: '7px', fontSize: '0.9rem', color: 'rgba(243,240,235,0.9)' }}>
@@ -370,12 +370,12 @@ export default function AuraSpectrumPage() {
                   <div style={{ padding: '14px', border: '1px solid ' + result.firstHue.hex + '66', borderRadius: '8px' }}>
                     <div style={{ height: '46px', borderRadius: '6px', background: result.firstHue.hex, marginBottom: '10px' }} />
                     <strong>{readableName(result.firstHue.name)}</strong>
-                    <p style={{ ...muted, fontSize: '0.78rem' }}>{result.firstHue.hex}</p>
+                    <p style={{ ...muted, fontSize: '0.78rem' }}>Primary Hue 1 · original color</p>
                   </div>
                   <div style={{ padding: '14px', border: '1px solid ' + result.birthstone.hex + '66', borderRadius: '8px' }}>
                     <div style={{ height: '46px', borderRadius: '6px', background: result.birthstone.hex, marginBottom: '10px' }} />
                     <strong>{result.birthstone.name}</strong>
-                    <p style={{ ...muted, fontSize: '0.78rem' }}>{result.birthstone.hex} · geographic opacity {result.birthstone.opacityPercent.toFixed(1)}%</p>
+                    <p style={{ ...muted, fontSize: '0.78rem' }}>Deposit proximity · {result.birthstone.opacityPercent.toFixed(1)}% color strength</p>
                   </div>
                 </div>
                 <div style={{ height: 'min(240px, 42vw)', minHeight: '150px', borderRadius: '8px', margin: '24px 0 16px', background: unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex), boxShadow: '0 0 45px ' + ((unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex)) + '55'), border: '1px solid rgba(255,255,255,0.22)' }} />
@@ -383,7 +383,7 @@ export default function AuraSpectrumPage() {
                   {unlockedBlend?.name || (readableName(result.firstHue.name) + ' × ' + result.birthstone.name)}
                 </h3>
                 <p style={muted}>
-                  {(unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex))} · equal 50/50 RGB blend of Primary Hue 1 and Primary Hue 2 only.
+                  Equal blend of Primary Hue 1 and Primary Hue 2 only.
                 </p>
                 <p style={{ ...muted, fontSize: '0.8rem' }}>Zodiac traits and today's placement are contextual; neither is added as a third blend ingredient.</p>
               </>
