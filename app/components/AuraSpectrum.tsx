@@ -23,15 +23,15 @@ const AuraSpectrum: React.FC<AuraSpectrumProps> = ({ birthSeed, dayOfYear, activ
     const size = canvas.width;
     const cx = size / 2;
     const cy = size / 2;
-    const birthFreq = birthSeed % 1000;
+    const birthIndex = ((Math.trunc(birthSeed) % emotionColors.length) + emotionColors.length) % emotionColors.length;
 
     const annOffset = (dayOfYear / 365) * Math.PI * 2;
     const norm = (Math.sin(annOffset) + 1) / 2;
     const baseSpeed = 0.00018 + norm * 0.00014;
 
-    const freqToPolar = (freq: number) => {
+    const indexToPolar = (index: number) => {
       const TURNS = 4.5, MIN_R = 18;
-      const t = freq / 1000;
+      const t = Math.max(0, Math.min(1, index / Math.max(1, emotionColors.length - 1)));
       const maxR = (size / 2) - 12;
       return {
         r: MIN_R + t * (maxR - MIN_R),
@@ -62,15 +62,13 @@ const AuraSpectrum: React.FC<AuraSpectrumProps> = ({ birthSeed, dayOfYear, activ
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, size, size);
 
-      // Spiral ribbon
-      const steps = 600;
+      // Palette ribbon follows the ordered emotion entries.
+      const steps = emotionColors.length;
       for (let i = 0; i < steps - 1; i++) {
-        const f0 = (i / steps) * 1000, f1 = ((i + 1) / steps) * 1000;
-        const p0 = freqToPolar(f0), p1 = freqToPolar(f1);
+        const p0 = indexToPolar(i), p1 = indexToPolar(i + 1);
         const c0 = toXY(p0.r, p0.theta, rotation), c1 = toXY(p1.r, p1.theta, rotation);
-        
-        const colorIdx = Math.floor((i / steps) * (emotionColors.length - 1));
-        const hex = emotionColors[colorIdx].hex;
+
+        const hex = emotionColors[i].hex;
         const alpha = i < 60 ? i / 60 : 1;
         const aHex = Math.floor(alpha * 150).toString(16).padStart(2, '0');
         
@@ -96,7 +94,7 @@ const AuraSpectrum: React.FC<AuraSpectrumProps> = ({ birthSeed, dayOfYear, activ
       });
 
       // Birth point
-      const bp = freqToPolar(birthFreq);
+      const bp = indexToPolar(birthIndex);
       const bxy = toXY(bp.r, bp.theta, rotation);
       const pulse = 0.5 + 0.5 * Math.sin(Date.now() * (scanMode ? 0.005 : 0.002));
       const BGR = 8;
@@ -132,8 +130,8 @@ const AuraSpectrum: React.FC<AuraSpectrumProps> = ({ birthSeed, dayOfYear, activ
     <div className="relative w-full max-w-[500px] aspect-square mx-auto">
       <canvas
         ref={canvasRef}
-        width={1000}
-        height={1000}
+        width={800}
+        height={800}
         className="w-full h-full rounded-full"
       />
     </div>
