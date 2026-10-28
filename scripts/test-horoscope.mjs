@@ -10,7 +10,7 @@ const javascript = ts.transpile(source, {
 const moduleUrl = "data:text/javascript;base64," + Buffer.from(javascript).toString("base64");
 const { generateAuraHoroscope } = await import(moduleUrl);
 
-const emotion = (name, hex) => ({ name, hex, freq: 500 });
+const emotion = (name, hex) => ({ name, hex });
 const inputA = {
   zodiac: {
     sign: "Aries",
@@ -59,8 +59,8 @@ assert.match(a.relationships, /courage/i);
 assert.match(b.relationships, /dreaming/i);
 assert.match(a.direction, /compassion blend/i);
 assert.match(b.direction, /nostalgia blend/i);
-assert.equal(a.balancingColor, "Hope (#eeeeaa)");
-assert.equal(b.balancingColor, "Sorrow (#5555aa)");
+assert.equal(a.balancingColor, "Hope");
+assert.equal(b.balancingColor, "Sorrow");
 assert.equal(a.nextStep, inputA.action);
 assert.equal(b.nextStep, inputB.action);
 
