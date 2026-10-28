@@ -191,7 +191,7 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [x] Defined the first-hue index as the bounded residue of `N^daysAlive`, reduced to the spectrum, combined with the days-lived remainder and zodiac index. The current placement advances from the first hue using completed spectrum cycles and the current day of year.
 - [x] Removed direct registration-time weighting of the zodiac triad from `app/lib/auraEngine.ts`. Positive, neutral, and shadow zodiac traits now contribute equally to the base zodiac-trait average; the rotating selected trait is a reflective focus rather than a heavier vote.
 - [x] Added traditional element, modality, and planetary ruler metadata for all twelve signs in `app/lib/zodiacMap.ts`, using the traditional planetary rulers for Scorpio, Aquarius, and Pisces.
-- [x] Integrated the first hue and current placement into the final aura frequency and color blend, so age-derived placement affects the reading itself.
+- [x] Integrated the first hue and current placement into the final palette-position selection and color blend, so age-derived placement affects the reading itself.
 - [x] Connected the canonical static birthdate form to validate the entered date, store `birthdate` in local storage, and navigate to `/reveal`.
 - [x] Added a repeatable age-spectrum test and wired it into the existing GitHub Actions production-build workflow before `npm run build`.
 - [x] Added an on-page explanation and display of days alive, spectrum point count, quotient/cycles, first hue, current placement, and traditional zodiac frame.
@@ -220,13 +220,13 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [x] Named the reveal mechanism Aura-Spectrum and made `/aura-spectrum` the canonical route; the birthdate entry directs into it.
 - [x] Preserved the existing age/spectrum, zodiac-context, first-primary, current-marker, and literal birthstone-color model.
 - [x] Preserved the Chico, California reference point and the original geographic opacity rule for the monthly stone swatches.
-- [x] Clarified that the second primary is the gemstone's literal hex swatch; the gemstone name is metadata, not a color generator.
+- [x] Clarified that the second primary is the gemstone's natural color swatch; the gemstone name is metadata, not a color generator.
 - [ ] CI, production build, and the live birthdate route still require external verification before release.
 
 ## 2026-10-28 — Emotion can aesthetic and subscriber-only blend
 
 - [x] Replaced the separate cyclone graphic with the supplied transparent-can look while keeping the Aura-Spectrum engine in control of the two primaries.
-- [x] Connected the can's 374 names, definitions, colors, and frequency points to the same glossary used by the primary reveal.
+- [x] Connected the can's 374 names, definitions, colors, and ordered palette positions to the same glossary used by the primary reveal.
 - [x] Kept the can focused on the 374 emotion glossary, with no auxiliary emotion system or linked concept blends.
 - [x] Changed the display geometry to evenly spaced cylindrical rows and a regular tapered helix, independent of reveal calculations.
 - [x] Disabled composite calculation on the public pre-subscription path. Primary Hue 1 and Primary Hue 2 remain distinct on screen.
@@ -240,6 +240,15 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - Preserved the birthdate-entry handoff to /aura-spectrum and the existing age-derived Primary Hue 1 plus literal birthstone-swatch Primary Hue 2.
 - Kept the personal color blend locked until the server successfully confirms the subscriber in the configured Resend audience. The server computes only the equal-weight RGB blend of those two primaries; zodiac and current placement remain contextual.
 - Added regression checks for removal of stale spiral/Q-loop UI labels and the hard-coded starter emotion.
-- Passed the engine's literal birthstone hex and geographic opacity into the display-only can, blending the overlay into point rendering while retaining each point's base hex and verbatim definition in its inspector.
+- Passed the engine's natural birthstone color and geographic opacity into the display-only can, blending the overlay into point rendering while retaining each point's original color and verbatim definition in its inspector.
 - Added a server-signed, HttpOnly, birthdate-bound ticket so an already confirmed subscriber can restore their blend after refresh without trusting a client-side subscription flag.
 - Verification remains pending until CI and the deployed birthdate-to-subscription flow are confirmed.
+
+
+## 2026-10-28 — Ordered palette positions and plain-language color UI
+
+- [x] Removed the 0–1000 frequency values and calculations from the emotion palette, glossary assignment, both reading engines, the animated spectrum, and the retired vortex prototype.
+- [x] Use the emotion list's own order and length for selection and visual placement; geographic distance remains a separate input to stone-color strength.
+- [x] Replaced user-facing raw color-code displays with swatches, names, definitions, and plain-language color descriptions. Internal color values remain available to draw the colors and calculate the two-primary blend.
+- [x] Updated the older and newer reveal copy, the guide, subscription email, and regression tests to remove numerical color readouts.
+- [ ] CI, production build, and the live birthdate-to-subscription-to-reveal journey remain unverified.
