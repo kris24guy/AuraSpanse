@@ -162,6 +162,10 @@ assert.ok(pageSource.includes("aura-spectrum-cyclone.html"), "the reveal page mu
 assert.ok(pageSource.includes("includeComposite: false"), "the public page must not precompute the personal blend");
 assert.ok(pageSource.includes("/api/subscribe-aura-spectrum"), "the blend must be requested only through the subscription path");
 assert.ok(!pageSource.includes("result.composite"), "the pre-subscription page must not render the older composite model");
+assert.ok(!pageSource.includes("auraspanse-aura-spectrum-subscription"),
+  "the client must not restore the blend from a spoofable local-storage flag");
+assert.ok(pageSource.includes("data.subscribed !== true"),
+  "the page must wait for server-confirmed mailing-list subscription before revealing the blend");
 
 const cycloneSource = await readFile(new URL("../public/aura-spectrum-cyclone.html", import.meta.url), "utf8");
 assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show the 374 emotion entries");
