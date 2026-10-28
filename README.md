@@ -51,3 +51,9 @@ GitHub Actions runs the test suite before the production build. A repository com
 - Geosciences LibreTexts, gemstone minerals and producing regions: https://geo.libretexts.org/Bookshelves/Geology/Mineralogy_(Perkins_et_al.)/09:_Ore_Deposits_and_Economic_Minerals/9.02:_Ore_Minerals/9.2.04:_Gems_and_Gem_Minerals
 
 AuraSpanse is for entertainment and personal reflection.
+
+## Aura-Spectrum emotion cyclone
+
+`app/lib/emotionGlossary.ts` holds the 374 user-supplied emotion labels and definitions verbatim. Each entry becomes one separately addressable point on the cylindrical golden-angle cyclone. Exact normalized matches inherit the existing `emotionColors` swatch; unmatched entries receive a deterministic semantic frequency band and the nearest existing palette swatch. A searchable point index exposes each point's definition and hex color. The 374-point list is the live spectrum used by the birthdate/age placement calculation.
+
+Color assignments for unmatched labels are software heuristics, not scientific emotion measurements. The birthstone overlay and upward darkening continue to modify the displayed point color.
