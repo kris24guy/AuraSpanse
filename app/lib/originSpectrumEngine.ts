@@ -256,8 +256,8 @@ export function generateOriginSpectrum(
   let composite: OriginSpectrumComposite | null = null
   if (includeComposite) {
     // The five primary contributors remain equal in the base field.
-    // The actual gemstone hex is then layered over that base using the geographic
-    // proximity opacity. The stone's name is metadata; only its literal hex drives color.
+    // The natural stone color is layered over the base using geological proximity strength.
+    // The name identifies the stone; its configured swatch supplies the tint.
     const sourceColors = [
       { source: 'Zodiac · positive', color: zodiacRecord.pos },
       { source: 'Zodiac · neutral', color: zodiacRecord.neu },
@@ -277,7 +277,7 @@ export function generateOriginSpectrum(
     const compositeHex = blendHex(baseHex, birthstone.hex, birthstone.opacity)
     const compositeNearestEmotion = nearestEmotionAtIndex(compositePositionIndex, spectrum)
     const compositeName = `${zodiacRecord.sign} ${cleanEmotionName(firstHue.name)}–${cleanEmotionName(currentPlacement.name)} with ${birthstone.name} Resonance`
-    const definition = `The Aura-Spectrum base balances ${zodiacRecord.pos.name} (constructive channel), ${zodiacRecord.neu.name} (steady channel), and ${zodiacRecord.neg.name} (shadow channel), each contributing one third within the zodiac triad. ${cleanEmotionName(firstHue.name)} establishes the age-derived first hue; ${cleanEmotionName(currentPlacement.name)} marks today's spectrum placement. The literal birthstone swatch ${birthstone.hex} for ${birthstone.name} is then overlaid at ${birthstone.opacityPercent.toFixed(1)}% opacity, based on the great-circle distance from ${birthstone.origin.name} to the representative ${birthstone.deposit} region (${Math.round(birthstone.distanceKm).toLocaleString('en-US')} km). This geographic resonance is a custom symbolic rule, not a physical force or scientific measurement.`
+    const definition = `The Aura-Spectrum base balances ${zodiacRecord.pos.name} (constructive channel), ${zodiacRecord.neu.name} (steady channel), and ${zodiacRecord.neg.name} (shadow channel), each contributing one third within the zodiac triad. ${cleanEmotionName(firstHue.name)} establishes the age-derived first hue; ${cleanEmotionName(currentPlacement.name)} marks today's spectrum placement. The configured natural-stone color for ${birthstone.name} is then layered at ${birthstone.opacityPercent.toFixed(1)}% strength, based on the great-circle distance from ${birthstone.origin.name} to the representative ${birthstone.deposit} region (${Math.round(birthstone.distanceKm).toLocaleString('en-US')} km). This geographic resonance is a custom symbolic rule, not a physical force or scientific measurement.`
     composite = {
       name: compositeName,
       hex: compositeHex,
