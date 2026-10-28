@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { AURA_SPECTRUM_PRIMARY_POINTS } from '../../lib/auraSpectrumCycloneData'
@@ -33,6 +34,108 @@ function blendTwoPrimaryHex(firstHex: string, secondHex: string): string {
   ).join('')
 }
 
+const REVEAL_COOKIE = 'auraspanse-aura-spectrum-ticket'
+const REVEAL_TTL_MS = 90 * 24 * 60 * 60 * 1000
+
+interface RevealTicket {
+  email: string
+  birthDate: string
+  expiresAt: number
+}
+
+function calculatePrimaryResult(birthDate: string) {
+  return generateOriginSpectrum(birthDate, {
+    now: new Date(),
+    spectrum: AURA_SPECTRUM_PRIMARY_POINTS,
+    zodiacMap,
+    resolveZodiacSign: (date) => getZodiacSign(date),
+    getBirthstoneResonance,
+    includeComposite: false,
+  })
+}
+
+function signRevealPayload(payload: string, secret: string): string {
+  return createHmac('sha256', secret).update(payload).digest('base64url')
+}
+
+function createRevealTicket(email: string, birthDate: string, secret: string): string {
+  const payload = Buffer.from(JSON.stringify({
+    email,
+    birthDate,
+    expiresAt: Date.now() + REVEAL_TTL_MS,
+  } satisfies RevealTicket)).toString('base64url')
+  return payload + '.' + signRevealPayload(payload, secret)
+}
+
+function verifyRevealTicket(token: string, birthDate: string, secret: string): RevealTicket | null {
+  const parts = token.split('.')
+  if (parts.length !== 2) return null
+  const expected = Buffer.from(signRevealPayload(parts[0], secret))
+  const received = Buffer.from(parts[1])
+  if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null
+
+  try {
+    const ticket = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8')) as RevealTicket
+    if (
+      !ticket ||
+      typeof ticket.email !== 'string' ||
+      !ticket.email.includes('@') ||
+      ticket.birthDate !== birthDate ||
+      !Number.isFinite(ticket.expiresAt) ||
+      ticket.expiresAt < Date.now()
+    ) return null
+    return ticket
+  } catch {
+    return null
+  }
+}
+
+function setRevealCookie(response: NextResponse, email: string, birthDate: string, secret: string) {
+  response.cookies.set(REVEAL_COOKIE, createRevealTicket(email, birthDate, secret), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api/subscribe-aura-spectrum',
+    maxAge: Math.floor(REVEAL_TTL_MS / 1000),
+  })
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const secret = process.env.RESEND_API_KEY
+    const birthDate = request.nextUrl.searchParams.get('birthDate') || ''
+    const token = request.cookies.get(REVEAL_COOKIE)?.value
+    if (!secret || !token || !birthDate) {
+      return NextResponse.json({ success: false, subscribed: false }, { status: 401 })
+    }
+
+    const ticket = verifyRevealTicket(token, birthDate, secret)
+    if (!ticket) {
+      return NextResponse.json({ success: false, subscribed: false }, { status: 401 })
+    }
+
+    const result = calculatePrimaryResult(ticket.birthDate)
+    const blendHex = blendTwoPrimaryHex(result.firstHue.hex, result.birthstone.hex)
+    const response = NextResponse.json({
+      success: true,
+      subscribed: true,
+      emailSent: false,
+      birthDate: result.birthDate,
+      primaryHueName: readableName(result.firstHue.name),
+      primaryHueHex: result.firstHue.hex,
+      birthstoneName: result.birthstone.name,
+      birthstoneHex: result.birthstone.hex,
+      birthstoneOpacityPercent: result.birthstone.opacityPercent,
+      blendHex,
+    })
+    setRevealCookie(response, ticket.email, result.birthDate, secret)
+    return response
+  } catch (error) {
+    console.error('[Aura-Spectrum ticket restore]', error)
+    return NextResponse.json({ success: false, subscribed: false }, { status: 401 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
@@ -62,6 +165,10 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       )
     }
+
+    // Validate the birthdate and resolve the two separate primaries before subscribing.
+    // No composite color is calculated at this stage.
+    const result = calculatePrimaryResult(birthDate)
 
     // Add the address to the configured Resend audience before producing the blend.
     // The blend does not get returned to the browser unless the audience reports that
@@ -108,18 +215,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Subscription was not confirmed.' }, { status: 502 })
     }
 
-    // Only now run the reveal for this request. The existing engine supplies the same
-    // age-derived first hue and literal birthstone second hue used by the public page.
-    const result = generateOriginSpectrum(birthDate, {
-      now: new Date(),
-      spectrum: AURA_SPECTRUM_PRIMARY_POINTS,
-      zodiacMap,
-      resolveZodiacSign: (date) => getZodiacSign(date),
-      getBirthstoneResonance,
-      includeComposite: false,
-    })
-
-    // The only post-subscription blend is the equal-weight RGB average of the two primaries.
+    // Only after the mailing-list confirms subscription do the two separate primaries blend.
     const blendHex = blendTwoPrimaryHex(result.firstHue.hex, result.birthstone.hex)
     let emailSent = false
     const firstHueName = readableName(result.firstHue.name)
@@ -172,7 +268,7 @@ export async function POST(request: NextRequest) {
       console.error('[Aura-Spectrum reading email]', error)
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       subscribed: true,
       emailSent,
@@ -184,6 +280,10 @@ export async function POST(request: NextRequest) {
       birthstoneOpacityPercent: result.birthstone.opacityPercent,
       blendHex,
     })
+    // Persist a signed, HttpOnly ticket so a confirmed subscriber can restore the
+    // reveal after refresh. The client cannot unlock it by editing localStorage.
+    setRevealCookie(response, email, result.birthDate, apiKey)
+    return response
   } catch (error) {
     console.error('[Aura-Spectrum subscription]', error)
     return NextResponse.json({ error: 'AuraSpanse could not confirm the subscription. Please try again.' }, { status: 500 })
