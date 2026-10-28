@@ -39,15 +39,16 @@ const zodiacMap = {
   },
 };
 const fixedNow = new Date("2026-10-26T18:00:00.000Z");
-const deps = (now, resolveZodiacSign) => ({
+const deps = (now, resolveZodiacSign, includeComposite = false) => ({
   now,
   spectrum: emotionColors,
   zodiacMap,
   resolveZodiacSign,
   getBirthstoneResonance,
+  includeComposite,
 });
 const resolveAries = () => "aries";
-const result = generateOriginSpectrum("1989-01-01", deps(fixedNow, resolveAries));
+const result = generateOriginSpectrum("1989-01-01", deps(fixedNow, resolveAries, true));
 
 const glossaryPoints = buildEmotionGlossaryPoints(emotionColors);
 assert.equal(EMOTION_GLOSSARY_ROWS.length, 374, "every supplied definition should become a point");
@@ -122,7 +123,7 @@ const mix = (baseHex, overlayHex, opacity) => {
 assert.equal(result.composite.hex, mix(result.composite.baseHex, result.birthstone.hex, result.birthstone.opacity),
   "composite color must be mixed from the literal birthstone hex and the geographic opacity");
 
-const repeat = generateOriginSpectrum("1989-01-01", deps(fixedNow, resolveAries));
+const repeat = generateOriginSpectrum("1989-01-01", deps(fixedNow, resolveAries, true));
 assert.deepEqual(repeat, result, "same inputs on the same date must return the same result");
 
 const otherSign = generateOriginSpectrum("1989-01-01", deps(fixedNow, () => "taurus"));
@@ -166,7 +167,8 @@ assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show th
 assert.ok(cycloneSource.includes("aura-spectrum-cyclone-points"), "the can must receive the actual engine glossary");
 assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses regular cylindrical rows");
 assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the inner tornado uses a regular tapered helix");
-assert.ok(!/fibonacci|golden.angle|q-loop|qLoop|DATA\\.q/i.test(cycloneSource), "the visual must contain no Fibonacci algorithm or Q-loop system");
+assert.ok(!cycloneSource.includes("137.507764") && !cycloneSource.includes("3 - Math.sqrt(5)"), "the can must not use a special spiral-angle formula");
+assert.ok(!cycloneSource.includes("DATA.q") && !cycloneSource.includes("qLoop") && !cycloneSource.includes("linkTargets"), "the can must only contain the emotion glossary points");
 
 const subscriptionRoute = await readFile(new URL("../app/api/subscribe-aura-spectrum/route.ts", import.meta.url), "utf8");
 assert.ok(subscriptionRoute.includes("RESEND_AUDIENCE_ID"), "the signup must be backed by an actual Resend audience");
@@ -180,5 +182,5 @@ console.log("PASS: age/spectrum equation, zodiac balancing, and current placemen
 console.log("PASS: literal birthstone hex values and geographic opacity are preserved.");
 console.log("PASS: all 12 monthly stone swatches and their geographic opacity values validate.");
 console.log("PASS: all 374 source labels preserve their definitions and receive deterministic palette swatches.");
-console.log("PASS: the can is a 374-point regular cylinder/helix UI with no Fibonacci or Q-loop logic.");
+console.log("PASS: the can is a 374-point regular cylinder/helix UI driven by the emotion glossary.");
 console.log("PASS: the two-primary blend is not calculated by the public page and is calculated after confirmed subscription.");
