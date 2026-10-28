@@ -12,7 +12,7 @@ AuraSpanse is an astrology-inspired emotional-color and personal-reflection proj
 
 ## Can presentation
 
-The can displays 374 individually selectable emotion points around an evenly spaced cylindrical wall. The inner black-and-white tornado is a regular tapered helix. The geometry is a visual treatment, not an input into the birthdate reveal formula. The UI can search labels and show definitions; the birthdate-based model owns the actual primary selections.
+The can displays 374 individually selectable emotion points around an evenly spaced cylindrical wall. The inner black-and-white center uses a regular tapered helix; the wall uses equal cylindrical columns and rows. This is a visual treatment, not an input into the birthdate reveal formula. The parent page passes Primary Hue 2's literal stone hex and the model-computed geographic opacity to the can. Each displayed point layers that color over its base swatch and darkens with height, while the inspector preserves the base hex, displayed hex, and source definition. The UI can search labels and show definitions; the birthdate-based model owns the actual primary selections.
 
 The emotion glossary retains the 374 supplied definitions verbatim. Exact normalized palette-name matches inherit an existing emotion-color swatch. Other labels get a deterministic inferred frequency band and the closest existing palette color. Inferred assignments are software heuristics, not scientifically established emotion measurements.
 
@@ -34,7 +34,7 @@ Configure these environment variables in Render or the production environment:
 - `RESEND_AUDIENCE_ID` — the mailing-list audience used to confirm the subscription.
 - `EMAIL_FROM` — sender address verified for your Resend account.
 
-Without all three, the route returns a configuration error and the combined color stays locked. A successful Resend contact operation is the subscription checkpoint; email delivery is reported separately so a mail-send failure is not misrepresented as a failed list subscription.
+Without all three, the route returns a configuration error and the combined color stays locked. A successful Resend contact operation is the subscription checkpoint; email delivery is reported separately so a mail-send failure is not misrepresented as a failed list subscription. A server-signed, HttpOnly ticket bound to the birthdate lets an already confirmed subscriber restore the blend after refresh; a browser-stored flag alone cannot unlock it.
 
 ## Main implementation files
 
