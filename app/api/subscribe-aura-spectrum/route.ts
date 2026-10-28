@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { AURA_SPECTRUM_PRIMARY_POINTS } from '../../../lib/auraSpectrumCycloneData'
-import { getBirthstoneResonance } from '../../../lib/birthstoneResonance'
-import { generateOriginSpectrum } from '../../../lib/originSpectrumEngine'
-import { getZodiacSign, zodiacMap } from '../../../lib/zodiacMap'
+import { AURA_SPECTRUM_PRIMARY_POINTS } from '../../lib/auraSpectrumCycloneData'
+import { getBirthstoneResonance } from '../../lib/birthstoneResonance'
+import { generateOriginSpectrum } from '../../lib/originSpectrumEngine'
+import { getZodiacSign, zodiacMap } from '../../lib/zodiacMap'
 
 export const runtime = 'nodejs'
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       !emailFrom ? 'EMAIL_FROM' : '',
     ].filter(Boolean)
 
-    if (missing.length) {
+    if (!apiKey || !audienceId || !emailFrom) {
       return NextResponse.json(
         { error: 'AuraSpanse email signup is not configured. Set these Render environment variables: ' + missing.join(', ') + '.' },
         { status: 503 }
