@@ -7,6 +7,7 @@ import { getZodiacSign, zodiacMap } from '../lib/zodiacMap'
 import { generateOriginSpectrum, type OriginSpectrumResult } from '../lib/originSpectrumEngine'
 import AuraSpectrumCylinder from '../components/AuraSpectrumCylinder'
 import { getBirthstoneResonance } from '../lib/birthstoneResonance'
+import { buildEmotionGlossaryPoints } from '../lib/emotionGlossary'
 
 const shell: CSSProperties = {
   minHeight: '100vh',
@@ -37,6 +38,8 @@ const eyebrow: CSSProperties = {
   color: 'rgba(243,240,235,0.55)',
 }
 
+const emotionGlossaryPoints = buildEmotionGlossaryPoints(emotionColors)
+
 const muted: CSSProperties = {
   color: 'rgba(243,240,235,0.72)',
   lineHeight: 1.75,
@@ -65,7 +68,7 @@ export default function AuraSpectrumPage() {
 
       const generated = generateOriginSpectrum(birthDate, {
         now: new Date(),
-        spectrum: emotionColors,
+        spectrum: emotionGlossaryPoints,
         zodiacMap,
         resolveZodiacSign: (date) => getZodiacSign(date),
         getBirthstoneResonance,
@@ -86,7 +89,7 @@ export default function AuraSpectrumPage() {
           Aura-Spectrum
         </h1>
         <p style={{ ...muted, maxWidth: '670px', margin: '0 auto' }}>
-          One birthdate. Every emotion-color point. A bright central origin; an upward cylindrical Fibonacci path that darkens with height; and a birthstone hue whose literal color is modulated by geographic deposit proximity.
+          Every one of the 374 glossary entries becomes its own colored point on the cylindrical Fibonacci cyclone, retaining its definition. The existing palette supplies exact matches and nearest swatches for unmatched terms; the birthstone layer blends into the points and the path darkens upward.
         </p>
       </header>
 
@@ -132,10 +135,10 @@ export default function AuraSpectrumPage() {
           </section>
 
           <section style={panel}>
-            <p style={eyebrow}>THE CLOSED SPECTRUM</p>
-            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Bright origin → current placement → composite</h2>
+            <p style={eyebrow}>THE 374-POINT EMOTION CYCLONE</p>
+            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Every definition has a color-bearing point</h2>
             <AuraSpectrumCylinder
-              spectrum={emotionColors}
+              spectrum={emotionGlossaryPoints}
               firstHueIndex={result.firstHueIndex}
               currentPlacementIndex={result.currentPlacementIndex}
               birthstoneHex={result.birthstone.hex}
