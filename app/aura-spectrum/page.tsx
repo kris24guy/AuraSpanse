@@ -240,7 +240,7 @@ export default function AuraSpectrumPage() {
             <p style={eyebrow}>THE 374-POINT EMOTION CAN</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Explore the emotional spectrum</h2>
             <p style={muted}>
-              The transparent can is the visual explorer, not a second calculation engine. It loads the same 374 names, definitions, base colors, and frequency positions used by the reveal model. The rendered points layer Primary Hue 2's literal stone hex using the engine's geographic-opacity value, then darken toward the rim. The stored emotion color and definition remain inspectable for each point.
+              The transparent can is the visual explorer, not a second calculation engine. It loads the same 374 names, definitions, base colors, and frequency positions used by the reveal model. Both the wall points and central tornado take a tint from Primary Hue 2's literal stone hex using the engine's geographic-opacity value. A nearer geological-deposit reference produces a stronger stone-color tint; a farther one leaves more of the black-and-white core visible. Height separately darkens the color toward the upper rim. The stored emotion color and definition remain inspectable for each point.
             </p>
             <div style={{ marginTop: '18px', border: '1px solid rgba(255,255,255,0.11)', borderRadius: '10px', overflow: 'hidden', background: '#0a0a12' }}>
               <iframe
