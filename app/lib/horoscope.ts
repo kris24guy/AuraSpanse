@@ -47,7 +47,7 @@ export function generateAuraHoroscope(input: AuraHoroscopeInput): AuraHoroscope 
     balance: `The balancing invitation is to make room for both the signal represented by ${primary} and the counterpoint represented by ${secondary}. If either theme feels unlike your experience, use that difference as a prompt to identify what actually matters to you.`,
     relationships: `In connection with others, consider how ${selected.toLowerCase()} shows up in listening, boundaries, and clear communication. Ask one question before assuming what another person means, and express one need plainly.`,
     direction: `For goals and decisions, the ${blend} theme favors a small, observable next step over a sweeping promise. Choose one priority you can influence, then decide what progress would look like by the end of the day.`,
-    balancingColor: `${color} (${input.finalEmotion.hex})`,
+    balancingColor: color,
     nextStep: input.action
   }
 }
