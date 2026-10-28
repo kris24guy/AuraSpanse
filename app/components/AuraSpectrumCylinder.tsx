@@ -40,7 +40,7 @@ export default function AuraSpectrumCylinder({
   birthstoneHex,
   birthstoneOpacity,
 }: AuraSpectrumCylinderProps) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(currentPlacementIndex)
   const [search, setSearch] = useState('')
   const count = spectrum.length
   const cx = 210
@@ -121,6 +121,8 @@ export default function AuraSpectrumCylinder({
         <ellipse cx={cx} cy={topY} rx={radius} ry="17" fill="none" stroke="#d8d5e8" strokeOpacity="0.12" strokeDasharray="3 7" />
         <ellipse cx={cx} cy={baseY - 10} rx={radius} ry="17" fill="none" stroke={birthstoneHex} strokeOpacity={0.10 + birthstoneOpacity * 0.18} />
         <circle cx={cx} cy={baseY} r="34" fill="url(#aura-core-glow)" filter="url(#aura-soft-glow)" />
+        <circle cx={cx} cy={baseY} r="12" fill="#ffffff" fillOpacity="0.96" />
+        <circle cx={cx} cy={baseY} r="22" fill="none" stroke={birthstoneHex} strokeOpacity={birthstoneOpacity} strokeWidth="1.2" />
 
         {points.map((point) => (
           <g key={point.step}>
@@ -148,8 +150,7 @@ export default function AuraSpectrumCylinder({
             </circle>
           </g>
         ))}
-        <circle cx={cx} cy={baseY} r="12" fill="#ffffff" fillOpacity="0.96" />
-        <circle cx={cx} cy={baseY} r="22" fill="none" stroke={birthstoneHex} strokeOpacity={birthstoneOpacity} strokeWidth="1.2" />
+
         <text x={cx} y="24" fill="#a8a5b7" fontSize="9" textAnchor="middle" letterSpacing="2.3">DARKER · UPPER FIELD</text>
         <text x={cx} y="744" fill="#f1eee8" fontSize="9" textAnchor="middle" letterSpacing="2.1">BRIGHT ORIGIN · CYCLONE BASE</text>
       </svg>
