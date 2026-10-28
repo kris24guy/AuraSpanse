@@ -1,4 +1,4 @@
-import { EmotionColor } from './emotionColors'
+import { EmotionColor, getEmotionIndex } from './emotionColors'
 
 interface AuraScopeInput {
   zodiac: {
@@ -11,7 +11,6 @@ interface AuraScopeInput {
       polarity: 'positive' | 'neutral' | 'shadow'
       name: string
       hex: string
-      freq: number
     }
   }
   lifePath: number
@@ -21,11 +20,10 @@ interface AuraScopeInput {
   primaryAuraName?: string
   secondaryAuraName?: string
   finalEmotion?: EmotionColor
-  finalFrequency?: number
   finalHex?: string
   stoneOpacity?: number
   currentAuraDay?: number
-  timeWeight?: number
+  timePositionIndex?: number
   timeState?: string
   selectedStoneTrait?: EmotionColor
 }
@@ -126,17 +124,17 @@ function traitLabel(name: string): string {
 export function generateAurascope(input: AuraScopeInput): AurascopeReading {
   const [hue1, hue2, hue3, hue4] = input.hues
   const finalEmotion = input.finalEmotion || hue3
-  const traitSeed = input.lifePath + input.dayOfYear + finalEmotion.freq + (input.timeWeight || 0)
+  const traitSeed = input.lifePath + input.dayOfYear + getEmotionIndex(finalEmotion) + (input.timePositionIndex || 0)
   const selectedTrait = input.zodiac.selectedTrait?.name || pick(input.zodiac.traits, traitSeed)
-  const stoneGift = input.selectedStoneTrait?.name || pick(input.zodiac.stoneTraits, traitSeed + hue2.freq)
-  const focus = pick(focuses, traitSeed + hue1.freq)
-  const action = pick(actions, traitSeed + hue2.freq + hue3.freq)
+  const stoneGift = input.selectedStoneTrait?.name || pick(input.zodiac.stoneTraits, traitSeed + getEmotionIndex(hue2))
+  const focus = pick(focuses, traitSeed + getEmotionIndex(hue1))
+  const action = pick(actions, traitSeed + getEmotionIndex(hue2) + getEmotionIndex(hue3))
   const primaryAura = input.primaryAuraName || cleanName(hue1.name)
   const secondaryAura = input.secondaryAuraName || cleanName(hue2.name)
   const title = input.finalAuraName || `${primaryAura} with ${secondaryAura} whispers`
   const birthstones = input.zodiac.birthstones?.length ? input.zodiac.birthstones : [input.zodiac.birthstone]
   const subtitleTraits = input.zodiac.traits.slice(0, 3).map(traitLabel)
-  const timeWeight = input.timeWeight ?? 0
+  const timePositionIndex = input.timePositionIndex ?? 0
   const opacity = Math.round((input.stoneOpacity || 0.5) * 100)
   const placementZone = input.timeState || 'the living field'
   const placementTint = cleanName((hue4 || finalEmotion).name).toLowerCase()
@@ -147,7 +145,7 @@ export function generateAurascope(input: AuraScopeInput): AurascopeReading {
     `Your ${input.zodiac.sign} current opens through ${traitLabel(selectedTrait).toLowerCase()}, giving your primary aura its first signature: ${primaryAura}. This is the part of you that translates pressure into instinct and emotion into direction.`,
     `${input.zodiac.birthstone} steps into your field as ${secondaryAura}, carrying ${cleanName(stoneGift).toLowerCase()} at ${opacity}% opacity. It does not simply sit beside ${primaryAura}; it moves through it, shifting the edges, sharpening the signal, and giving your ${input.zodiac.sign} aura a more specific emotional depth.`,
     `Your third hue is not randomly assigned. It is created where ${primaryAura} and ${secondaryAura} collide, forming ${combinedHue}: the color of ${focus}.`,
-    `Your registration-time placement mechanism lands at ${timeWeight}/1000, moving through the ${placementZone} zone and tinting the final Aura Identity with ${placementTint}. This placement does not define you; it positions ${title} inside the AuraSpectrum, revealing how your timing, traits, and stones combine into one personalized AuraScope.`
+    `Your current date adds a ${placementZone} layer, tinting the final Aura Identity with ${placementTint}. This placement does not define you; it positions ${title} inside AuraSpanse as a symbolic combination of timing, traits, and stones.`
   ]
 
   const mantra = `I let ${primaryAura}, ${secondaryAura}, and ${combinedHue} become one honest field.`
@@ -187,7 +185,7 @@ export function generateAurascope(input: AuraScopeInput): AurascopeReading {
         label: 'Final aura · Placement mechanism',
         name: title,
         hex: input.finalHex || finalEmotion.hex,
-        meaning: `The Aura Identity is positioned by the ${timeWeight}/1000 registration-time placement mechanism.`
+        meaning: `The Aura Identity combines the birthdate-derived starting point with today's modeled placement.`
       }
     ]
   }
