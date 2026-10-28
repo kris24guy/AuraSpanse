@@ -60,6 +60,7 @@ assert.ok(glossaryPoints.some((point) => point.colorAssignment === "exact"), "ex
 assert.ok(glossaryPoints.some((point) => point.colorAssignment === "inferred"), "unmatched entries should receive nearest-palette swatches");
 for (let i = 0; i < glossaryPoints.length; i += 1) assert.equal(glossaryPoints[i].definition, EMOTION_GLOSSARY_ROWS[i][1], "definition remains verbatim for " + glossaryPoints[i].name);
 const glossaryResult = generateOriginSpectrum("1989-01-01", { ...deps(fixedNow, resolveAries), spectrum: glossaryPoints });
+assert.equal(glossaryResult.composite, null, "the engine default leaves the two primaries separate");
 assert.equal(glossaryResult.spectrumPointCount, 374, "the age equation now uses the 374 source glossary points");
 assert.equal(glossaryResult.firstHue.name, glossaryPoints[glossaryResult.firstHueIndex].name);
 assert.equal(glossaryResult.currentPlacement.name, glossaryPoints[glossaryResult.currentPlacementIndex].name);
