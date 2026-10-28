@@ -199,12 +199,12 @@ export default function AuraSpectrumPage() {
             <p style={eyebrow}>THE 374-POINT EMOTION CAN</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Explore the emotional spectrum</h2>
             <p style={muted}>
-              The transparent can is the explorer interface: the same named emotions, definitions, colors, and frequency positions used by this reveal engine. It is not a second calculation engine.
+              The transparent can is the visual explorer, not a second calculation engine. It loads the same 374 names, definitions, base colors, and frequency positions used by the reveal model. The rendered points layer Primary Hue 2's literal stone hex using the engine's geographic-opacity value, then darken toward the rim. The stored emotion color and definition remain inspectable for each point.
             </p>
             <div style={{ marginTop: '18px', border: '1px solid rgba(255,255,255,0.11)', borderRadius: '10px', overflow: 'hidden', background: '#0a0a12' }}>
               <iframe
                 title="AuraSpanse interactive emotion-color can"
-                src={'/aura-spectrum-cyclone.html?selected=' + encodeURIComponent(result.firstHue.name)}
+                src={'/aura-spectrum-cyclone.html?selected=' + encodeURIComponent(result.firstHue.name) + '&stone=' + encodeURIComponent(result.birthstone.hex) + '&opacity=' + encodeURIComponent(String(result.birthstone.opacity))}
                 loading="eager"
                 style={{ display: 'block', width: '100%', height: 'clamp(900px, 112vh, 1180px)', border: 0, background: '#0a0a12' }}
               />
