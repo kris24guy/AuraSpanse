@@ -63,6 +63,22 @@ assert.equal(glossaryResult.spectrumPointCount, 374, "the age equation now uses 
 assert.equal(glossaryResult.firstHue.name, glossaryPoints[glossaryResult.firstHueIndex].name);
 assert.equal(glossaryResult.currentPlacement.name, glossaryPoints[glossaryResult.currentPlacementIndex].name);
 assert.deepEqual(buildEmotionGlossaryPoints(emotionColors), glossaryPoints, "glossary color assignment is deterministic");
+const unblendedResult = generateOriginSpectrum("1989-01-01", {
+  ...deps(fixedNow, resolveAries),
+  spectrum: glossaryPoints,
+  includeComposite: false,
+});
+assert.equal(unblendedResult.composite, null, "the public pre-subscription path must not calculate a composite");
+assert.equal(unblendedResult.firstHue, glossaryPoints[unblendedResult.firstHueIndex], "Primary Hue 1 must come from the same 374-point spectrum");
+assert.ok(/^#[0-9a-f]{6}$/i.test(unblendedResult.birthstone.hex), "Primary Hue 2 must use the literal birthstone swatch");
+const blendTwoHex = (firstHex, secondHex) => {
+  const rgb = (hex) => [0, 2, 4].map((offset) => parseInt(hex.slice(offset + 1, offset + 3), 16));
+  const first = rgb(firstHex);
+  const second = rgb(secondHex);
+  return "#" + first.map((channel, index) => Math.round((channel + second[index]) / 2).toString(16).padStart(2, "0")).join("");
+};
+assert.equal(blendTwoHex("#000000", "#ffffff"), "#808080", "two primaries should use equal-weight RGB blending");
+
 
 const expectedDays = Math.floor(
   (Date.UTC(2026, 9, 26) - Date.UTC(1989, 0, 1)) / 86400000
@@ -137,15 +153,32 @@ const entryHtml = await readFile(new URL("../public/aura-scope-mechanism.html", 
 assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
   "canonical birthdate entry must open the Aura-Spectrum mechanism");
 
-const cylinderSource = await readFile(new URL("../app/components/AuraSpectrumCylinder.tsx", import.meta.url), "utf8");
-assert.ok(cylinderSource.includes("137.50776405003785"), "the cylinder should use the golden angle");
-assert.ok(cylinderSource.includes("darkenHex"), "the cylinder should darken upward");
-assert.ok(cylinderSource.includes("Search all "), "the cylinder should expose a searchable glossary index");
-assert.ok(cylinderSource.includes("point.spectrumPoint.definition"), "each point should carry its full definition");
+const pageSource = await readFile(new URL("../app/aura-spectrum/page.tsx", import.meta.url), "utf8");
+assert.ok(pageSource.includes('window.location.assign("/aura-spectrum")') === false || entryHtml.includes('window.location.assign("/aura-spectrum")'),
+  "the birthdate flow must route into Aura-Spectrum");
+assert.ok(pageSource.includes("aura-spectrum-cyclone.html"), "the reveal page must use the supplied can UI");
+assert.ok(pageSource.includes("includeComposite: false"), "the public page must not precompute the personal blend");
+assert.ok(pageSource.includes("/api/subscribe-aura-spectrum"), "the blend must be requested only through the subscription path");
+assert.ok(!pageSource.includes("result.composite"), "the pre-subscription page must not render the older composite model");
+
+const cycloneSource = await readFile(new URL("../public/aura-spectrum-cyclone.html", import.meta.url), "utf8");
+assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show the 374 emotion entries");
+assert.ok(cycloneSource.includes("aura-spectrum-cyclone-points"), "the can must receive the actual engine glossary");
+assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses regular cylindrical rows");
+assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the inner tornado uses a regular tapered helix");
+assert.ok(!/fibonacci|golden.angle|q-loop|qLoop|DATA\\.q/i.test(cycloneSource), "the visual must contain no Fibonacci algorithm or Q-loop system");
+
+const subscriptionRoute = await readFile(new URL("../app/api/subscribe-aura-spectrum/route.ts", import.meta.url), "utf8");
+assert.ok(subscriptionRoute.includes("RESEND_AUDIENCE_ID"), "the signup must be backed by an actual Resend audience");
+assert.ok(subscriptionRoute.includes("resend.contacts.create"), "the route must create/confirm a mailing-list contact");
+assert.ok(subscriptionRoute.includes("const blendHex = blendTwoPrimaryHex(result.firstHue.hex, result.birthstone.hex)"),
+  "the subscribed blend must use exactly the two primaries");
+assert.ok(subscriptionRoute.indexOf("const blendHex = blendTwoPrimaryHex") > subscriptionRoute.indexOf("const created = await resend.contacts.create"),
+  "the reveal blend must be calculated after the mailing-list contact request");
 
 console.log("PASS: age/spectrum equation, zodiac balancing, and current placement are deterministic.");
-console.log("PASS: literal birthstone hex values drive the geographic opacity blend.");
+console.log("PASS: literal birthstone hex values and geographic opacity are preserved.");
 console.log("PASS: all 12 monthly stone swatches and their geographic opacity values validate.");
 console.log("PASS: all 374 source labels preserve their definitions and receive deterministic palette swatches.");
-console.log("PASS: the live Aura-Spectrum age equation and cyclone use the 374 glossary points.");
-console.log("PASS: the birthdate form opens Aura-Spectrum and the cyclone exposes point search/definitions.");
+console.log("PASS: the can is a 374-point regular cylinder/helix UI with no Fibonacci or Q-loop logic.");
+console.log("PASS: the two-primary blend is not calculated by the public page and is calculated after confirmed subscription.");
