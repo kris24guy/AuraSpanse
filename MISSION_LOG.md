@@ -227,8 +227,8 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 
 - [x] Replaced the separate cyclone graphic with the supplied transparent-can look while keeping the Aura-Spectrum engine in control of the two primaries.
 - [x] Connected the can's 374 names, definitions, colors, and frequency points to the same glossary used by the primary reveal.
-- [x] Removed the Q-loop concepts and linked conceptual blends.
-- [x] Removed Fibonacci/golden-angle logic. The can uses evenly spaced cylindrical rows and a regular tapered helix purely for presentation.
+- [x] Kept the can focused on the 374 emotion glossary, with no auxiliary emotion system or linked concept blends.
+- [x] Changed the display geometry to evenly spaced cylindrical rows and a regular tapered helix, independent of reveal calculations.
 - [x] Disabled composite calculation on the public pre-subscription path. Primary Hue 1 and Primary Hue 2 remain distinct on screen.
 - [x] Added a server endpoint that confirms the Resend audience subscription before calculating and returning the equal-weight RGB blend of those two primaries only.
 - [!] Production signup requires `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `EMAIL_FROM` in the deployed environment.
