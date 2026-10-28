@@ -1,6 +1,6 @@
 'use client'
 
-import type { CSSProperties } from 'react'
+import type { CSSProperties, FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { getZodiacSign, zodiacMap } from '../lib/zodiacMap'
 import { generateOriginSpectrum, type OriginSpectrumResult } from '../lib/originSpectrumEngine'
@@ -123,7 +123,7 @@ export default function AuraSpectrumPage() {
     }
   }, [result])
 
-  async function handleSubscribe(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!result || !email.trim()) return
     if (!consent) {
