@@ -233,3 +233,11 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [x] Added a server endpoint that confirms the Resend audience subscription before calculating and returning the equal-weight RGB blend of those two primaries only.
 - [!] Production signup requires `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `EMAIL_FROM` in the deployed environment.
 - [ ] GitHub CI, production build, and the live subscribe/reveal journey remain unverified until checks complete successfully.
+
+## 2026-10-28 — Aura-Spectrum visual/reveal separation
+- Kept the transparent can as an interactive presentation layer only, with 374 named/defined emotion points loaded from the same glossary used by the age-based reveal engine.
+- Removed the prototype's fixed spiral-angle label, default Q-emotion label, Q-loop entries, Q-specific connections, and Q-blend presentation. The can uses regularly spaced cylindrical rows and a regular tapered central helix; no spiral-based formula selects emotion or reveal data.
+- Preserved the birthdate-entry handoff to /aura-spectrum and the existing age-derived Primary Hue 1 plus literal birthstone-swatch Primary Hue 2.
+- Kept the personal color blend locked until the server successfully confirms the subscriber in the configured Resend audience. The server computes only the equal-weight RGB blend of those two primaries; zodiac and current placement remain contextual.
+- Added regression checks for removal of stale spiral/Q-loop UI labels and the hard-coded starter emotion.
+- Verification remains pending until CI and the deployed birthdate-to-subscription flow are confirmed.
