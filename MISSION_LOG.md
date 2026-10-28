@@ -215,23 +215,21 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [ ] Render deployment and the live birthdate-to-`/origin` route are pending verification.
 
 
-### 2026-10-27 — Aura-Spectrum geometry and literal birthstone resonance
+### 2026-10-27 — Aura-Spectrum engine and literal birthstone resonance
 
-- [x] Named the mechanism **Aura-Spectrum** and made `/aura-spectrum` the canonical route; `/origin` remains a backwards-compatible redirect.
-- [x] Replaced the horizontal rainbow bar with `AuraSpectrumCylinder.tsx`: one point per emotion-color point, arranged upward using the golden angle (137.507764°), beginning at a bright center, spreading into a straight cylindrical envelope, and progressively darkening toward the upper field.
-- [x] Added a separate 12-month birthstone reference with literal hex swatches; colors are read from the hex values directly, never synthesized from the gemstone name.
-- [x] Preserved the earlier mechanism's geographic origin at Chico, California and its original opacity rule: `clamp(100 - distanceKm / 150, 25, 100)`, using great-circle distances to representative deposit regions.
-- [x] Applied the geographic birthstone opacity to the second-hue overlay on each spectrum point. The upward position further attenuates the overlay and darkens the points.
-- [x] Integrated the birthstone overlay into the composite hex calculation and its source-weight description.
-- [x] Changed the canonical birthdate form to route directly to `/aura-spectrum`.
-- [x] Expanded the Origin Engine test to check literal hex inputs, all 12 month entries, geographic distance/opacity, consistent source weights, route handoff, and golden-angle/darkening logic.
-- [x] Documented the mechanism and cited sources for birthstone conventions, gemstone color variability, and producing regions in `README.md`.
-- [ ] Latest GitHub Actions run, production build, and Render deployment have not been confirmed in this session. Do not label the feature released until CI passes and the live birthdate-to-`/aura-spectrum` flow is tested.
-- [!] The hex values are fixed canonical display swatches for repeatable computation. Natural gemstones can display multiple colors, so these should not be described as universal spectrometer measurements of every real stone.
+- [x] Named the reveal mechanism Aura-Spectrum and made `/aura-spectrum` the canonical route; the birthdate entry directs into it.
+- [x] Preserved the existing age/spectrum, zodiac-context, first-primary, current-marker, and literal birthstone-color model.
+- [x] Preserved the Chico, California reference point and the original geographic opacity rule for the monthly stone swatches.
+- [x] Clarified that the second primary is the gemstone's literal hex swatch; the gemstone name is metadata, not a color generator.
+- [ ] CI, production build, and the live birthdate route still require external verification before release.
 
-## 2026-10-28 — 374-entry emotion cyclone integration
-- Preserved all 374 uploaded emotion labels and definitions as the searchable Aura-Spectrum glossary.
-- Each glossary record now becomes an individual colored point on the cylindrical golden-angle path.
-- Exact normalized palette-name matches inherit existing hex colors; unmatched entries receive a deterministic semantic frequency band and nearest existing palette swatch.
-- Integrated the 374-entry list as the live spectrum for age-derived first hue and current placement; added tests for definitions, color mapping, and point count.
-- Verification status: repository changes committed; CI/build/live deployment must be checked separately before claiming the route is verified.
+## 2026-10-28 — Emotion can aesthetic and subscriber-only blend
+
+- [x] Replaced the separate cyclone graphic with the supplied transparent-can look while keeping the Aura-Spectrum engine in control of the two primaries.
+- [x] Connected the can's 374 names, definitions, colors, and frequency points to the same glossary used by the primary reveal.
+- [x] Removed the Q-loop concepts and linked conceptual blends.
+- [x] Removed Fibonacci/golden-angle logic. The can uses evenly spaced cylindrical rows and a regular tapered helix purely for presentation.
+- [x] Disabled composite calculation on the public pre-subscription path. Primary Hue 1 and Primary Hue 2 remain distinct on screen.
+- [x] Added a server endpoint that confirms the Resend audience subscription before calculating and returning the equal-weight RGB blend of those two primaries only.
+- [!] Production signup requires `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `EMAIL_FROM` in the deployed environment.
+- [ ] GitHub CI, production build, and the live subscribe/reveal journey remain unverified until checks complete successfully.
