@@ -170,6 +170,11 @@ assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses regular
 assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the inner tornado uses a regular tapered helix");
 assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses even cylindrical rows");
 assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the central tornado is a regular tapered helix");
+assert.ok(!cycloneSource.includes("137.5°"), "the visual UI must not prescribe a spiral-angle formula");
+assert.ok(!cycloneSource.includes("Fib //"), "the visual UI must not label itself with a spiral formula");
+assert.ok(!cycloneSource.includes("Quaintness"), "the can must not hard-code one starter emotion");
+assert.ok(!cycloneSource.includes("DATA.q") && !cycloneSource.includes("Q-loop") && !cycloneSource.includes("linkTargets"),
+  "the can must not contain the separate Q-loop model");
 
 const subscriptionRoute = await readFile(new URL("../app/api/subscribe-aura-spectrum/route.ts", import.meta.url), "utf8");
 assert.ok(subscriptionRoute.includes("RESEND_AUDIENCE_ID"), "the signup must be backed by an actual Resend audience");
