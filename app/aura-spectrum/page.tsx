@@ -258,7 +258,7 @@ export default function AuraSpectrumPage() {
           </section>
 
                     <section style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
-            <p style={eyebrow}>SECOND HUE · GEOGRAPHIC BIRTHSTONE RESONANCE</p>
+            <p style={eyebrow}>PRIMARY HUE 2 · GEOGRAPHIC BIRTHSTONE RESONANCE</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Literal stone color first. Name second.</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(125px, 0.7fr) minmax(210px, 1.5fr)', gap: '20px', alignItems: 'stretch', marginTop: '18px' }}>
               <div style={{ borderRadius: '18px', background: result.birthstone.hex, minHeight: '170px', boxShadow: `0 0 38px ${result.birthstone.hex}35`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', boxSizing: 'border-box', color: ['#EAF5FF','#F6F0E5','#C9D8D6','#E3A341','#A5C639'].includes(result.birthstone.hex) ? '#15151a' : '#ffffff' }}>
@@ -389,7 +389,6 @@ export default function AuraSpectrumPage() {
         <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <a href="/aura-scope-mechanism.html" style={{ color: '#d9c9ff', textUnderlineOffset: '4px' }}>Enter another birthdate</a>
           <button onClick={() => setRetryKey((key) => key + 1)} style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#f3f0eb', padding: '9px 14px', borderRadius: '999px', cursor: 'pointer' }}>Recalculate today</button>
-          <a href="/reveal" style={{ color: 'rgba(243,240,235,0.6)', textUnderlineOffset: '4px' }}>Open classic reveal</a>
         </div>
       </footer>
     </main>
