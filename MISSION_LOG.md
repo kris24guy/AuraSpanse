@@ -240,4 +240,6 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - Preserved the birthdate-entry handoff to /aura-spectrum and the existing age-derived Primary Hue 1 plus literal birthstone-swatch Primary Hue 2.
 - Kept the personal color blend locked until the server successfully confirms the subscriber in the configured Resend audience. The server computes only the equal-weight RGB blend of those two primaries; zodiac and current placement remain contextual.
 - Added regression checks for removal of stale spiral/Q-loop UI labels and the hard-coded starter emotion.
+- Passed the engine's literal birthstone hex and geographic opacity into the display-only can, blending the overlay into point rendering while retaining each point's base hex and verbatim definition in its inspector.
+- Added a server-signed, HttpOnly, birthdate-bound ticket so an already confirmed subscriber can restore their blend after refresh without trusting a client-side subscription flag.
 - Verification remains pending until CI and the deployed birthdate-to-subscription flow are confirmed.
