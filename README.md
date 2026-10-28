@@ -1,40 +1,56 @@
 # AuraSpanse
 
-AuraSpanse is an astrology-inspired emotional color and reflection project.
+AuraSpanse is an astrology-inspired emotional-color and personal-reflection project.
 
-## Aura-Spectrum mechanism
+## Canonical experience
 
-The canonical birthdate entry at `/aura-scope-mechanism.html` routes to `/aura-spectrum`. The public mechanism is a cylindrical Fibonacci pattern, not a generic rainbow bar or a calculation named after the page.
+1. The birthdate form at `/aura-scope-mechanism.html` validates the date, saves it locally, and routes to `/aura-spectrum`.
+2. The Aura-Spectrum engine uses the 374-entry emotion glossary, the birthdate/day-count rule, zodiac context, and the birthstone's literal hex swatch to resolve two primaries.
+3. The first primary is an age-derived emotion point. The second primary is the literal monthly birthstone color, with the original geographic-distance opacity metadata.
+4. The transparent can is the visual explorer only. It receives the same 374 names, definitions, base colors, and frequency positions from the reveal page. The Q-loop concepts are not part of AuraSpanse.
+5. The two primary colors stay separate before signup. Only after the server confirms a Resend mailing-list subscription does it calculate and return the equal-weight RGB average of Primary Hue 1 and Primary Hue 2. Zodiac traits and today's context marker are not additional blend ingredients.
 
-### Shape and point rules
+## Can presentation
 
-- The first hue is derived from the birthdate, days alive, total number of emotion-color points, bounded modular exponent, and zodiac index.
-- Every emotion-color point is mapped onto one ascending path using the golden angle (approximately 137.507764°). The pattern begins at a bright central origin, opens into a fixed-radius cylinder, and gets progressively darker toward the top.
-- The current placement is highlighted among the same points; its position advances according to the existing age/spectrum rule and current day-of-year.
+The can displays 374 individually selectable emotion points around an evenly spaced cylindrical wall. The inner black-and-white tornado is a regular tapered helix. The geometry is a visual treatment, not an input into the birthdate reveal formula. The UI can search labels and show definitions; the birthdate-based model owns the actual primary selections.
 
-### Birthstone as the second hue
+The emotion glossary retains the 374 supplied definitions verbatim. Exact normalized palette-name matches inherit an existing emotion-color swatch. Other labels get a deterministic inferred frequency band and the closest existing palette color. Inferred assignments are software heuristics, not scientifically established emotion measurements.
 
-- The original twelve-stone month mapping is retained.
-- Each month stone has a literal, fixed hex swatch in `app/lib/birthstoneResonance.ts`. The hex—not the gemstone name—drives color blending.
-- The original mechanism's geographic reference origin is preserved as Chico, California (39.76, -121.84).
-- A great-circle distance to the representative source region is calculated in kilometres with the Haversine formula.
-- Geographic opacity follows the first mechanism's rule: `clamp(100 - distanceKm / 150, 25, 100)`. That percentage blends the stone's literal swatch over the underlying emotion-color points. As the point sequence rises, its opacity and luminance are attenuated so the cylinder darkens upward.
-- Deposit coordinates are regional reference points, not surveyed mine entrances. Natural gems vary in color; the canonical hex values are deterministic visual inputs for this model, not a claim that each real gemstone has one universally exact RGB value.
+## Reveal calculation
 
-### Historical and conceptual boundaries
+`app/lib/originSpectrumEngine.ts` owns the age/spectrum placement, first primary, current context marker, zodiac channels, and geographic birthstone resonance. The public pre-subscription page calls it with `includeComposite: false`, so it does not precompute a combined color. The subscription endpoint repeats the same primary selection server-side and computes the two-color blend only after the Resend contact is confirmed.
 
-The birthstone and zodiac associations draw on cultural traditions. Birthstone lists vary, and many gemstones have multiple natural colors; the stable hex swatches are engineering constants selected for reproducible rendering. This color-placement model is custom AuraSpanse logic, not a scientific measurement of personality, emotion, or a physical gemstone influence.
+The birthstone overlay uses fixed hex swatches. Geographic opacity is based on the distance from a fixed Chico, California reference to representative gemstone-producing regions:
 
-### Implementation
+`clamp(100 - distanceKm / 150, 25, 100)`
 
-- `app/lib/originSpectrumEngine.ts`: age, zodiac balancing, first hue/current placement and composite color.
-- `app/lib/birthstoneResonance.ts`: literal gem swatches, representative regional coordinates, Haversine distance and opacity.
-- `app/components/AuraSpectrumCylinder.tsx`: cylindrical Fibonacci rendering and progressive upward darkening.
-- `app/aura-spectrum/page.tsx`: public Aura-Spectrum experience.
-- `app/origin/page.tsx`: backwards-compatible redirect to `/aura-spectrum`.
-- `scripts/test-origin-spectrum.mjs`: calculation, color, geographic opacity, route, and geometry-rule tests.
+These deposit coordinates are regional reference centers, not surveyed mine entrances. Natural gemstones vary in color; the hex values are consistent software swatches, not universal spectrometer measurements. The geographic relationship is a symbolic design convention, not a demonstrated physical influence.
 
-### Verification commands
+## Environment setup for subscription reveal
+
+Configure these environment variables in Render or the production environment:
+
+- `RESEND_API_KEY` — Resend API key.
+- `RESEND_AUDIENCE_ID` — the mailing-list audience used to confirm the subscription.
+- `EMAIL_FROM` — sender address verified for your Resend account.
+
+Without all three, the route returns a configuration error and the combined color stays locked. A successful Resend contact operation is the subscription checkpoint; email delivery is reported separately so a mail-send failure is not misrepresented as a failed list subscription.
+
+## Main implementation files
+
+- `public/aura-scope-mechanism.html` — birthdate entry and route handoff.
+- `app/lib/emotionGlossary.ts` — 374 source labels and definitions and their deterministic color assignments.
+- `app/lib/auraSpectrumCycloneData.ts` — the same point data for the visual can.
+- `public/aura-spectrum-cyclone.html` — visual-only transparent can, searchable point inspector, and regular tapered helix.
+- `app/lib/originSpectrumEngine.ts` — existing birthdate-based reveal model.
+- `app/lib/birthstoneResonance.ts` — literal monthly stone hex values, reference regions, distance, and opacity.
+- `app/aura-spectrum/page.tsx` — primary-color reveal screen and subscription gate.
+- `app/api/subscribe-aura-spectrum/route.ts` — mailing-list confirmation, then two-primary blend calculation and reading email.
+- `scripts/test-origin-spectrum.mjs` — engine, glossary, can UI, and subscription-gate checks.
+
+## Verification
+
+Run:
 
 ```sh
 npm run test:origin-spectrum
@@ -42,18 +58,6 @@ npm run test:aura-engine
 npm run build
 ```
 
-GitHub Actions runs the test suite before the production build. A repository commit is not considered released until CI passes and the deployed birthdate-to-`/aura-spectrum` journey is verified in a browser.
+The GitHub Actions workflow runs the tests before the production build. A repository commit is not considered released until CI succeeds and the live birthdate-to-subscription-to-reveal journey is verified in a browser.
 
-## References for source conventions
-
-- Jewelers of America, birthstone list: https://www.jewelers.org/find-a-jeweler/buying-guides/birthstones/
-- Gemological Institute of America, birthstones and natural color variation: https://www.gia.edu/gia-museum-exhibit-birthstones
-- Geosciences LibreTexts, gemstone minerals and producing regions: https://geo.libretexts.org/Bookshelves/Geology/Mineralogy_(Perkins_et_al.)/09:_Ore_Deposits_and_Economic_Minerals/9.02:_Ore_Minerals/9.2.04:_Gems_and_Gem_Minerals
-
-AuraSpanse is for entertainment and personal reflection.
-
-## Aura-Spectrum emotion cyclone
-
-`app/lib/emotionGlossary.ts` holds the 374 user-supplied emotion labels and definitions verbatim. Each entry becomes one separately addressable point on the cylindrical golden-angle cyclone. Exact normalized matches inherit the existing `emotionColors` swatch; unmatched entries receive a deterministic semantic frequency band and the nearest existing palette swatch. A searchable point index exposes each point's definition and hex color. The 374-point list is the live spectrum used by the birthdate/age placement calculation.
-
-Color assignments for unmatched labels are software heuristics, not scientific emotion measurements. The birthstone overlay and upward darkening continue to modify the displayed point color.
+AuraSpanse is for entertainment and personal reflection. It is not a scientifically validated measure of personality, emotion, destiny, or gemstone influence.
