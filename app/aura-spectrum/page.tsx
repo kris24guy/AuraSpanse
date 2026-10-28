@@ -105,6 +105,10 @@ export default function AuraSpectrumPage() {
   useEffect(() => {
     if (!result) return
     let cancelled = false
+    setIsSubscribed(false)
+    setUnlockedBlend(null)
+    setSubscriptionMessage('')
+    setSubscriptionError('')
 
     fetch('/api/subscribe-aura-spectrum?birthDate=' + encodeURIComponent(result.birthDate), {
       method: 'GET',
