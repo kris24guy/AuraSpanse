@@ -1,4 +1,4 @@
-import { emotionColors, getEmotionByFreq, EmotionColor } from './emotionColors'
+import { emotionColors, getEmotionByIndex, getEmotionIndex, EmotionColor } from './emotionColors'
 import { getZodiacSign, zodiacMap } from './zodiacMap'
 import { getAgeSpectrumPlacement } from './ageSpectrum'
 
@@ -19,15 +19,13 @@ export interface ZodiacData {
     weight: number
     name: string
     hex: string
-    freq: number
-  }>
+    }>
   selectedTrait: {
     polarity: 'positive' | 'neutral' | 'shadow'
     weight: number
     name: string
     hex: string
-    freq: number
-  }
+    }
 }
 
 interface BirthstoneData {
@@ -107,12 +105,12 @@ const birthstones: Record<number, BirthstoneData[]> = {
   ]
 }
 
-function averageFreq(colors: EmotionColor[]): number {
-  return Math.round(colors.reduce((sum, color) => sum + color.freq, 0) / colors.length)
+function averagePositionIndex(colors: EmotionColor[]): number {
+  return colors.reduce((sum, color) => sum + getEmotionIndex(color), 0) / colors.length
 }
 
-function clamp(freq: number): number {
-  return Math.max(0, Math.min(1000, Math.round(freq)))
+function clampPositionIndex(index: number): number {
+  return Math.max(0, Math.min(emotionColors.length - 1, index))
 }
 
 function hexToRgb(hex: string) {
@@ -151,32 +149,34 @@ function cleanName(name: string): string {
 }
 
 function colorWordFromEmotion(emotion: EmotionColor): string {
-  const freq = emotion.freq
-  if (freq < 45) return 'Luminous'
-  if (freq < 130) return 'Violet'
-  if (freq < 220) return 'Indigo'
-  if (freq < 320) return 'Oceanic'
-  if (freq < 415) return 'Azure'
-  if (freq < 510) return 'Teal'
-  if (freq < 640) return 'Emerald'
-  if (freq < 735) return 'Golden'
-  if (freq < 825) return 'Ember'
-  if (freq < 935) return 'Rose'
+  const progress = getEmotionIndex(emotion) / Math.max(1, emotionColors.length - 1)
+  if (progress < 0.045) return 'Luminous'
+  if (progress < 0.13) return 'Violet'
+  if (progress < 0.22) return 'Indigo'
+  if (progress < 0.32) return 'Oceanic'
+  if (progress < 0.415) return 'Azure'
+  if (progress < 0.51) return 'Teal'
+  if (progress < 0.64) return 'Emerald'
+  if (progress < 0.735) return 'Golden'
+  if (progress < 0.825) return 'Ember'
+  if (progress < 0.935) return 'Rose'
   return 'Ink'
 }
 
-function auraMotionWord(freq: number): string {
+function auraMotionWord(positionIndex: number): string {
   const words = ['Stillness', 'Veil', 'Whisper', 'Quiet', 'Current', 'Bloom', 'Flare', 'Pulse', 'Flame', 'Crown', 'Threshold']
-  return words[Math.min(words.length - 1, Math.floor((freq / 1001) * words.length))]
+  const progress = clampPositionIndex(positionIndex) / Math.max(1, emotionColors.length - 1)
+  return words[Math.min(words.length - 1, Math.floor(progress * words.length))]
 }
 
-function timeStateWord(weight: number): string {
+function timeStateWord(positionIndex: number): string {
   const states = ['Origin', 'Veil', 'Mirror', 'Current', 'Gate', 'Field', 'Bloom', 'Flame', 'Crown', 'Threshold']
-  return states[Math.min(states.length - 1, Math.floor((weight / 1001) * states.length))]
+  const progress = clampPositionIndex(positionIndex) / Math.max(1, emotionColors.length - 1)
+  return states[Math.min(states.length - 1, Math.floor(progress * states.length))]
 }
 
-function makeAuraName(emotion: EmotionColor, fallbackHex?: string): string {
-  return `${colorWordFromEmotion(emotion)} ${auraMotionWord(emotion.freq || parseInt((fallbackHex || '#000000').slice(1, 3), 16))}`
+function makeAuraName(emotion: EmotionColor): string {
+  return `${colorWordFromEmotion(emotion)} ${auraMotionWord(getEmotionIndex(emotion))}`
 }
 
 export function calculateLifePath(dateString: string): number {
@@ -193,7 +193,7 @@ export function calculateLifePath(dateString: string): number {
 export function getDayOfYear(date: Date): number {
   const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 0))
   const diff = date.getTime() - start.getTime()
-  const oneDay = 1000 * 60 * 60 * 24
+  const oneDay = 86_400_000
   return Math.floor(diff / oneDay)
 }
 
@@ -231,7 +231,7 @@ export function generateAura(dateString: string, registeredDateString?: string) 
   const agePlacement = getAgeSpectrumPlacement(daysAlive, signKey, currentDayOfYear, emotionColors)
   const firstHue = agePlacement.firstHue
   const currentPlacement = agePlacement.currentPlacement
-  const timeWeight = clamp(currentPlacement.freq)
+  const timePositionIndex = agePlacement.currentPlacementIndex
   const channel = (agePlacement.currentPlacementIndex % 3) as 0 | 1 | 2
   const stones = birthstones[birthDate.getUTCMonth()]
   const selectedStone = stones[(lifePath + channel + dayOfYear + agePlacement.firstHueIndex) % stones.length]
@@ -241,8 +241,8 @@ export function generateAura(dateString: string, registeredDateString?: string) 
   // a rotating reflective focus, not a heavier mathematical vote.
   const zodiacTriad = [sign.pos, sign.neu, sign.neg]
   const birthstoneTriad = [selectedStone.pos, selectedStone.neu, selectedStone.neg]
-  const zodiacAverage = getEmotionByFreq(averageFreq(zodiacTriad))
-  const birthstoneAverage = getEmotionByFreq(averageFreq(birthstoneTriad))
+  const zodiacAverage = getEmotionByIndex(averagePositionIndex(zodiacTriad))
+  const birthstoneAverage = getEmotionByIndex(averagePositionIndex(birthstoneTriad))
   const selectedTrait = zodiacTriad[channel]
   const selectedStoneTrait = birthstoneTriad[channel]
 
@@ -253,41 +253,42 @@ export function generateAura(dateString: string, registeredDateString?: string) 
   )
 
   // The first hue influences, but does not replace, the equal-weight zodiac triad.
-  const zodiacHueFreq = clamp(zodiacAverage.freq * 0.8 + firstHue.freq * 0.2)
-  const birthstoneHueFreq = clamp(
-    birthstoneAverage.freq * (1 - stoneOpacity) + selectedStoneTrait.freq * stoneOpacity
-  )
-  const zodiacHue = getEmotionByFreq(zodiacHueFreq)
-  const birthstoneHue = getEmotionByFreq(birthstoneHueFreq)
+  const zodiacHueIndex = getEmotionIndex(zodiacAverage) * 0.8 + getEmotionIndex(firstHue) * 0.2
+  const birthstoneHueIndex =
+    getEmotionIndex(birthstoneAverage) * (1 - stoneOpacity) +
+    getEmotionIndex(selectedStoneTrait) * stoneOpacity
+  const zodiacHue = getEmotionByIndex(zodiacHueIndex)
+  const birthstoneHue = getEmotionByIndex(birthstoneHueIndex)
 
   const blendedHex = blendHex(
     [zodiacHue.hex, birthstoneHue.hex, firstHue.hex],
     [0.55, 0.30, 0.15]
   )
-  const blendedFreq = clamp(
-    zodiacHue.freq * 0.55 + birthstoneHue.freq * 0.30 + firstHue.freq * 0.15
+  const blendedPositionIndex = clampPositionIndex(
+    getEmotionIndex(zodiacHue) * 0.55 +
+    getEmotionIndex(birthstoneHue) * 0.30 +
+    getEmotionIndex(firstHue) * 0.15
   )
   const blendedHue: EmotionColor = {
     name: `${cleanName(zodiacHue.name)} ${cleanName(birthstoneHue.name)} ${cleanName(firstHue.name)} Blend`,
-    hex: blendedHex,
-    freq: blendedFreq
+    hex: blendedHex
   }
 
   const daysInCurrentYear = new Date(Date.UTC(now.getUTCFullYear() + 1, 0, 1)).getTime() -
     new Date(Date.UTC(now.getUTCFullYear(), 0, 1)).getTime() > 365 * 86400000 ? 366 : 365
-  const seasonalFreq = clamp(((currentDayOfYear - 1) / (daysInCurrentYear - 1)) * 1000)
-  const timeHue = getEmotionByFreq(seasonalFreq)
+  const seasonalPositionIndex =
+    ((currentDayOfYear - 1) / (daysInCurrentYear - 1)) * (emotionColors.length - 1)
+  const timeHue = getEmotionByIndex(seasonalPositionIndex)
   const currentAuraDay = ((currentDayOfYear + agePlacement.currentPlacementIndex + lifePath + channel) % daysInCurrentYear) || daysInCurrentYear
 
-  // The current placement and the first hue are both explicit contributors to the
-  // final blend, so the age/spectrum equation changes the actual reading, not only its copy.
-  const finalFrequency = clamp(
-    blendedHue.freq * 0.45 +
-    timeHue.freq * 0.10 +
-    firstHue.freq * 0.20 +
-    currentPlacement.freq * 0.25
+  // The current placement and first hue remain explicit contributors to the final reading.
+  const finalPositionIndex = clampPositionIndex(
+    getEmotionIndex(blendedHue) * 0.45 +
+    getEmotionIndex(timeHue) * 0.10 +
+    getEmotionIndex(firstHue) * 0.20 +
+    getEmotionIndex(currentPlacement) * 0.25
   )
-  const finalEmotion = getEmotionByFreq(finalFrequency)
+  const finalEmotion = getEmotionByIndex(finalPositionIndex)
   const finalHex = blendHex(
     [blendedHue.hex, timeHue.hex, firstHue.hex, currentPlacement.hex, finalEmotion.hex],
     [0.42, 0.10, 0.18, 0.15, 0.15]
@@ -316,14 +317,12 @@ export function generateAura(dateString: string, registeredDateString?: string) 
       weight: 1 / 3,
       name: trait.name,
       hex: trait.hex,
-      freq: trait.freq
     })),
     selectedTrait: {
       polarity: polarities[channel],
       weight: 1 / 3,
       name: selectedTrait.name,
       hex: selectedTrait.hex,
-      freq: selectedTrait.freq
     }
   }
 
@@ -349,10 +348,9 @@ export function generateAura(dateString: string, registeredDateString?: string) 
     firstHueIndex: agePlacement.firstHueIndex,
     currentPlacementIndex: agePlacement.currentPlacementIndex,
     currentDayOfYear,
-    timeState: timeStateWord(timeWeight),
-    timeWeight,
+    timeState: timeStateWord(timePositionIndex),
+    timePositionIndex,
     finalEmotion,
-    finalFrequency,
     finalHex,
     finalAuraName,
     primaryAuraName,
