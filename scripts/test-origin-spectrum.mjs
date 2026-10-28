@@ -55,7 +55,7 @@ assert.equal(EMOTION_GLOSSARY_ROWS.length, 374, "every supplied definition shoul
 assert.equal(glossaryPoints.length, 374, "every supplied definition should become a colored point");
 assert.equal(new Set(glossaryPoints.map((point) => point.name.toLowerCase())).size, 374, "glossary labels remain individually addressable");
 assert.ok(glossaryPoints.every((point) => point.definition.trim().length > 0), "all points retain a definition");
-assert.ok(glossaryPoints.every((point) => /^#[0-9a-f]{6}$/i.test(point.hex) && point.freq >= 0 && point.freq <= 1000), "every glossary point has a valid color and frequency");
+assert.ok(glossaryPoints.every((point) => /^#[0-9a-f]{6}$/i.test(point.hex) && !("freq" in point)), "every glossary point has an original color and no numeric frequency field");
 assert.ok(glossaryPoints.some((point) => point.colorAssignment === "exact"), "exact color-name matches should inherit palette swatches");
 assert.ok(glossaryPoints.some((point) => point.colorAssignment === "inferred"), "unmatched entries should receive nearest-palette swatches");
 for (let i = 0; i < glossaryPoints.length; i += 1) assert.equal(glossaryPoints[i].definition, EMOTION_GLOSSARY_ROWS[i][1], "definition remains verbatim for " + glossaryPoints[i].name);
@@ -155,6 +155,12 @@ const entryHtml = await readFile(new URL("../public/aura-scope-mechanism.html", 
 assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
   "canonical birthdate entry must open the Aura-Spectrum mechanism");
 
+const paletteSource = await readFile(new URL("../app/lib/emotionColors.ts", import.meta.url), "utf8");
+const glossarySource = await readFile(new URL("../app/lib/emotionGlossary.ts", import.meta.url), "utf8");
+const originEngineSource = await readFile(new URL("../app/lib/originSpectrumEngine.ts", import.meta.url), "utf8");
+const auraEngineSource = await readFile(new URL("../app/lib/auraEngine.ts", import.meta.url), "utf8");
+assert.ok(!/\bfreq\b|frequency|0\s*[-–]\s*1000/.test(paletteSource + glossarySource + originEngineSource + auraEngineSource),
+  "color selection and reading calculations must use ordered palette positions, not a 0–1000 frequency scale");
 const pageSource = await readFile(new URL("../app/aura-spectrum/page.tsx", import.meta.url), "utf8");
 assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
   "the birthdate entry must route into Aura-Spectrum");
@@ -183,7 +189,7 @@ assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the inner tornado uses a
 assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses even cylindrical rows");
 assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the central tornado is a regular tapered helix");
 assert.ok(cycloneSource.includes("var sourceStoneHex = queryParams.get('stone')"),
-  "the can must receive Primary Hue 2's literal hex from the reveal model");
+  "the can must receive Primary Hue 2's natural color swatch from the reveal model");
 assert.ok(cycloneSource.includes("queryParams.get('opacity')"),
   "the can must receive the model-computed birthstone opacity");
 assert.ok(cycloneSource.includes("function resonanceHex(v, heightRatio, strength)") && cycloneSource.includes("stoneOpacity * (1 - 0.23 * height) * strength"),
@@ -192,8 +198,8 @@ assert.ok(cycloneSource.includes("resonanceRGBA(255 * (1 - pt.q), op, pt.q, 0.82
   "the tornado particle field must combine grayscale structure with the literal stone color");
 assert.ok(cycloneSource.includes("cg.addColorStop(0, resonanceHex(255, 0, 0.9))") && cycloneSource.includes("cg.addColorStop(1, resonanceHex(0, 1, 0.9))"),
   "the central tornado core must use the deposit-proximity hue tint while retaining bottom-to-top darkening");
-assert.ok(cycloneSource.includes("n.baseHex + ' base → ' + n.hex + ' displayed"),
-  "the inspector must distinguish each emotion's base color from its rendered stone overlay");
+assert.ok(cycloneSource.includes("meta.textContent = 'Original emotion color · stone-tinted display · ' + place"),
+  "the inspector must distinguish the original emotion color from its stone-tinted appearance");
 assert.ok(pageSource.includes("opacity=' + encodeURIComponent(String(result.birthstone.opacity))"),
   "the reveal page must pass its calculated opacity into the display-only can");
 assert.ok(!cycloneSource.includes("137.5°"), "the visual UI must not prescribe a spiral-angle formula");
@@ -218,8 +224,8 @@ assert.ok(subscriptionRoute.includes("ticket.birthDate !== birthDate"),
   "a signed ticket must not unlock a different birthdate's blend");
 
 console.log("PASS: age/spectrum equation, zodiac balancing, and current placement are deterministic.");
-console.log("PASS: literal birthstone hex values and geographic opacity are preserved.");
-console.log("PASS: all 12 monthly stone swatches and their geographic opacity values validate.");
+console.log("PASS: literal birthstone colors and geological-deposit opacity are preserved.");
+console.log("PASS: all 12 monthly stone colors and their geographic opacity values validate.");
 console.log("PASS: all 374 source labels preserve their definitions and receive deterministic palette swatches.");
 console.log("PASS: the can is a 374-point regular cylinder/helix UI driven by the emotion glossary.");
 console.log("PASS: the two-primary blend is not calculated by the public page and is calculated after confirmed subscription.");
