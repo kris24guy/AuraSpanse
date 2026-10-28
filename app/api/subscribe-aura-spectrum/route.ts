@@ -24,7 +24,7 @@ function readableName(name: string): string {
 function blendTwoPrimaryHex(firstHex: string, secondHex: string): string {
   const read = (hex: string) => {
     const clean = hex.replace('#', '')
-    if (!/^[0-9a-fA-F]{6}$/.test(clean)) throw new Error('Primary hue is not a valid hex color.')
+    if (!/^[0-9a-fA-F]{6}$/.test(clean)) throw new Error('Primary hue color is invalid.')
     return [0, 2, 4].map((offset) => Number.parseInt(clean.slice(offset, offset + 2), 16))
   }
   const first = read(firstHex)
@@ -229,9 +229,9 @@ export async function POST(request: NextRequest) {
         text: [
           'Your AuraSpanse subscription is confirmed.',
           '',
-          'Primary Hue 1 — ' + firstHueName + ': ' + result.firstHue.hex,
-          'Primary Hue 2 — ' + secondHueName + ': ' + result.birthstone.hex,
-          'Your combined hue — ' + blendHex,
+          'Primary Hue 1 — ' + firstHueName,
+          'Primary Hue 2 — ' + secondHueName,
+          'Your combined hue is shown below.',
           '',
           'The combined hue is the equal-weight RGB blend of the two primaries only.',
           'The AuraSpanse model is a symbolic tool for entertainment and personal reflection.',
@@ -246,18 +246,18 @@ export async function POST(request: NextRequest) {
               <div style="border:1px solid #ffffff22;border-radius:14px;padding:14px">
                 <div style="height:72px;border-radius:8px;background:${result.firstHue.hex}"></div>
                 <h2 style="font-size:16px">${escapeHtml(firstHueName)}</h2>
-                <p>${escapeHtml(result.firstHue.hex)} · Primary Hue 1</p>
+                <p>Primary Hue 1 · original emotion color</p>
               </div>
               <div style="border:1px solid #ffffff22;border-radius:14px;padding:14px">
                 <div style="height:72px;border-radius:8px;background:${result.birthstone.hex}"></div>
                 <h2 style="font-size:16px">${escapeHtml(secondHueName)}</h2>
-                <p>${escapeHtml(result.birthstone.hex)} · Primary Hue 2</p>
+                <p>Primary Hue 2 · natural stone color</p>
                 <p style="font-size:12px;color:#bfc0ce">Geographic opacity: ${result.birthstone.opacityPercent.toFixed(1)}%</p>
               </div>
             </div>
             <h2 style="margin-top:28px">Your combined hue</h2>
             <div style="height:136px;border-radius:14px;background:${blendHex};border:1px solid #ffffff33"></div>
-            <p><strong>${escapeHtml(blendHex)}</strong></p>
+            <p><strong>Your two colors are now blended.</strong></p>
             <p style="line-height:1.7;color:#d2d2dc">This color is the equal-weight RGB average of Primary Hue 1 and Primary Hue 2 only. The zodiac frame and current placement remain contextual and are not added as extra blend ingredients.</p>
             <p style="font-size:12px;line-height:1.6;color:#888">AuraSpanse is a symbolic tool for entertainment and personal reflection, not a scientifically validated measure of personality or emotional state. You subscribed to AuraScope email updates; future list mailings should provide an unsubscribe option.</p>
           </div>
