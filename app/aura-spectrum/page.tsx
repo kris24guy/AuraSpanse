@@ -2,12 +2,10 @@
 
 import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
-import { emotionColors } from '../lib/emotionColors'
 import { getZodiacSign, zodiacMap } from '../lib/zodiacMap'
 import { generateOriginSpectrum, type OriginSpectrumResult } from '../lib/originSpectrumEngine'
-import AuraSpectrumCylinder from '../components/AuraSpectrumCylinder'
 import { getBirthstoneResonance } from '../lib/birthstoneResonance'
-import { buildEmotionGlossaryPoints } from '../lib/emotionGlossary'
+import { AURA_SPECTRUM_CYCLONE_POINTS as emotionGlossaryPoints } from '../lib/auraSpectrumCycloneData'
 
 const shell: CSSProperties = {
   minHeight: '100vh',
@@ -38,8 +36,6 @@ const eyebrow: CSSProperties = {
   color: 'rgba(243,240,235,0.55)',
 }
 
-const emotionGlossaryPoints = buildEmotionGlossaryPoints(emotionColors)
-
 const muted: CSSProperties = {
   color: 'rgba(243,240,235,0.72)',
   lineHeight: 1.75,
@@ -53,10 +49,24 @@ function formatNumber(value: number): string {
   return Math.round(value).toLocaleString('en-US')
 }
 
+function blendTwoHex(firstHex: string, secondHex: string): string {
+  const channels = (hex: string) => [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset + 1, offset + 3), 16))
+  const first = channels(firstHex)
+  const second = channels(secondHex)
+  return '#' + first.map((channel, index) => Math.round((channel + second[index]) / 2).toString(16).padStart(2, '0')).join('')
+}
+
 export default function AuraSpectrumPage() {
   const [result, setResult] = useState<OriginSpectrumResult | null>(null)
   const [error, setError] = useState('')
   const [retryKey, setRetryKey] = useState(0)
+  const [email, setEmail] = useState('')
+  const [consent, setConsent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [subscriptionError, setSubscriptionError] = useState('')
+  const [subscriptionMessage, setSubscriptionMessage] = useState('')
+  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [unlockedBlend, setUnlockedBlend] = useState<{ hex: string; name: string } | null>(null)
 
   useEffect(() => {
     try {
@@ -66,12 +76,22 @@ export default function AuraSpectrumPage() {
         return
       }
 
+      // Supply the display-only can with the exact same point records used by the reveal engine.
+      try {
+        window.localStorage.setItem('aura-spectrum-cyclone-points', JSON.stringify(
+          emotionGlossaryPoints.map(({ name, definition, hex, freq, colorAssignment }) => ({ name, definition, hex, freq, colorAssignment }))
+        ))
+      } catch {
+        // The can iframe falls back to its bundled display data if storage is blocked.
+      }
+
       const generated = generateOriginSpectrum(birthDate, {
         now: new Date(),
         spectrum: emotionGlossaryPoints,
         zodiacMap,
         resolveZodiacSign: (date) => getZodiacSign(date),
         getBirthstoneResonance,
+        includeComposite: false,
       })
       setResult(generated)
       setError('')
@@ -81,6 +101,77 @@ export default function AuraSpectrumPage() {
     }
   }, [retryKey])
 
+  useEffect(() => {
+    if (!result) return
+    try {
+      const saved = window.localStorage.getItem('auraspanse-aura-spectrum-subscription')
+      const parsed = saved ? JSON.parse(saved) as { birthDate?: string; email?: string; subscribed?: boolean } : null
+      if (parsed?.subscribed && parsed.birthDate === result.birthDate) {
+        setIsSubscribed(true)
+        setEmail(parsed.email || '')
+        setUnlockedBlend({
+          hex: blendTwoHex(result.firstHue.hex, result.birthstone.hex),
+          name: readableName(result.firstHue.name) + ' × ' + result.birthstone.name,
+        })
+      } else {
+        setIsSubscribed(false)
+        setUnlockedBlend(null)
+      }
+    } catch {
+      setIsSubscribed(false)
+      setUnlockedBlend(null)
+    }
+  }, [result])
+
+  async function handleSubscribe(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!result || !email.trim()) return
+    if (!consent) {
+      setSubscriptionError('Confirm that you want to receive AuraSpanse email updates to continue.')
+      return
+    }
+
+    setSubmitting(true)
+    setSubscriptionError('')
+    setSubscriptionMessage('')
+    try {
+      const response = await fetch('/api/subscribe-aura-spectrum', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), birthDate: result.birthDate, consent }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.success || data.subscribed !== true || typeof data.blendHex !== 'string') {
+        throw new Error(data.error || 'The subscription could not be confirmed. The combined color remains locked.')
+      }
+
+      const blend = {
+        hex: data.blendHex as string,
+        name: readableName(data.primaryHueName || result.firstHue.name) + ' × ' + (data.birthstoneName || result.birthstone.name),
+      }
+      setUnlockedBlend(blend)
+      setIsSubscribed(true)
+      setSubscriptionMessage(
+        data.emailSent
+          ? 'Subscription confirmed. Your two-primary blend is revealed below, and the reading email was sent.'
+          : 'Subscription confirmed. Your two-primary blend is revealed below. The email could not be sent, but the subscription is active.'
+      )
+      try {
+        window.localStorage.setItem('auraspanse-aura-spectrum-subscription', JSON.stringify({
+          birthDate: result.birthDate,
+          email: email.trim(),
+          subscribed: true,
+        }))
+      } catch {
+        // Subscription and reveal are already confirmed by the server.
+      }
+    } catch (cause) {
+      setSubscriptionError(cause instanceof Error ? cause.message : 'The subscription could not be confirmed.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <main style={shell}>
       <header style={{ ...panel, textAlign: 'center', paddingTop: '42px', paddingBottom: '42px' }}>
@@ -89,7 +180,7 @@ export default function AuraSpectrumPage() {
           Aura-Spectrum
         </h1>
         <p style={{ ...muted, maxWidth: '670px', margin: '0 auto' }}>
-          Every one of the 374 glossary entries becomes its own colored point on the cylindrical Fibonacci cyclone, retaining its definition. The existing palette supplies exact matches and nearest swatches for unmatched terms; the birthstone layer blends into the points and the path darkens upward.
+          Your birthdate initializes the existing Aura-Spectrum reveal engine. Its first primary is an age-derived emotion color; its second primary is your birth month's literal gemstone swatch. The transparent can is the explorer UI. The two personal primaries remain separate until the email subscription is confirmed.
         </p>
       </header>
 
@@ -135,33 +226,38 @@ export default function AuraSpectrumPage() {
           </section>
 
           <section style={panel}>
-            <p style={eyebrow}>THE 374-POINT EMOTION CYCLONE</p>
-            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Every definition has a color-bearing point</h2>
-            <AuraSpectrumCylinder
-              spectrum={emotionGlossaryPoints}
-              firstHueIndex={result.firstHueIndex}
-              currentPlacementIndex={result.currentPlacementIndex}
-              birthstoneHex={result.birthstone.hex}
-              birthstoneOpacity={result.birthstone.opacity}
-            />
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '24px' }}>
-              <div style={{ border: `1px solid ${result.firstHue.hex}88`, background: `${result.firstHue.hex}18`, borderRadius: '18px', padding: '20px' }}>
-                <p style={eyebrow}>FIRST HUE · POINT {result.firstHueIndex + 1}</p>
-                <div style={{ width: '100%', height: '62px', borderRadius: '12px', margin: '16px 0', background: result.firstHue.hex }} />
+            <p style={eyebrow}>THE 374-POINT EMOTION CAN</p>
+            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Explore the emotional spectrum</h2>
+            <p style={muted}>
+              The transparent can is the explorer interface: the same named emotions, definitions, colors, and frequency positions used by this reveal engine. It is not a second calculation engine.
+            </p>
+            <div style={{ marginTop: '18px', border: '1px solid rgba(255,255,255,0.11)', borderRadius: '10px', overflow: 'hidden', background: '#0a0a12' }}>
+              <iframe
+                title="AuraSpanse interactive emotion-color can"
+                src={'/aura-spectrum-cyclone.html?selected=' + encodeURIComponent(result.firstHue.name)}
+                loading="eager"
+                style={{ display: 'block', width: '100%', height: 'clamp(980px, 132vh, 1380px)', border: 0, background: '#0a0a12' }}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '22px' }}>
+              <div style={{ border: '1px solid ' + result.firstHue.hex + '88', background: result.firstHue.hex + '18', borderRadius: '12px', padding: '18px' }}>
+                <p style={eyebrow}>PRIMARY HUE 1 · AGE-DERIVED</p>
+                <div style={{ height: '58px', borderRadius: '8px', margin: '14px 0', background: result.firstHue.hex }} />
                 <h3 style={{ color: result.firstHue.hex, margin: '0 0 5px' }}>{readableName(result.firstHue.name)}</h3>
                 <p style={muted}>{result.firstHue.hex} · frequency {result.firstHue.freq}/1000</p>
+                <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>{emotionGlossaryPoints[result.firstHueIndex]?.definition}</p>
               </div>
-              <div style={{ border: `1px solid ${result.currentPlacement.hex}88`, background: `${result.currentPlacement.hex}18`, borderRadius: '18px', padding: '20px' }}>
-                <p style={eyebrow}>CURRENT PLACEMENT · POINT {result.currentPlacementIndex + 1}</p>
-                <div style={{ width: '100%', height: '62px', borderRadius: '12px', margin: '16px 0', background: result.currentPlacement.hex }} />
+              <div style={{ border: '1px solid ' + result.currentPlacement.hex + '88', background: result.currentPlacement.hex + '18', borderRadius: '12px', padding: '18px' }}>
+                <p style={eyebrow}>CURRENT PLACEMENT · CONTEXT MARKER</p>
+                <div style={{ height: '58px', borderRadius: '8px', margin: '14px 0', background: result.currentPlacement.hex }} />
                 <h3 style={{ color: result.currentPlacement.hex, margin: '0 0 5px' }}>{readableName(result.currentPlacement.name)}</h3>
                 <p style={muted}>{result.currentPlacement.hex} · frequency {result.currentPlacement.freq}/1000</p>
+                <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>Today's marker in the same spectrum. It is contextual and is not a third ingredient in the two-primary blend.</p>
               </div>
             </div>
           </section>
 
-          <section style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
+                    <section style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
             <p style={eyebrow}>SECOND HUE · GEOGRAPHIC BIRTHSTONE RESONANCE</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Literal stone color first. Name second.</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(125px, 0.7fr) minmax(210px, 1.5fr)', gap: '20px', alignItems: 'stretch', marginTop: '18px' }}>
@@ -188,7 +284,7 @@ export default function AuraSpectrumPage() {
                 <div style={{ height: '100%', width: `${result.birthstone.opacityPercent}%`, background: result.birthstone.hex, boxShadow: `0 0 14px ${result.birthstone.hex}88` }} />
               </div>
               <p style={{ ...muted, fontSize: '0.88rem', marginBottom: 0 }}>
-                Existing mechanism rule: clamp(100 − distance in km ÷ 150, 25, 100). That opacity overlays the gemstone’s literal hex on the emotion-color points; as the cylindrical Fibonacci path rises, its points progressively darken. The gemstone name never generates the hue.
+                Existing mechanism rule: clamp(100 − distance in km ÷ 150, 25, 100). That percentage describes the birthstone's geographic-resonance layer. The gemstone name never generates the hue, and the two personal primary swatches remain unblended until subscription is confirmed.
               </p>
             </div>
           </section>
@@ -197,7 +293,7 @@ export default function AuraSpectrumPage() {
             <p style={eyebrow}>HISTORICAL ZODIAC FRAME</p>
             <h2 style={{ color: result.firstHue.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: '2.2rem', margin: '12px 0 4px' }}>{result.zodiac.sign}</h2>
             <p style={muted}>{result.zodiac.element} · {result.zodiac.modality} · traditional ruler: {result.zodiac.traditionalRuler}</p>
-            <p style={muted}>{result.zodiac.description} The sign's three symbolic channels receive equal one-third weights before they are combined with the age-derived hues.</p>
+            <p style={muted}>{result.zodiac.description} The sign's positive, neutral, and shadow channels provide equal-weight symbolic context. They are not additional ingredients in the subscriber-only blend of the two primary hues.</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginTop: '20px' }}>
               {result.zodiac.traitChannels.map((trait) => (
@@ -212,29 +308,81 @@ export default function AuraSpectrumPage() {
             <p style={muted}>Equal-trait mean: {result.zodiac.averageFrequency}/1000 · nearest spectrum label: <strong>{readableName(result.zodiac.averageEmotion.name)}</strong></p>
           </section>
 
-          <section style={{ ...panel, borderColor: `${result.composite.hex}88` }}>
-            <p style={eyebrow}>THE NEW COMPOSITE EMOTION</p>
-            <div style={{ width: '100%', height: '12px', borderRadius: '99px', background: result.composite.hex, boxShadow: `0 0 32px ${result.composite.hex}55`, margin: '18px 0' }} />
-            <h2 style={{ color: result.composite.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.7rem)', margin: '12px 0' }}>{result.composite.name}</h2>
-            <p style={muted}>{result.composite.hex} · blended frequency {result.composite.frequency}/1000 · nearest spectrum emotion: {readableName(result.composite.nearestEmotion.name)}</p>
-            <p style={{ ...muted, fontSize: '1rem' }}>{result.composite.definition}</p>
-            <h3 style={{ fontWeight: 500, marginTop: '26px' }}>Balanced spectrum plus proximity-weighted birthstone</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '10px' }}>
-              {result.composite.sourceWeights.map((source) => (
-                <div key={source.source} style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: '13px', padding: '12px' }}>
-                  <div style={{ height: '30px', borderRadius: '7px', background: source.hex, marginBottom: '10px' }} />
-                  <p style={{ ...muted, fontSize: '0.78rem', margin: 0 }}>{source.source}</p>
-                  <strong style={{ display: 'block', fontSize: '0.87rem', marginTop: '6px' }}>{readableName(source.name)}</strong>
-                  <p style={{ ...muted, fontSize: '0.75rem', margin: '5px 0 0' }}>{source.hex} · {Math.round(source.weight * 100)}%</p>
+          <section style={{ ...panel, borderColor: isSubscribed ? ((unlockedBlend?.hex || result.firstHue.hex) + '88') : 'rgba(201,224,216,0.36)' }} aria-live="polite">
+            {!isSubscribed ? (
+              <>
+                <p style={eyebrow}>SUBSCRIBE TO REVEAL THE BLEND</p>
+                <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.4rem)', margin: '12px 0' }}>Two primaries. One personal color.</h2>
+                <p style={muted}>
+                  Primary Hue 1 is <strong style={{ color: result.firstHue.hex }}>{readableName(result.firstHue.name)}</strong> ({result.firstHue.hex}). Primary Hue 2 is <strong style={{ color: result.birthstone.hex }}>{result.birthstone.name}</strong> ({result.birthstone.hex}). Both are shown separately. The combined hue is calculated on the server only after your email subscription is confirmed.
+                </p>
+                <form onSubmit={handleSubscribe} style={{ display: 'grid', gap: '14px', marginTop: '22px' }}>
+                  <label htmlFor="aura-spectrum-email" style={{ display: 'grid', gap: '7px', fontSize: '0.9rem', color: 'rgba(243,240,235,0.9)' }}>
+                    Email address
+                    <input
+                      id="aura-spectrum-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="you@example.com"
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '13px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', background: '#12121d', color: '#f3f0eb', font: 'inherit' }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.82rem', lineHeight: 1.55, color: 'rgba(243,240,235,0.7)' }}>
+                    <input
+                      type="checkbox"
+                      required
+                      checked={consent}
+                      onChange={(event) => setConsent(event.target.checked)}
+                      style={{ marginTop: '4px', accentColor: '#c9e0d8', flex: '0 0 auto' }}
+                    />
+                    <span>I agree to subscribe to AuraSpanse email updates and receive this reading. I understand future updates will be sent to this address and I can unsubscribe.</span>
+                  </label>
+                  {subscriptionError && <p role="alert" style={{ margin: 0, color: '#f0a8b8', lineHeight: 1.6 }}>{subscriptionError}</p>}
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    style={{ padding: '14px 18px', border: 0, borderRadius: '4px', background: submitting ? '#5d5c68' : 'linear-gradient(115deg, #c9e0d8, #d9c9ff)', color: '#101018', fontWeight: 700, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.8 : 1, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+                  >
+                    {submitting ? 'Confirming subscription…' : 'Subscribe and reveal'}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <p style={eyebrow}>SUBSCRIPTION CONFIRMED · TWO-PRIMARY REVEAL</p>
+                <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.4rem)', margin: '12px 0' }}>Your primaries, now combined</h2>
+                {subscriptionMessage && <p style={{ ...muted, color: '#c9e0d8' }}>{subscriptionMessage}</p>}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '12px', marginTop: '20px' }}>
+                  <div style={{ padding: '14px', border: '1px solid ' + result.firstHue.hex + '66', borderRadius: '8px' }}>
+                    <div style={{ height: '46px', borderRadius: '6px', background: result.firstHue.hex, marginBottom: '10px' }} />
+                    <strong>{readableName(result.firstHue.name)}</strong>
+                    <p style={{ ...muted, fontSize: '0.78rem' }}>{result.firstHue.hex}</p>
+                  </div>
+                  <div style={{ padding: '14px', border: '1px solid ' + result.birthstone.hex + '66', borderRadius: '8px' }}>
+                    <div style={{ height: '46px', borderRadius: '6px', background: result.birthstone.hex, marginBottom: '10px' }} />
+                    <strong>{result.birthstone.name}</strong>
+                    <p style={{ ...muted, fontSize: '0.78rem' }}>{result.birthstone.hex} · geographic opacity {result.birthstone.opacityPercent.toFixed(1)}%</p>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div style={{ height: 'min(240px, 42vw)', minHeight: '150px', borderRadius: '8px', margin: '24px 0 16px', background: unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex), boxShadow: '0 0 45px ' + ((unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex)) + '55'), border: '1px solid rgba(255,255,255,0.22)' }} />
+                <h3 style={{ color: unlockedBlend?.hex || result.firstHue.hex, fontFamily: 'Georgia, serif', fontSize: 'clamp(1.35rem, 4vw, 2rem)', fontWeight: 400, margin: '0 0 8px' }}>
+                  {unlockedBlend?.name || (readableName(result.firstHue.name) + ' × ' + result.birthstone.name)}
+                </h3>
+                <p style={muted}>
+                  {(unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex))} · equal 50/50 RGB blend of Primary Hue 1 and Primary Hue 2 only.
+                </p>
+                <p style={{ ...muted, fontSize: '0.8rem' }}>Zodiac traits and today's placement are contextual; neither is added as a third blend ingredient.</p>
+              </>
+            )}
           </section>
         </>
       )}
 
       <footer style={{ ...panel, textAlign: 'center', padding: '22px' }}>
-        <p style={eyebrow}>AURA-SPECTRUM · CYLINDRICAL FIBONACCI MECHANISM</p>
+        <p style={eyebrow}>AURA-SPECTRUM · TWO-PRIMARY REVEAL</p>
         <p style={{ ...muted, fontSize: '0.82rem' }}>
           A custom symbolic model for entertainment and self-reflection, not a scientifically validated measure of personality, emotion, or destiny.
         </p>
