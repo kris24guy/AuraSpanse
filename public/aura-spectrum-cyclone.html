@@ -125,7 +125,7 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     <div class="list" id="list"></div>
   </details>
 
-  <p class="note"><span style="color:var(--muted)">NOTE:</span> The can contains 374 defined emotion points, ordered alphabetically around its cylindrical wall. The inner black-and-white tornado is a regular tapered helix, independent of the emotion-color reveal rules. Of the wall points, 69 use hex values directly from emotionColors.ts. The other 305 use colors interpolated along the existing 0–1000 frequency spectrum. This page defines visual presentation and browsing interactions only; the birthdate reveal is calculated by the Aura-Spectrum engine.</p>
+  <p class="note"><span style="color:var(--muted)">NOTE:</span> The can contains 374 defined emotion points, ordered alphabetically around its cylindrical wall. The inner black-and-white tornado is a regular tapered helix, independent of the emotion-color reveal rules. Exact normalized palette-name matches use their existing swatches. Other labels use a deterministic frequency band and the closest existing palette swatch. This page defines visual presentation and browsing interactions only; the birthdate reveal is calculated by the Aura-Spectrum engine.</p>
 </main>
 
 <script>
@@ -381,7 +381,7 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     meta.textContent = n.hex + ' · ' + place;
     insp.appendChild(meta);
     insp.appendChild(el('p', 'def', n.def));
-    insp.appendChild(el('p', 'prov', n.src === 'db' ? 'Hex taken from emotionColors.ts.' : 'Not in emotionColors.ts. Given spectrum position ' + n.f + ' of 1000 and colored by interpolation.'));
+    insp.appendChild(el('p', 'prov', n.src === 'db' ? 'Hex taken from emotionColors.ts.' : 'No exact palette-name match; uses the nearest existing swatch at frequency ' + n.f + '/1000.'));
   }
 
   var searchInput = document.getElementById('q'), countEl = document.getElementById('count'), listEl = document.getElementById('list');
