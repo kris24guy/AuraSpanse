@@ -159,6 +159,12 @@ const pageSource = await readFile(new URL("../app/aura-spectrum/page.tsx", impor
 assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
   "the birthdate entry must route into Aura-Spectrum");
 assert.ok(pageSource.includes("aura-spectrum-cyclone.html"), "the reveal page must use the supplied can UI");
+assert.ok(pageSource.includes("import AuraSky from '../components/AuraSky'") && pageSource.includes("<AuraSky />"),
+  "the static-glow sky should be present as visual framing around the unchanged model");
+const auraSkySource = await readFile(new URL("../app/components/AuraSky.tsx", import.meta.url), "utf8");
+assert.ok(auraSkySource.includes("pointerEvents: 'none'"), "ambient sky must not intercept UI interaction");
+assert.ok(auraSkySource.includes("prefers-reduced-motion: reduce"), "ambient sky must respect reduced-motion preferences");
+assert.ok(!/fibonacci|golden.?angle|137\\.5/i.test(auraSkySource), "ambient sky must not introduce a spiral-based model");
 assert.ok(pageSource.includes("includeComposite: false"), "the public page must not precompute the personal blend");
 assert.ok(pageSource.includes("/api/subscribe-aura-spectrum"), "the blend must be requested only through the subscription path");
 assert.ok(!pageSource.includes("result.composite"), "the pre-subscription page must not render the older composite model");
