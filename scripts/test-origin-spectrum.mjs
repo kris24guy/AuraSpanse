@@ -200,6 +200,15 @@ assert.ok(cycloneSource.includes("cg.addColorStop(0, resonanceHex(255, 0, 0.9))"
   "the central tornado core must use the deposit-proximity hue tint while retaining bottom-to-top darkening");
 assert.ok(cycloneSource.includes("meta.textContent = 'Original emotion color · stone-tinted display · ' + place"),
   "the inspector must distinguish the original emotion color from its stone-tinted appearance");
+const legacyPrototypeSource = await readFile(new URL("../server.js", import.meta.url), "utf8");
+const spectrumComponentSource = await readFile(new URL("../app/components/AuraSpectrum.tsx", import.meta.url), "utf8");
+const guideSource = await readFile(new URL("../app/aura-guide/page.tsx", import.meta.url), "utf8");
+const revealPageSource = await readFile(new URL("../app/reveal/page.tsx", import.meta.url), "utf8");
+const subscriptionEmailSource = await readFile(new URL("../app/api/subscribe-aura-spectrum/route.ts", import.meta.url), "utf8");
+assert.ok(!/\\bfreq\\b|frequency|0\\s*[-–]\\s*1000|1000\\s*hz|\\bHz\\b/i.test(
+  paletteSource + glossarySource + originEngineSource + auraEngineSource + spectrumComponentSource +
+  pageSource + cycloneSource + guideSource + revealPageSource + legacyPrototypeSource + subscriptionEmailSource
+), "the full app and retired prototype must not use the old 0–1000 emotion-frequency scale");
 assert.ok(pageSource.includes("opacity=' + encodeURIComponent(String(result.birthstone.opacity))"),
   "the reveal page must pass its calculated opacity into the display-only can");
 assert.ok(!cycloneSource.includes("137.5°"), "the visual UI must not prescribe a spiral-angle formula");
