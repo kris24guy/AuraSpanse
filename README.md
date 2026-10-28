@@ -7,7 +7,7 @@ AuraSpanse is an astrology-inspired emotional-color and personal-reflection proj
 1. The birthdate form at `/aura-scope-mechanism.html` validates the date, saves it locally, and routes to `/aura-spectrum`.
 2. The Aura-Spectrum engine uses the 374-entry emotion glossary, the birthdate/day-count rule, zodiac context, and the birthstone's literal hex swatch to resolve two primaries.
 3. The first primary is an age-derived emotion point. The second primary is the literal monthly birthstone color, with the original geographic-distance opacity metadata.
-4. The transparent can is the visual explorer only. It receives the same 374 names, definitions, base colors, and frequency positions from the reveal page. The Q-loop concepts are not part of AuraSpanse.
+4. The transparent can is the visual explorer only. It receives the same 374 names, definitions, base colors, and frequency positions from the reveal page. The can contains only entries from the emotional glossary.
 5. The two primary colors stay separate before signup. Only after the server confirms a Resend mailing-list subscription does it calculate and return the equal-weight RGB average of Primary Hue 1 and Primary Hue 2. Zodiac traits and today's context marker are not additional blend ingredients.
 
 ## Can presentation
