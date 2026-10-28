@@ -42,6 +42,7 @@ Without all three, the route returns a configuration error and the combined colo
 - `app/lib/emotionGlossary.ts` — 374 source labels and definitions and their deterministic color assignments.
 - `app/lib/auraSpectrumCycloneData.ts` — the same point data for the visual can.
 - `public/aura-spectrum-cyclone.html` — visual-only transparent can, searchable point inspector, and regular tapered helix.
+- `app/components/AuraSky.tsx` — decorative static-glow background and starfield; does not affect model calculations.
 - `app/lib/originSpectrumEngine.ts` — existing birthdate-based reveal model.
 - `app/lib/birthstoneResonance.ts` — literal monthly stone hex values, reference regions, distance, and opacity.
 - `app/aura-spectrum/page.tsx` — primary-color reveal screen and subscription gate.
