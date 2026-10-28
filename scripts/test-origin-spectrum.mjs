@@ -174,6 +174,14 @@ assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses regular
 assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the inner tornado uses a regular tapered helix");
 assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses even cylindrical rows");
 assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the central tornado is a regular tapered helix");
+assert.ok(cycloneSource.includes("var sourceStoneHex = queryParams.get('stone')"),
+  "the can must receive Primary Hue 2's literal hex from the reveal model");
+assert.ok(cycloneSource.includes("queryParams.get('opacity')"),
+  "the can must receive the model-computed birthstone opacity");
+assert.ok(cycloneSource.includes("n.baseHex + ' base → ' + n.hex + ' displayed"),
+  "the inspector must distinguish each emotion's base color from its rendered stone overlay");
+assert.ok(pageSource.includes("opacity=' + encodeURIComponent(String(result.birthstone.opacity))"),
+  "the reveal page must pass its calculated opacity into the display-only can");
 assert.ok(!cycloneSource.includes("137.5°"), "the visual UI must not prescribe a spiral-angle formula");
 assert.ok(!cycloneSource.includes("Fib //"), "the visual UI must not label itself with a spiral formula");
 assert.ok(!cycloneSource.includes("Quaintness"), "the can must not hard-code one starter emotion");
