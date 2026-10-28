@@ -7,7 +7,7 @@ function callClaude(birthdate) {
   return new Promise((resolve, reject) => {
     const prompt = `Generate a full living aura reading for someone born on ${birthdate}.
 
-Tone: intimate color psychology — NOT a horoscope. Speak directly about what each color frequency reveals about innate strengths, hidden shadows, and specific alignment actions grounded in the color's actual frequency, element, and energetic nature.
+Tone: intimate color psychology — NOT a horoscope. Speak directly about what each chosen palette color evokes about innate strengths, hidden shadows, and specific alignment actions grounded in its symbolic color and element.
 
 Return ONLY valid JSON — no markdown, no backticks:
 {
@@ -16,14 +16,13 @@ Return ONLY valid JSON — no markdown, no backticks:
       "name": "unique 2-3 word poetic hue name",
       "hex": "#rich saturated hex",
       "emotion": "1-3 word primary emotion",
-      "frequency": 432,
       "element": "one of: Fire Water Earth Air Ether Plasma Void Starlight Storm Crystal Thunder Mist",
-      "strength": "2 sentences — innate gift this color frequency gives them",
+      "strength": "2 sentences — innate gift this palette color gives them",
       "weakness": "2 sentences — shadow or block this color reveals",
-      "action": "2 sentences — specific grounded action to align with this frequency"
+      "action": "2 sentences — specific grounded action to align with this color"
     },
-    { "name":"...", "hex":"...", "emotion":"...", "frequency": 528, "element":"...", "strength":"...", "weakness":"...", "action":"..." },
-    { "name":"...", "hex":"...", "emotion":"...", "frequency": 639, "element":"...", "strength":"...", "weakness":"...", "action":"..." }
+    { "name":"...", "hex":"...", "emotion":"...", "element":"...", "strength":"...", "weakness":"...", "action":"..." },
+    { "name":"...", "hex":"...", "emotion":"...", "element":"...", "strength":"...", "weakness":"...", "action":"..." }
   ],
   "finalHue": {
     "name": "unique 2-4 word signature aura name",
@@ -31,13 +30,13 @@ Return ONLY valid JSON — no markdown, no backticks:
     "description": "3 sentences on blended aura essence — who they are at their core"
   },
   "aurascope": "6 sentences weaving all three frequencies into a personal portrait: creative architecture, relational patterns, specific fears, concrete inner shifts that would transform their life. Intimate color psychology, not fortune telling.",
-  "mantra": "8-12 words — powerful personal mantra reflecting their specific color frequencies"
+  "mantra": "8-12 words — powerful personal mantra reflecting their specific palette colors"
 }`;
 
     const body = JSON.stringify({
       model: "claude-opus-4-5",
       max_tokens: 2000,
-      system: "You are the Universe's Aura Oracle — a master of chromotherapy, color frequency psychology, sacred geometry, chakra science, and quantum physics meeting ancient wisdom. You interpret electromagnetic signatures encoded in birth dates to reveal a person's true color nature. You speak with intimate directness — not as a fortune teller, but as a mirror. Every reading is grounded in the specific properties of each color frequency: its Hz range, elemental correspondence, what it opens and blocks in the human energy field.",
+      system: "You are AuraSpanse’s emotional-color guide. Interpret the chosen palette colors, emotion words, symbolic elements, and birthdate context as creative personal reflection, not as scientific measurement or guaranteed truth.",
       messages: [{ role: "user", content: prompt }]
     });
 
@@ -195,7 +194,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) s
 <!-- ═══════════════════ INTRO ═══════════════════ -->
 <div id="screen-intro" class="screen">
   <h1 class="gold" style="font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,6vw,3.8rem);letter-spacing:.14em;margin-bottom:6px">AURASCOPE</h1>
-  <p style="font-family:'Cinzel',serif;font-size:clamp(.6rem,1.7vw,.78rem);letter-spacing:.28em;color:rgba(180,150,255,.35);text-transform:uppercase;margin-bottom:28px">Read the living frequency of your soul</p>
+  <p style="font-family:'Cinzel',serif;font-size:clamp(.6rem,1.7vw,.78rem);letter-spacing:.28em;color:rgba(180,150,255,.35);text-transform:uppercase;margin-bottom:28px">Read the living color of your soul</p>
 
   <div style="animation:floatY 4s ease-in-out infinite;margin-bottom:28px;position:relative">
     <div class="vortex-wrap" id="vwrap-intro" style="box-shadow:0 0 60px rgba(139,92,246,.35),0 0 120px rgba(139,92,246,.12)">
@@ -220,7 +219,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) s
   </div>
 
   <p style="margin-top:38px;font-size:.72rem;font-style:italic;color:rgba(180,150,255,.17);max-width:320px;letter-spacing:.04em">
-    Your birth date encodes a unique electromagnetic signature — enter it to activate your living frequency map
+    Your birth date encodes a unique electromagnetic signature — enter it to activate your living color map
   </p>
 </div>
 
@@ -232,8 +231,8 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) s
     </div>
     <div class="vortex-tooltip" id="tt-scan"></div>
   </div>
-  <h2 style="font-family:'Cinzel',serif;font-size:clamp(.95rem,3vw,1.25rem);letter-spacing:.1em;color:rgba(200,170,255,.9);margin-bottom:8px">Reading Your Frequency...</h2>
-  <p id="scan-msg" style="font-style:italic;color:rgba(180,150,255,.5);font-size:.9rem;margin-bottom:44px;min-height:24px;transition:opacity .4s">Decoding your birth frequency...</p>
+  <h2 style="font-family:'Cinzel',serif;font-size:clamp(.95rem,3vw,1.25rem);letter-spacing:.1em;color:rgba(200,170,255,.9);margin-bottom:8px">Reading Your Color…...</h2>
+  <p id="scan-msg" style="font-style:italic;color:rgba(180,150,255,.5);font-size:.9rem;margin-bottom:44px;min-height:24px;transition:opacity .4s">Decoding your birthdate color...</p>
   <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
   <p id="prog-pct" style="font-family:'Cinzel',serif;font-size:.64rem;letter-spacing:.22em;color:rgba(139,92,246,.4);margin-top:8px;width:300px;max-width:80vw;text-align:right">0%</p>
 </div>
@@ -260,7 +259,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) s
       </div>
     </div>
 
-    <p style="font-style:italic;color:rgba(200,175,255,.55);font-size:.85rem;letter-spacing:.06em;text-align:center;margin-bottom:36px">Three living frequencies encoded in your birth — your strengths, your shadows, your design</p>
+    <p style="font-style:italic;color:rgba(200,175,255,.55);font-size:.85rem;letter-spacing:.06em;text-align:center;margin-bottom:36px">Three living colors selected from your birthdate — your strengths, your shadows, your design</p>
 
     <!-- Hue cards -->
     <div class="cards-grid" id="cards-grid"></div>
@@ -284,7 +283,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) s
         <p id="aurascope-txt" class="aurascope-txt blurred"></p>
         <div class="unlock-ov" id="unlock-ov">
           <p style="font-family:'Cinzel',serif;font-size:.76rem;letter-spacing:.12em;color:rgba(200,170,255,.9);text-transform:uppercase;margin-bottom:2px">Your Full Aurascope Awaits</p>
-          <p style="font-style:italic;color:rgba(180,150,255,.55);font-size:.86rem;max-width:300px">Receive your complete soul-frequency reading, mantra, and monthly aura updates</p>
+          <p style="font-style:italic;color:rgba(180,150,255,.55);font-size:.86rem;max-width:300px">Receive your complete color reading, mantra, and monthly aura updates</p>
           <input type="email" id="inp-email" placeholder="Your email address..." style="max-width:280px;text-align:center"/>
           <button class="btn-unlock" id="btn-unlock">&#10022; Send My Full Reading</button>
           <p id="email-err" style="color:#f87171;font-size:.82rem;font-style:italic;min-height:18px"></p>
@@ -303,7 +302,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) s
     </div>
 
     <p style="margin-top:56px;font-size:.72rem;font-style:italic;color:rgba(180,150,255,.14);letter-spacing:.06em">
-      Channeled through chromotherapy, frequency science &amp; the ancient wisdom of light
+      Channeled through chromotherapy, color symbolism &amp; the ancient wisdom of light
     </p>
   </div>
 </div>
@@ -323,47 +322,47 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) s
   }
 })();
 
-// ── Emotion color spectrum (0–1000 Hz mapped to spiral) ─────────────────────
+// The palette array order defines the available color positions.
 var EC = [
-  {n:'Cosmic Void',     f:0,   h:'#2e1065'},
-  {n:'Deep Mystery',    f:28,  h:'#4c1d95'},
-  {n:'Ethereal Violet', f:55,  h:'#6d28d9'},
-  {n:'Mystic Purple',   f:80,  h:'#7c3aed'},
-  {n:'Soul Indigo',     f:108, h:'#4338ca'},
-  {n:'Sacred Blue',     f:135, h:'#1d4ed8'},
-  {n:'Celestial Azure', f:160, h:'#0369a1'},
-  {n:'Oracle Cyan',     f:188, h:'#0891b2'},
-  {n:'Aqua Aether',     f:215, h:'#0d9488'},
-  {n:'Emerald Life',    f:242, h:'#047857'},
-  {n:'Forest Wisdom',   f:268, h:'#15803d'},
-  {n:'Jade Harmony',    f:295, h:'#4d7c0f'},
-  {n:'Sage Peace',      f:322, h:'#65a30d'},
-  {n:'Golden Light',    f:348, h:'#a16207'},
-  {n:'Amber Will',      f:375, h:'#b45309'},
-  {n:'Solar Power',     f:402, h:'#c2410c'},
-  {n:'Fire Passion',    f:428, h:'#dc2626'},
-  {n:'Crimson Heart',   f:455, h:'#b91c1c'},
-  {n:'Ruby Love',       f:482, h:'#9f1239'},
-  {n:'Rose Tender',     f:508, h:'#be185d'},
-  {n:'Magenta Divine',  f:535, h:'#a21caf'},
-  {n:'Orchid Spirit',   f:562, h:'#7e22ce'},
-  {n:'Violet Dream',    f:588, h:'#6d28d9'},
-  {n:'Indigo Deep',     f:615, h:'#3730a3'},
-  {n:'Midnight Sea',    f:642, h:'#1e3a8a'},
-  {n:'Ocean Vast',      f:668, h:'#1e40af'},
-  {n:'Cerulean Calm',   f:695, h:'#0284c7'},
-  {n:'Turquoise Flow',  f:722, h:'#0e7490'},
-  {n:'Malachite Heal',  f:748, h:'#0f766e'},
-  {n:'Pine Ground',     f:775, h:'#166534'},
-  {n:'Earth Root',      f:802, h:'#713f12'},
-  {n:'Copper Burn',     f:828, h:'#92400e'},
-  {n:'Amber Blaze',     f:855, h:'#d97706'},
-  {n:'Gold Radiant',    f:882, h:'#f59e0b'},
-  {n:'Solar White',     f:908, h:'#fde68a'},
-  {n:'Pearl Clarity',   f:935, h:'#e9d5ff'},
-  {n:'Lavender Grace',  f:962, h:'#c4b5fd'},
-  {n:'Stellar Violet',  f:988, h:'#a78bfa'},
-  {n:'Cosmic Return',   f:1000,h:'#7c3aed'}
+  {n:'Cosmic Void',   h:'#2e1065'},
+  {n:'Deep Mystery',  h:'#4c1d95'},
+  {n:'Ethereal Violet',  h:'#6d28d9'},
+  {n:'Mystic Purple',  h:'#7c3aed'},
+  {n:'Soul Indigo', h:'#4338ca'},
+  {n:'Sacred Blue', h:'#1d4ed8'},
+  {n:'Celestial Azure', h:'#0369a1'},
+  {n:'Oracle Cyan', h:'#0891b2'},
+  {n:'Aqua Aether', h:'#0d9488'},
+  {n:'Emerald Life', h:'#047857'},
+  {n:'Forest Wisdom', h:'#15803d'},
+  {n:'Jade Harmony', h:'#4d7c0f'},
+  {n:'Sage Peace', h:'#65a30d'},
+  {n:'Golden Light', h:'#a16207'},
+  {n:'Amber Will', h:'#b45309'},
+  {n:'Solar Power', h:'#c2410c'},
+  {n:'Fire Passion', h:'#dc2626'},
+  {n:'Crimson Heart', h:'#b91c1c'},
+  {n:'Ruby Love', h:'#9f1239'},
+  {n:'Rose Tender', h:'#be185d'},
+  {n:'Magenta Divine', h:'#a21caf'},
+  {n:'Orchid Spirit', h:'#7e22ce'},
+  {n:'Violet Dream', h:'#6d28d9'},
+  {n:'Indigo Deep', h:'#3730a3'},
+  {n:'Midnight Sea', h:'#1e3a8a'},
+  {n:'Ocean Vast', h:'#1e40af'},
+  {n:'Cerulean Calm', h:'#0284c7'},
+  {n:'Turquoise Flow', h:'#0e7490'},
+  {n:'Malachite Heal', h:'#0f766e'},
+  {n:'Pine Ground', h:'#166534'},
+  {n:'Earth Root', h:'#713f12'},
+  {n:'Copper Burn', h:'#92400e'},
+  {n:'Amber Blaze', h:'#d97706'},
+  {n:'Gold Radiant', h:'#f59e0b'},
+  {n:'Solar White', h:'#fde68a'},
+  {n:'Pearl Clarity', h:'#e9d5ff'},
+  {n:'Lavender Grace', h:'#c4b5fd'},
+  {n:'Stellar Violet', h:'#a78bfa'},
+  {n:'Cosmic Return',h:'#7c3aed'}
 ];
 
 // ── AuraVortex class ─────────────────────────────────────────────────────────
@@ -371,7 +370,7 @@ function AuraVortex(canvas, tooltip, birthSeed, dayOfYear) {
   this.canvas    = canvas;
   this.ctx       = canvas.getContext('2d');
   this.tooltip   = tooltip;
-  this.birthFreq = birthSeed % 1000;
+  this.birthIndex = ((Math.trunc(birthSeed) % EC.length) + EC.length) % EC.length;
   this.size      = canvas.width;
   this.rotation  = 0;
   this.rafId     = null;
@@ -381,17 +380,13 @@ function AuraVortex(canvas, tooltip, birthSeed, dayOfYear) {
   var norm        = (Math.sin(annOffset) + 1) / 2;
   this.baseSpeed  = 0.00018 + norm * 0.00014;
 
-  // find birth color
-  var bc = EC[0];
-  for(var i=0;i<EC.length;i++){
-    if(Math.abs(EC[i].f - this.birthFreq) < Math.abs(bc.f - this.birthFreq)) bc = EC[i];
-  }
-  this.birthColor = bc.h;
+  // The birthdate selects a starting color by position in the ordered palette.
+  this.birthColor = EC[this.birthIndex].h;
 }
 
-AuraVortex.prototype.freqToPolar = function(freq) {
+AuraVortex.prototype.indexToPolar = function(index) {
   var TURNS = 4.5, MIN_R = 18;
-  var t = freq / 1000;
+  var t = Math.max(0, Math.min(1, index / Math.max(1, EC.length - 1)));
   var maxR = (this.size / 2) - 12;
   return {
     r:     MIN_R + t * (maxR - MIN_R),
@@ -425,8 +420,7 @@ AuraVortex.prototype.draw = function() {
   // Spiral ribbon
   var steps = 800;
   for(var i=0;i<steps-1;i++){
-    var f0 = (i/steps)*1000,  f1 = ((i+1)/steps)*1000;
-    var p0 = this.freqToPolar(f0), p1 = this.freqToPolar(f1);
+    var p0 = this.indexToPolar((i/steps)*(EC.length-1)), p1 = this.indexToPolar(((i+1)/steps)*(EC.length-1));
     var c0 = this.toXY(p0.r,p0.theta), c1 = this.toXY(p1.r,p1.theta);
     var idx = Math.floor((i/steps)*(EC.length-1));
     var hex = EC[idx].h;
@@ -443,7 +437,7 @@ AuraVortex.prototype.draw = function() {
   // Emotion dots
   for(var j=0;j<EC.length;j++){
     var em = EC[j];
-    var ep = this.freqToPolar(em.f);
+    var ep = this.indexToPolar(j);
     var exy = this.toXY(ep.r, ep.theta);
     var grd = ctx.createRadialGradient(exy.x,exy.y,0,exy.x,exy.y,9.6);
     grd.addColorStop(0, em.h+'88');
@@ -459,7 +453,7 @@ AuraVortex.prototype.draw = function() {
   }
 
   // Birth point
-  var bp  = this.freqToPolar(this.birthFreq);
+  var bp  = this.indexToPolar(this.birthIndex);
   var bxy = this.toXY(bp.r, bp.theta);
   var bh  = this.birthColor;
   var pulse = 0.5 + 0.5 * Math.sin(Date.now() * (this.scanMode ? 0.005 : 0.002));
@@ -536,13 +530,13 @@ AuraVortex.prototype.attachHover = function(wrapEl) {
     var my   = (e.clientY - rect.top)  * (self.size / rect.height);
     var best = null, minD = 22;
     for(var i=0;i<EC.length;i++){
-      var p  = self.freqToPolar(EC[i].f);
+      var p  = self.indexToPolar(i);
       var xy = self.toXY(p.r, p.theta);
       var d  = Math.hypot(mx - xy.x, my - xy.y);
       if(d < minD){ minD = d; best = EC[i]; }
     }
     if(best){
-      tt.textContent = best.n + ' · ' + best.f + ' Hz';
+      tt.textContent = best.n;
       tt.style.left  = (e.clientX - wrapEl.getBoundingClientRect().left + 12) + 'px';
       tt.style.top   = (e.clientY - wrapEl.getBoundingClientRect().top  - 12) + 'px';
       tt.classList.add('show');
@@ -559,7 +553,7 @@ var vortexIntro = null, vortexScan = null, vortexResults = null;
 var scanInt = null, msgInt = null;
 
 var MSGS = [
-  'Decoding your birth frequency...',
+  'Decoding your birthdate color...',
   'Mapping your electromagnetic signature...',
   'Reading vibrational layers across the chakric spectrum...',
   'Translating light frequencies into living language...',
@@ -575,10 +569,10 @@ function dayOfYear() {
 }
 
 function parseBirthSeed(val) {
-  if(!val) return Math.floor(Math.random()*900000)+100000;
-  var parts = val.split('-');
-  var y = parseInt(parts[0])||2000, m = parseInt(parts[1])||1, d = parseInt(parts[2])||1;
-  return y*10000 + m*100 + d;
+  if(!val) return Math.floor(Math.random() * EC.length);
+  var parsed = new Date(val + 'T12:00:00');
+  if(Number.isNaN(parsed.getTime())) return 0;
+  return Math.floor(parsed.getTime() / 86400000);
 }
 
 function vortexSize(type) {
@@ -630,11 +624,8 @@ document.addEventListener('DOMContentLoaded', function(){
     var seed = parseBirthSeed(this.value);
     if(vortexIntro){
       vortexIntro.stop();
-      vortexIntro.birthFreq = seed % 1000;
-      var bc = EC[0];
-      for(var i=0;i<EC.length;i++){
-        if(Math.abs(EC[i].f - vortexIntro.birthFreq) < Math.abs(bc.f - vortexIntro.birthFreq)) bc = EC[i];
-      }
+      vortexIntro.birthIndex = ((Math.trunc(seed) % EC.length) + EC.length) % EC.length;
+      var bc = EC[vortexIntro.birthIndex];
       vortexIntro.birthColor = bc.h;
       updateIntroGlow(bc.h);
       vortexIntro.start(1);
@@ -765,7 +756,7 @@ function renderResults() {
 
     var tags = document.createElement('div');
     tags.style.marginBottom = '16px';
-    [[h.element,h.hex],[h.frequency+' Hz','#a855f7'],[h.emotion,'#ec4899']].forEach(function(t){
+    [[h.element,h.hex],[h.emotion,'#ec4899']].forEach(function(t){
       var s = document.createElement('span');
       s.className = 'tag';
       s.style.cssText = 'border:1px solid '+t[1]+'36;color:'+t[1]+';background:'+t[1]+'0f';
@@ -808,12 +799,12 @@ document.addEventListener('DOMContentLoaded', function(){
     var h = auraData.subHues, f = auraData.finalHue, ln = '\n', bar = '='.repeat(48);
     var body = [
       '✦  YOUR FULL AURASCOPE READING  ✦', ln,
-      bar, 'BIRTH FREQUENCY: '+userBdate, bar, ln,
-      '◈ '+h[0].name.toUpperCase(), h[0].frequency+' Hz | '+h[0].element+' | '+h[0].emotion, ln,
+      bar, 'BIRTHDATE: '+userBdate, bar, ln,
+      '◈ '+h[0].name.toUpperCase(), h[0].element+' | '+h[0].emotion, ln,
       'STRENGTH: '+h[0].strength, ln, 'SHADOW: '+h[0].weakness, ln, 'ALIGNMENT: '+h[0].action, ln,
-      '◈ '+h[1].name.toUpperCase(), h[1].frequency+' Hz | '+h[1].element+' | '+h[1].emotion, ln,
+      '◈ '+h[1].name.toUpperCase(), h[1].element+' | '+h[1].emotion, ln,
       'STRENGTH: '+h[1].strength, ln, 'SHADOW: '+h[1].weakness, ln, 'ALIGNMENT: '+h[1].action, ln,
-      '◈ '+h[2].name.toUpperCase(), h[2].frequency+' Hz | '+h[2].element+' | '+h[2].emotion, ln,
+      '◈ '+h[2].name.toUpperCase(), h[2].element+' | '+h[2].emotion, ln,
       'STRENGTH: '+h[2].strength, ln, 'SHADOW: '+h[2].weakness, ln, 'ALIGNMENT: '+h[2].action, ln,
       bar, 'SIGNATURE AURA: '+f.name.toUpperCase(), bar, ln, f.description, ln,
       bar, 'YOUR FULL AURASCOPE', bar, ln, auraData.aurascope, ln,
