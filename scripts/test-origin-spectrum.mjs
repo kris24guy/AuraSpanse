@@ -205,7 +205,7 @@ const spectrumComponentSource = await readFile(new URL("../app/components/AuraSp
 const guideSource = await readFile(new URL("../app/aura-guide/page.tsx", import.meta.url), "utf8");
 const revealPageSource = await readFile(new URL("../app/reveal/page.tsx", import.meta.url), "utf8");
 const subscriptionEmailSource = await readFile(new URL("../app/api/subscribe-aura-spectrum/route.ts", import.meta.url), "utf8");
-assert.ok(!/\\bfreq\\b|frequency|0\\s*[-–]\\s*1000|1000\\s*hz|\\bHz\\b/i.test(
+assert.ok(!/\bfreq\b|frequency|0\s*[-–]\s*1000|1000\s*hz|\bHz\b/i.test(
   paletteSource + glossarySource + originEngineSource + auraEngineSource + spectrumComponentSource +
   pageSource + cycloneSource + guideSource + revealPageSource + legacyPrototypeSource + subscriptionEmailSource
 ), "the full app and retired prototype must not use the old 0–1000 emotion-frequency scale");
