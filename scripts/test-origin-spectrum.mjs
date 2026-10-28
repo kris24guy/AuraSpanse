@@ -14,6 +14,7 @@ async function loadTypeScriptModule(relativePath) {
 
 const { emotionColors } = await loadTypeScriptModule("../app/lib/emotionColors.ts");
 const { generateOriginSpectrum } = await loadTypeScriptModule("../app/lib/originSpectrumEngine.ts");
+const { buildEmotionGlossaryPoints, EMOTION_GLOSSARY_ROWS } = await loadTypeScriptModule("../app/lib/emotionGlossary.ts");
 const {
   getBirthstoneResonance,
   BIRTHSTONE_REFERENCES,
@@ -47,6 +48,21 @@ const deps = (now, resolveZodiacSign) => ({
 });
 const resolveAries = () => "aries";
 const result = generateOriginSpectrum("1989-01-01", deps(fixedNow, resolveAries));
+
+const glossaryPoints = buildEmotionGlossaryPoints(emotionColors);
+assert.equal(EMOTION_GLOSSARY_ROWS.length, 374, "every supplied definition should become a point");
+assert.equal(glossaryPoints.length, 374, "every supplied definition should become a colored point");
+assert.equal(new Set(glossaryPoints.map((point) => point.name.toLowerCase())).size, 374, "glossary labels remain individually addressable");
+assert.ok(glossaryPoints.every((point) => point.definition.trim().length > 0), "all points retain a definition");
+assert.ok(glossaryPoints.every((point) => /^#[0-9a-f]{6}$/i.test(point.hex) && point.freq >= 0 && point.freq <= 1000), "every glossary point has a valid color and frequency");
+assert.ok(glossaryPoints.some((point) => point.colorAssignment === "exact"), "exact color-name matches should inherit palette swatches");
+assert.ok(glossaryPoints.some((point) => point.colorAssignment === "inferred"), "unmatched entries should receive nearest-palette swatches");
+for (let i = 0; i < glossaryPoints.length; i += 1) assert.equal(glossaryPoints[i].definition, EMOTION_GLOSSARY_ROWS[i][1], "definition remains verbatim for " + glossaryPoints[i].name);
+const glossaryResult = generateOriginSpectrum("1989-01-01", { ...deps(fixedNow, resolveAries), spectrum: glossaryPoints });
+assert.equal(glossaryResult.spectrumPointCount, 374, "the age equation now uses the 374 source glossary points");
+assert.equal(glossaryResult.firstHue.name, glossaryPoints[glossaryResult.firstHueIndex].name);
+assert.equal(glossaryResult.currentPlacement.name, glossaryPoints[glossaryResult.currentPlacementIndex].name);
+assert.deepEqual(buildEmotionGlossaryPoints(emotionColors), glossaryPoints, "glossary color assignment is deterministic");
 
 const expectedDays = Math.floor(
   (Date.UTC(2026, 9, 26) - Date.UTC(1989, 0, 1)) / 86400000
@@ -124,8 +140,12 @@ assert.ok(entryHtml.includes('window.location.assign("/aura-spectrum")'),
 const cylinderSource = await readFile(new URL("../app/components/AuraSpectrumCylinder.tsx", import.meta.url), "utf8");
 assert.ok(cylinderSource.includes("137.50776405003785"), "the cylinder should use the golden angle");
 assert.ok(cylinderSource.includes("darkenHex"), "the cylinder should darken upward");
+assert.ok(cylinderSource.includes("Search all "), "the cylinder should expose a searchable glossary index");
+assert.ok(cylinderSource.includes("point.spectrumPoint.definition"), "each point should carry its full definition");
 
 console.log("PASS: age/spectrum equation, zodiac balancing, and current placement are deterministic.");
 console.log("PASS: literal birthstone hex values drive the geographic opacity blend.");
 console.log("PASS: all 12 monthly stone swatches and their geographic opacity values validate.");
-console.log("PASS: the birthdate form opens Aura-Spectrum and the cylinder uses golden-angle upward darkening.");
+console.log("PASS: all 374 source labels preserve their definitions and receive deterministic palette swatches.");
+console.log("PASS: the live Aura-Spectrum age equation and cyclone use the 374 glossary points.");
+console.log("PASS: the birthdate form opens Aura-Spectrum and the cyclone exposes point search/definitions.");
