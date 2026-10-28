@@ -228,3 +228,10 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [x] Documented the mechanism and cited sources for birthstone conventions, gemstone color variability, and producing regions in `README.md`.
 - [ ] Latest GitHub Actions run, production build, and Render deployment have not been confirmed in this session. Do not label the feature released until CI passes and the live birthdate-to-`/aura-spectrum` flow is tested.
 - [!] The hex values are fixed canonical display swatches for repeatable computation. Natural gemstones can display multiple colors, so these should not be described as universal spectrometer measurements of every real stone.
+
+## 2026-10-28 — 374-entry emotion cyclone integration
+- Preserved all 374 uploaded emotion labels and definitions as the searchable Aura-Spectrum glossary.
+- Each glossary record now becomes an individual colored point on the cylindrical golden-angle path.
+- Exact normalized palette-name matches inherit existing hex colors; unmatched entries receive a deterministic semantic frequency band and nearest existing palette swatch.
+- Integrated the 374-entry list as the live spectrum for age-derived first hue and current placement; added tests for definitions, color mapping, and point count.
+- Verification status: repository changes committed; CI/build/live deployment must be checked separately before claiming the route is verified.
