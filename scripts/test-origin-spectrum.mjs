@@ -195,8 +195,15 @@ assert.ok(subscriptionRoute.includes("RESEND_AUDIENCE_ID"), "the signup must be 
 assert.ok(subscriptionRoute.includes("resend.contacts.create"), "the route must create/confirm a mailing-list contact");
 assert.ok(subscriptionRoute.includes("const blendHex = blendTwoPrimaryHex(result.firstHue.hex, result.birthstone.hex)"),
   "the subscribed blend must use exactly the two primaries");
-assert.ok(subscriptionRoute.indexOf("const blendHex = blendTwoPrimaryHex") > subscriptionRoute.indexOf("const created = await resend.contacts.create"),
+const postSubscriptionRoute = subscriptionRoute.slice(subscriptionRoute.indexOf("export async function POST"));
+assert.ok(postSubscriptionRoute.indexOf("const blendHex = blendTwoPrimaryHex(result.firstHue.hex, result.birthstone.hex)") >
+  postSubscriptionRoute.indexOf("const created = await resend.contacts.create"),
   "the reveal blend must be calculated after the mailing-list contact request");
+assert.ok(subscriptionRoute.includes("export async function GET"), "the route must support restoring a confirmed reveal");
+assert.ok(subscriptionRoute.includes("timingSafeEqual") && subscriptionRoute.includes("httpOnly: true"),
+  "restoration must rely on a server-signed, HttpOnly subscription ticket");
+assert.ok(subscriptionRoute.includes("ticket.birthDate !== birthDate"),
+  "a signed ticket must not unlock a different birthdate's blend");
 
 console.log("PASS: age/spectrum equation, zodiac balancing, and current placement are deterministic.");
 console.log("PASS: literal birthstone hex values and geographic opacity are preserved.");
