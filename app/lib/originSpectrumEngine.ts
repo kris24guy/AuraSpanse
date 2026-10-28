@@ -324,7 +324,6 @@ export function generateOriginSpectrum(
       traditionalRuler: zodiacRecord.traditionalRuler,
       description: zodiacRecord.description,
       traitChannels,
-      averagePositionIndex: zodiacAveragePositionIndex,
       averageEmotion: zodiacAverageEmotion
     },
     composite
