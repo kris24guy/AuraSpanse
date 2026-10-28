@@ -166,6 +166,8 @@ assert.ok(!pageSource.includes("auraspanse-aura-spectrum-subscription"),
   "the client must not restore the blend from a spoofable local-storage flag");
 assert.ok(pageSource.includes("data.subscribed !== true"),
   "the page must wait for server-confirmed mailing-list subscription before revealing the blend");
+assert.ok(pageSource.includes("fetch('/api/subscribe-aura-spectrum?birthDate='"),
+  "a previous subscription must be restored only through server validation");
 
 const cycloneSource = await readFile(new URL("../public/aura-spectrum-cyclone.html", import.meta.url), "utf8");
 assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show the 374 emotion entries");
