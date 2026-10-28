@@ -6,12 +6,14 @@ import { getZodiacSign, zodiacMap } from '../lib/zodiacMap'
 import { generateOriginSpectrum, type OriginSpectrumResult } from '../lib/originSpectrumEngine'
 import { getBirthstoneResonance } from '../lib/birthstoneResonance'
 import { AURA_SPECTRUM_CYCLONE_POINTS as emotionGlossaryPoints } from '../lib/auraSpectrumCycloneData'
+import AuraSky from '../components/AuraSky'
 
 const shell: CSSProperties = {
   minHeight: '100vh',
   padding: '36px 18px 64px',
-  background:
-    'radial-gradient(circle at 15% 8%, rgba(119,168,155,0.18), transparent 26%), radial-gradient(circle at 85% 18%, rgba(139,120,201,0.18), transparent 25%), #07080c',
+  position: 'relative',
+  isolation: 'isolate',
+  background: '#07080c',
   color: '#f3f0eb',
   fontFamily: 'Inter, system-ui, sans-serif',
 }
@@ -181,6 +183,8 @@ export default function AuraSpectrumPage() {
 
   return (
     <main style={shell}>
+      <AuraSky />
+      <div style={{ position: 'relative', zIndex: 1 }}>
       <header style={{ ...panel, textAlign: 'center', paddingTop: '42px', paddingBottom: '42px' }}>
         <p style={eyebrow}>AURASPANSE · THE AURA-SPECTRUM MECHANISM</p>
         <h1 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(2.4rem, 7vw, 4.3rem)', letterSpacing: '-0.035em', margin: '16px 0 12px' }}>
@@ -398,6 +402,7 @@ export default function AuraSpectrumPage() {
           <button onClick={() => setRetryKey((key) => key + 1)} style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#f3f0eb', padding: '9px 14px', borderRadius: '999px', cursor: 'pointer' }}>Recalculate today</button>
         </div>
       </footer>
+      </div>
     </main>
   )
 }
