@@ -184,20 +184,30 @@ assert.ok(pageSource.includes("fetch('/api/subscribe-aura-spectrum?birthDate='")
 const cycloneSource = await readFile(new URL("../public/aura-spectrum-cyclone.html", import.meta.url), "utf8");
 assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show the 374 emotion entries");
 assert.ok(cycloneSource.includes("aura-spectrum-cyclone-points"), "the can must receive the actual engine glossary");
-assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses regular cylindrical rows");
-assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the inner tornado uses a regular tapered helix");
-assert.ok(cycloneSource.includes("var COLUMNS = 18"), "the can wall uses even cylindrical rows");
-assert.ok(cycloneSource.includes("ta = tq * TAU * 4"), "the central tornado is a regular tapered helix");
-assert.ok(cycloneSource.includes("var sourceStoneHex = queryParams.get('stone')"),
-  "the can must receive Primary Hue 2's natural color swatch from the reveal model");
+assert.ok(cycloneSource.includes("function colorSortInfo(hex)"), "the emotion wall must sort by original color rather than alphabet");
+assert.ok(cycloneSource.includes("nodes.sort(function (left, right)") && cycloneSource.includes("a.hue - b.hue"),
+  "wall positions must follow hue order with neutral tones grouped separately");
+assert.ok(cycloneSource.includes("group('All emotions, arranged by color', nodes)"),
+  "the browse list must follow the color-ordered wall");
+assert.ok(cycloneSource.includes("var sourcePrimaryHex = queryParams.get('primary') || '';"),
+  "the can must receive Primary Hue 1 from the reveal engine");
+assert.ok(cycloneSource.includes("var sourceStoneHex = queryParams.get('stone') || '';"),
+  "the can must receive Primary Hue 2's natural birthstone color");
 assert.ok(cycloneSource.includes("queryParams.get('opacity')"),
-  "the can must receive the model-computed birthstone opacity");
-assert.ok(cycloneSource.includes("function resonanceHex(v, heightRatio, strength)") && cycloneSource.includes("stoneOpacity * (1 - 0.23 * height) * strength"),
-  "geological proximity opacity must tint the cyclone wall and central tornado, fading toward the upper rim");
-assert.ok(cycloneSource.includes("resonanceRGBA(255 * (1 - pt.q), op, pt.q, 0.82)"),
-  "the tornado particle field must combine grayscale structure with the literal stone color");
-assert.ok(cycloneSource.includes("cg.addColorStop(0, resonanceHex(255, 0, 0.9))") && cycloneSource.includes("cg.addColorStop(1, resonanceHex(0, 1, 0.9))"),
-  "the central tornado core must use the deposit-proximity hue tint while retaining bottom-to-top darkening");
+  "the can must receive model-computed geological-deposit proximity strength");
+assert.ok(cycloneSource.includes("function vortexTint(height, stoneInfluence, darkness)") &&
+  cycloneSource.includes("stoneOpacity * (1 - 0.16 * heightRatio) * stoneInfluence"),
+  "deposit proximity must control how the birthstone hue blends into the vortex");
+assert.ok(cycloneSource.includes("function drawVortexSurface(c, widthFactor, phase, gradient, alpha, glowColor)") &&
+  cycloneSource.includes("function drawFlowEdge(c, phase, colorA, colorB, alpha, thickness)"),
+  "the vortex must render as connected surfaces and continuous color-flow ribbons");
+assert.ok(cycloneSource.includes("outer.addColorStop(1, vortexTint(1, 1, 0.84))") &&
+  cycloneSource.includes("inner.addColorStop(1, vortexTint(1, 1, 0.88))"),
+  "the central vortex must darken progressively toward the upper rim");
+assert.ok(!cycloneSource.includes("function disc(pt)") && !cycloneSource.includes("var NT = nodes.length, TPts = []"),
+  "the central tornado must not be rendered as separate particle dots");
+assert.ok(!cycloneSource.includes("A to Z upward") && !cycloneSource.includes("All points, A to Z"),
+  "the emotion wall must not be presented as alphabetically ordered");
 assert.ok(cycloneSource.includes("meta.textContent = 'Original emotion color · stone-tinted display · ' + place"),
   "the inspector must distinguish the original emotion color from its stone-tinted appearance");
 const legacyPrototypeSource = await readFile(new URL("../server.js", import.meta.url), "utf8");
@@ -209,6 +219,8 @@ assert.ok(!/\bfreq\b|frequency|0\s*[-–]\s*1000|1000\s*hz|\bHz\b/i.test(
   paletteSource + glossarySource + originEngineSource + auraEngineSource + spectrumComponentSource +
   pageSource + cycloneSource + guideSource + revealPageSource + legacyPrototypeSource + subscriptionEmailSource
 ), "the full app and retired prototype must not use the old 0–1000 emotion-frequency scale");
+assert.ok(pageSource.includes("'&primary=' + encodeURIComponent(result.firstHue.hex)"),
+  "the reveal page must pass Primary Hue 1 into the can renderer");
 assert.ok(pageSource.includes("opacity=' + encodeURIComponent(String(result.birthstone.opacity))"),
   "the reveal page must pass its calculated opacity into the display-only can");
 assert.ok(!cycloneSource.includes("137.5°"), "the visual UI must not prescribe a spiral-angle formula");
@@ -236,5 +248,5 @@ console.log("PASS: age/spectrum equation, zodiac balancing, and current placemen
 console.log("PASS: literal birthstone colors and geological-deposit opacity are preserved.");
 console.log("PASS: all 12 monthly stone colors and their geographic opacity values validate.");
 console.log("PASS: all 374 source labels preserve their definitions and receive deterministic palette swatches.");
-console.log("PASS: the can is a 374-point regular cylinder/helix UI driven by the emotion glossary.");
+console.log("PASS: the transparent can is color-ordered and the continuous vortex blends both primary hues with geographic strength and upper-rim darkening.");
 console.log("PASS: the two-primary blend is not calculated by the public page and is calculated after confirmed subscription.");
