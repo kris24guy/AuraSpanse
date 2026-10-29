@@ -132,7 +132,7 @@ assert.notEqual(result.zodiac.sign, otherSign.zodiac.sign);
 assert.notEqual(result.firstHueIndex, otherSign.firstHueIndex, "zodiac index should influence first hue");
 
 const nextDay = generateOriginSpectrum("1989-01-01", deps(new Date("2026-10-27T18:00:00.000Z"), resolveAries));
-assert.equal(nextDay.daysAlive, result.daysAlive);
+assert.equal(nextDay.daysAlive, result.daysAlive + 1, "days alive should advance when the current date advances by one day");
 assert.notEqual(nextDay.currentDate, result.currentDate);
 assert.notEqual(nextDay.currentPlacementIndex, result.currentPlacementIndex,
   "current placement should advance with the current day");
