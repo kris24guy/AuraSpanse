@@ -252,3 +252,12 @@ Fix commits: 37cd913 (new redirect component), 8273e6b (root page), f6a6641 (leg
 - [x] Replaced user-facing raw color-code displays with swatches, names, definitions, and plain-language color descriptions. Internal color values remain available to draw the colors and calculate the two-primary blend.
 - [x] Updated the older and newer reveal copy, the guide, subscription email, and regression tests to remove numerical color readouts.
 - [ ] CI, production build, and the live birthdate-to-subscription-to-reveal journey remain unverified.
+
+
+## 2026-10-29 — Color-ordered wall and continuous hue-reactive vortex
+- [x] Sort all 374 emotion entries by their original color hue; neutral tones are grouped after chromatic hues. The ordering is visual/color-based rather than alphabetical.
+- [x] Pass Primary Hue 1 from the birthdate reveal into the transparent-can renderer alongside the literal natural birthstone color and the existing geological-deposit opacity value.
+- [x] Replace the central point/disc particle field and opaque core column with continuous tapered surfaces, translucent inner/outer flow ribbons, and hue-interaction gradients.
+- [x] Use the birthstone-proximity strength to control the secondary hue's contribution and darken both the wall and vortex progressively toward the upper rim.
+- [x] Update the emotion browser copy and regression assertions to reflect color ordering and continuous vortex rendering.
+- [ ] Verify the new assertions and Next.js production build in GitHub Actions; verify the live Render deployment separately. No deployment or runtime success is assumed from source changes alone.
