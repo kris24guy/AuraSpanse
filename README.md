@@ -41,7 +41,7 @@ Without all three, the route returns a configuration error and the combined colo
 - `public/aura-scope-mechanism.html` — birthdate entry and route handoff.
 - `app/lib/emotionGlossary.ts` — 374 source labels and definitions and their deterministic color assignments.
 - `app/lib/auraSpectrumCycloneData.ts` — the same point data for the visual can.
-- `public/aura-spectrum-cyclone.html` — visual-only transparent can, searchable point inspector, and regular tapered helix.
+- `public/aura-spectrum-cyclone.html` — visual-only transparent can with a color-ordered emotion wall, searchable inspector, and continuous hue-reactive tapered vortex.
 - `app/components/AuraSky.tsx` — decorative static-glow background and starfield; does not affect model calculations.
 - `app/lib/originSpectrumEngine.ts` — existing birthdate-based reveal model.
 - `app/lib/birthstoneResonance.ts` — monthly stone colors, reference regions, distance, and opacity.
