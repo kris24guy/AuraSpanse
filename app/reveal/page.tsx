@@ -53,6 +53,7 @@ export default function RevealPage() {
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [emailError, setEmailError] = useState('')
 
   useEffect(() => {
     const birthdate = localStorage.getItem('birthdate')
@@ -64,13 +65,15 @@ export default function RevealPage() {
       localStorage.setItem('auracle_registered_at', registeredAt)
     }
 
-    const data = generateAura(birthdate, registeredAt)
-    setAuraData({ ...data, aurascope: generateAurascope(data), registeredAt })
+    const generatedAt = new Date().toISOString()
+    const data = generateAura(birthdate, registeredAt, new Date(generatedAt))
+    setAuraData({ ...data, aurascope: generateAurascope(data), registeredAt, generatedAt })
   }, [])
 
   const handleSendEmail = async () => {
     if (!email || !auraData) return
     setSending(true)
+    setEmailError('')
     try {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
@@ -78,12 +81,15 @@ export default function RevealPage() {
         body: JSON.stringify({
           email,
           birthDate: localStorage.getItem('birthdate'),
-          registeredAt: auraData.registeredAt
+          registeredAt: auraData.registeredAt,
+          generatedAt: auraData.generatedAt
         })
       })
+      const payload = await res.json().catch(() => null)
       if (res.ok) setSent(true)
-    } catch (err) {
-      console.error(err)
+      else setEmailError(payload?.error || 'Your personalized reading could not be emailed. Please try again.')
+    } catch {
+      setEmailError('Your personalized reading could not be emailed. Please try again.')
     } finally {
       setSending(false)
     }
@@ -269,11 +275,12 @@ export default function RevealPage() {
 
           {!sent ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '13px', margin: '28px auto 0', maxWidth: '420px' }}>
-              <input type="email" placeholder="Enter email for full AuraScope reading" value={email} onChange={(e) => setEmail(e.target.value)} style={{ padding: '15px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(0,0,0,0.36)', color: 'white' }} />
+              <input type="email" placeholder="Enter email for full AuraScope reading" value={email} onChange={(e) => { setEmail(e.target.value); setEmailError('') }} style={{ padding: '15px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(0,0,0,0.36)', color: 'white' }} />
               <button onClick={handleSendEmail} disabled={sending} style={{ padding: '15px', borderRadius: '99px', border: 'none', background: 'white', color: 'black', fontWeight: 'bold', cursor: 'pointer' }}>
                 {sending ? 'Sending...' : 'Send My Full AuraScope'}
               </button>
-              <p style={{ fontSize: '0.78rem', opacity: 0.55, margin: 0 }}>For entertainment and personal reflection only.</p>
+              {emailError && <p role="alert" style={{ color: '#ffb3b3', fontSize: '0.84rem', lineHeight: 1.5, margin: 0 }}>{emailError}</p>}
+              <p style={{ fontSize: '0.78rem', opacity: 0.65, lineHeight: 1.55, margin: 0 }}>The email includes your five-emotion definition, the exact generated color swatches, and this reading’s date. For entertainment and personal reflection only.</p>
             </div>
           ) : (
             <p style={{ color: '#70f0a0', fontWeight: 'bold' }}>Reading sent! Check your inbox.</p>

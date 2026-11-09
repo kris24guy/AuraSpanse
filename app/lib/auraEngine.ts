@@ -201,7 +201,7 @@ export function daysBetween(start: Date, end: Date): number {
   return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000))
 }
 
-export function generateAura(dateString: string, registeredDateString?: string) {
+export function generateAura(dateString: string, registeredDateString?: string, nowOverride?: Date) {
   const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString)
   if (!dateMatch) throw new Error('Birthdate must use YYYY-MM-DD format')
 
@@ -213,7 +213,7 @@ export function generateAura(dateString: string, registeredDateString?: string) 
     throw new Error('Birthdate is not a valid calendar date')
   }
 
-  const now = new Date()
+  const now = nowOverride && Number.isFinite(nowOverride.getTime()) ? new Date(nowOverride) : new Date()
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   if (birthDate.getTime() > today.getTime()) {
     throw new Error('Birthdate cannot be in the future')

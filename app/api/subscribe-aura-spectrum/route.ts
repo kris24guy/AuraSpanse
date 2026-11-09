@@ -4,6 +4,7 @@ import { Resend } from 'resend'
 import { AURA_SPECTRUM_PRIMARY_POINTS } from '../../lib/auraSpectrumCycloneData'
 import { getBirthstoneResonance } from '../../lib/birthstoneResonance'
 import { generateOriginSpectrum } from '../../lib/originSpectrumEngine'
+import { generatePersonalizedEmotionReading, PersonalizedReadingError } from '../../lib/personalizedEmotionReading'
 import { getZodiacSign, zodiacMap } from '../../lib/zodiacMap'
 
 export const runtime = 'nodejs'
@@ -43,9 +44,9 @@ interface RevealTicket {
   expiresAt: number
 }
 
-function calculatePrimaryResult(birthDate: string) {
+function calculatePrimaryResult(birthDate: string, now = new Date()) {
   return generateOriginSpectrum(birthDate, {
-    now: new Date(),
+    now,
     spectrum: AURA_SPECTRUM_PRIMARY_POINTS,
     zodiacMap,
     resolveZodiacSign: (date) => getZodiacSign(date),
@@ -141,6 +142,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null)
     const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
     const birthDate = typeof body?.birthDate === 'string' ? body.birthDate : ''
+    const generatedAt = typeof body?.generatedAt === 'string' ? body.generatedAt : ''
     const consent = body?.consent === true
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !birthDate || !consent) {
@@ -148,6 +150,13 @@ export async function POST(request: NextRequest) {
         { error: 'A valid email, a saved birthdate, and email-subscription consent are required.' },
         { status: 400 }
       )
+    }
+
+    const snapshotTime = /^\d{4}-\d{2}-\d{2}$/.test(generatedAt)
+      ? new Date(`${generatedAt}T12:00:00.000Z`)
+      : generatedAt ? new Date(generatedAt) : new Date()
+    if (!Number.isFinite(snapshotTime.getTime()) || snapshotTime.getTime() > Date.now() + 5 * 60_000) {
+      return NextResponse.json({ error: 'The reading date is invalid. Please recalculate and try again.' }, { status: 400 })
     }
 
     const apiKey = process.env.RESEND_API_KEY
@@ -166,9 +175,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate the birthdate and resolve the two separate primaries before subscribing.
-    // No composite color is calculated at this stage.
-    const result = calculatePrimaryResult(birthDate)
+    // Recreate the day-based reading shown in the browser, then synthesize one
+    // personal definition from its three zodiac channels and two age hues.
+    const result = calculatePrimaryResult(birthDate, snapshotTime)
+    const personalized = await generatePersonalizedEmotionReading([
+      ...result.zodiac.traitChannels.map((trait) => ({ name: trait.name, hex: trait.hex })),
+      result.firstHue,
+      result.currentPlacement,
+      result.zodiac.averageEmotion,
+      ...(result.composite ? [result.composite.nearestEmotion] : []),
+    ])
 
     // Add the address to the configured Resend audience before producing the blend.
     // The blend does not get returned to the browser unless the audience reports that
@@ -220,14 +236,26 @@ export async function POST(request: NextRequest) {
     let emailSent = false
     const firstHueName = readableName(result.firstHue.name)
     const secondHueName = result.birthstone.name
+    const generatedAtLabel = escapeHtml(result.currentDate)
+    const emotionCards = personalized.components.map((component) => `
+      <div style="border:1px solid ${component.hex}66;border-radius:12px;padding:12px;background:#101018">
+        <div style="height:54px;border-radius:7px;background:${component.hex};margin-bottom:9px"></div>
+        <strong style="color:${component.hex}">${escapeHtml(readableName(component.sourceName))}</strong>
+        <p style="font-size:12px;color:#bfc0ce;margin:6px 0 0">${escapeHtml(component.emotion)} · ${escapeHtml(component.hex)}</p>
+      </div>`).join('')
 
     try {
       const message = await resend.emails.send({
         from: emailFrom,
         to: email,
-        subject: 'Your AuraSpanse two-primary reveal',
+        subject: `Your personal AuraSpanse reading: ${personalized.title}`,
         text: [
-          'Your AuraSpanse subscription is confirmed.',
+          'Your personalized AuraSpanse reading: ' + personalized.title,
+          '',
+          personalized.definition,
+          '',
+          'Reading snapshot: ' + result.currentDate,
+          ...personalized.components.map((component) => `${component.emotion} — ${component.hex}`),
           '',
           'Primary Hue 1 — ' + firstHueName,
           'Primary Hue 2 — ' + secondHueName,
@@ -241,7 +269,12 @@ export async function POST(request: NextRequest) {
           <div style="max-width:620px;margin:0 auto;padding:32px;background:#0a0a12;color:#f3f0eb;font-family:Arial,sans-serif">
             <p style="font-size:11px;letter-spacing:3px;color:#aaa">AURASPANSE · AURA-SPECTRUM</p>
             <h1 style="font-weight:400;line-height:1.2">Your two-primary reveal</h1>
-            <p style="color:#c9e0d8">Subscription confirmed.</p>
+            <p style="color:#c9e0d8">Personalized reading snapshot · ${generatedAtLabel}</p>
+            <h2 style="font-family:Georgia,serif;font-weight:400;color:#d9c9ff">${escapeHtml(personalized.title)}</h2>
+            <p style="line-height:1.75;color:#e3e0eb">${escapeHtml(personalized.definition)}</p>
+            <h2 style="margin-top:24px">Five emotion colors in this reading</h2>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px">${emotionCards}</div>
+            <p style="margin-top:18px;color:#c9e0d8">Subscription confirmed.</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
               <div style="border:1px solid #ffffff22;border-radius:14px;padding:14px">
                 <div style="height:72px;border-radius:8px;background:${result.firstHue.hex}"></div>
@@ -279,12 +312,17 @@ export async function POST(request: NextRequest) {
       birthstoneHex: result.birthstone.hex,
       birthstoneOpacityPercent: result.birthstone.opacityPercent,
       blendHex,
+      personalizedReading: { title: personalized.title, definition: personalized.definition },
+      generatedAt: result.currentDate,
     })
     // Persist a signed, HttpOnly ticket so a confirmed subscriber can restore the
     // reveal after refresh. The client cannot unlock it by editing localStorage.
     setRevealCookie(response, email, result.birthDate, apiKey)
     return response
   } catch (error) {
+    if (error instanceof PersonalizedReadingError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('[Aura-Spectrum subscription]', error)
     return NextResponse.json({ error: 'AuraSpanse could not confirm the subscription. Please try again.' }, { status: 500 })
   }

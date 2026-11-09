@@ -10,7 +10,8 @@
     "test:aura-engine": "npm run test:age-spectrum && npm run test:horoscope",
     "test:age-spectrum": "node scripts/test-age-spectrum.mjs",
     "test:origin-spectrum": "node scripts/test-origin-spectrum.mjs",
-    "test:all": "npm run test:origin-spectrum && npm run test:aura-engine"
+    "test:personalized-reading": "node scripts/test-personalized-reading.mjs",
+    "test:all": "npm run test:origin-spectrum && npm run test:aura-engine && npm run test:personalized-reading"
   },
   "dependencies": {
     "next": "latest",

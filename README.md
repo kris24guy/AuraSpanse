@@ -33,8 +33,13 @@ Configure these environment variables in Render or the production environment:
 - `RESEND_API_KEY` — Resend API key.
 - `RESEND_AUDIENCE_ID` — the mailing-list audience used to confirm the subscription.
 - `EMAIL_FROM` — sender address verified for your Resend account.
+- `AURASCOPE_AI_API_KEY` — server-side key for an OpenAI-compatible chat-completions endpoint. `OPENAI_API_KEY` is also accepted.
+- `AURASCOPE_AI_MODEL` — a model available to that endpoint and supporting JSON-schema response format.
+- `AURASCOPE_AI_BASE_URL` — optional API base URL; defaults to `https://api.openai.com/v1`.
 
-Without all three, the route returns a configuration error and the combined color stays locked. A successful Resend contact operation is the subscription checkpoint; email delivery is reported separately so a mail-send failure is not misrepresented as a failed list subscription. A server-signed, HttpOnly ticket bound to the birthdate lets an already confirmed subscriber restore the blend after refresh; a browser-stored flag alone cannot unlock it.
+Keep AI and Resend keys in the production server's secret environment, never in client code. The personalized reading service receives only five emotion labels, their glossary definitions, and color swatches—not the user's email or birthdate. The user-initiated email includes the one blended definition, the five source colors, the generated AuraScope colors, and the snapshot date. It does not send a generic horoscope. If the AI engine is not configured or fails, the reading email is not sent as a generic fallback.
+
+Without the three Resend settings, the subscription route returns a configuration error and the combined color stays locked. A successful Resend contact operation is the subscription checkpoint; email delivery is reported separately so a mail-send failure is not misrepresented as a failed list subscription. A server-signed, HttpOnly ticket bound to the birthdate lets an already confirmed subscriber restore the blend after refresh; a browser-stored flag alone cannot unlock it.
 
 ## Main implementation files
 
@@ -47,6 +52,8 @@ Without all three, the route returns a configuration error and the combined colo
 - `app/lib/birthstoneResonance.ts` — monthly stone colors, reference regions, distance, and opacity.
 - `app/aura-spectrum/page.tsx` — primary-color reveal screen and subscription gate.
 - `app/api/subscribe-aura-spectrum/route.ts` — mailing-list confirmation, then two-primary blend calculation and reading email.
+- `app/lib/personalizedEmotionReading.ts` — resolves five generated color emotions to glossary definitions and requests one integrated personal reading.
+- `app/api/subscribe/route.ts` — full AuraScope email with the exact generation snapshot and synthesized definition.
 - `scripts/test-origin-spectrum.mjs` — engine, glossary, can UI, and subscription-gate checks.
 
 ## Verification
@@ -56,6 +63,7 @@ Run:
 ```sh
 npm run test:origin-spectrum
 npm run test:aura-engine
+npm run test:personalized-reading
 npm run build
 ```
 

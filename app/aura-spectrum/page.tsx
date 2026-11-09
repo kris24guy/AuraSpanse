@@ -156,7 +156,7 @@ export default function AuraSpectrumPage() {
       const response = await fetch('/api/subscribe-aura-spectrum', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), birthDate: result.birthDate, consent }),
+        body: JSON.stringify({ email: email.trim(), birthDate: result.birthDate, generatedAt: result.currentDate, consent }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data.success || data.subscribed !== true || typeof data.blendHex !== 'string') {
@@ -171,8 +171,8 @@ export default function AuraSpectrumPage() {
       setIsSubscribed(true)
       setSubscriptionMessage(
         data.emailSent
-          ? 'Subscription confirmed. Your two-primary blend is revealed below, and the reading email was sent.'
-          : 'Subscription confirmed. Your two-primary blend is revealed below. The email could not be sent, but the subscription is active.'
+          ? 'Subscription confirmed. Your personalized five-emotion reading and this snapshot’s colors were emailed.'
+          : 'Subscription confirmed. Your two-primary blend is revealed below. The reading email could not be sent, but the subscription is active.'
       )
     } catch (cause) {
       setSubscriptionError(cause instanceof Error ? cause.message : 'The subscription could not be confirmed.')
@@ -327,6 +327,7 @@ export default function AuraSpectrumPage() {
                 <p style={muted}>
                   Primary Hue 1 is <strong style={{ color: result.firstHue.hex }}>{readableName(result.firstHue.name)}</strong>. Primary Hue 2 is <strong style={{ color: result.birthstone.hex }}>{result.birthstone.name}</strong>, represented by its natural-stone color. Both appear separately. The combined hue is calculated on the server only after your email subscription is confirmed.
                 </p>
+                <p style={{ ...muted, fontSize: '0.9rem' }}>Your email also includes a personalized definition blended from five emotion channels in this reading, their exact source colors, and the snapshot date.</p>
                 <form onSubmit={handleSubscribe} style={{ display: 'grid', gap: '14px', marginTop: '22px' }}>
                   <label htmlFor="aura-spectrum-email" style={{ display: 'grid', gap: '7px', fontSize: '0.9rem', color: 'rgba(243,240,235,0.9)' }}>
                     Email address
