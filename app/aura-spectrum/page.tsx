@@ -69,6 +69,7 @@ export default function AuraSpectrumPage() {
   const [subscriptionMessage, setSubscriptionMessage] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [unlockedBlend, setUnlockedBlend] = useState<{ hex: string; name: string } | null>(null)
+  const [secondRevealed, setSecondRevealed] = useState(false)
 
   useEffect(() => {
     try {
@@ -96,6 +97,7 @@ export default function AuraSpectrumPage() {
         includeComposite: false,
       })
       setResult(generated)
+      setSecondRevealed(false)
       setError('')
     } catch (cause) {
       setResult(null)
@@ -130,6 +132,7 @@ export default function AuraSpectrumPage() {
           name: readableName(data.primaryHueName || result.firstHue.name) + ' × ' + (data.birthstoneName || result.birthstone.name),
         })
         setIsSubscribed(true)
+        setSecondRevealed(true)
         setSubscriptionMessage('Your previous subscription has been verified. The two-primary blend is restored.')
       })
       .catch(() => {
@@ -169,6 +172,7 @@ export default function AuraSpectrumPage() {
       }
       setUnlockedBlend(blend)
       setIsSubscribed(true)
+      setSecondRevealed(true)
       setSubscriptionMessage(
         data.emailSent
           ? 'Subscription confirmed. Your personalized five-emotion reading and this snapshot’s colors were emailed.'
@@ -191,7 +195,7 @@ export default function AuraSpectrumPage() {
           Aura-Spectrum
         </h1>
         <p style={{ ...muted, maxWidth: '670px', margin: '0 auto' }}>
-          Your birthdate initializes the existing Aura-Spectrum reveal engine. Its first primary is an age-derived emotion color; its second primary is your birth month's literal gemstone swatch. The transparent can is the explorer UI. The two personal primaries remain separate until the email subscription is confirmed.
+          Your first reveal is an age-derived emotion color. Continue to reveal the literal gemstone color linked to your birth month. The artwork imagines a one-foot aura boundary as a visual metaphor, not a physical measurement; the two colors stay separate until the email-confirmed blend.
         </p>
       </header>
 
@@ -236,16 +240,16 @@ export default function AuraSpectrumPage() {
             </p>
           </section>
 
-          <section style={{ ...panel, maxWidth: '1180px', padding: '20px' }}>
-            <p style={eyebrow}>THE 374-POINT EMOTION CAN</p>
+          <section id="first-hue-reveal" style={{ ...panel, maxWidth: '1180px', padding: '20px' }}>
+            <p style={eyebrow}>THE 374-POINT EMOTION FUNNEL</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Explore the emotional spectrum</h2>
             <p style={muted}>
-              The transparent can is the visual explorer, not a second calculation engine. It loads the same 374 names, definitions, and original colors used by the reveal model. Both the wall points and central tornado take a tint from Primary Hue 2's natural-stone color using the deposit-proximity result. A nearer geological-deposit reference produces a stronger birthstone tint. The center is a continuous tapered vortex showing how Primary Hue 1 and the birthstone hue react and blend; it is not a cloud of separate particles. The wall is sorted by original emotion color rather than alphabet, and the upper wall and vortex darken toward the rim. Each emotion keeps its source name, definition, and original swatch.
+              This explorer uses the same 374 named emotions, definitions, and source colors as your reading. On this first reveal, the points spiral up a faceted funnel around the age-derived color. After you continue, your birthstone color enters as the second tint and the upper points unfurl into woven streams around the continuous cyclone. The arrangement is a symbolic visualization, not a measured aura.
             </p>
             <div style={{ marginTop: '18px', border: '1px solid rgba(255,255,255,0.11)', borderRadius: '10px', overflow: 'hidden', background: '#0a0a12' }}>
               <iframe
-                title="AuraSpanse interactive emotion-color can"
-                src={'/aura-spectrum-cyclone.html?selected=' + encodeURIComponent(result.firstHue.name) + '&primary=' + encodeURIComponent(result.firstHue.hex) + '&stone=' + encodeURIComponent(result.birthstone.hex) + '&opacity=' + encodeURIComponent(String(result.birthstone.opacity))}
+                title="AuraSpanse interactive emotion-spectrum cyclone"
+                src={'/aura-spectrum-cyclone.html?selected=' + encodeURIComponent(result.firstHue.name) + '&primary=' + encodeURIComponent(result.firstHue.hex) + '&stone=' + (secondRevealed ? encodeURIComponent(result.birthstone.hex) : '') + '&opacity=' + encodeURIComponent(secondRevealed ? String(result.birthstone.opacity) : '0')}
                 loading="eager"
                 style={{ display: 'block', width: '100%', height: 'clamp(900px, 112vh, 1180px)', border: 0, background: '#0a0a12' }}
               />
@@ -258,17 +262,25 @@ export default function AuraSpectrumPage() {
                 <p style={muted}>Age-derived starting color from the emotional spectrum.</p>
                 <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>{emotionGlossaryPoints[result.firstHueIndex]?.definition}</p>
               </div>
-              <div style={{ border: '1px solid ' + result.currentPlacement.hex + '88', background: result.currentPlacement.hex + '18', borderRadius: '12px', padding: '18px' }}>
-                <p style={eyebrow}>CURRENT PLACEMENT · CONTEXT MARKER</p>
-                <div style={{ height: '58px', borderRadius: '8px', margin: '14px 0', background: result.currentPlacement.hex }} />
-                <h3 style={{ color: result.currentPlacement.hex, margin: '0 0 5px' }}>{readableName(result.currentPlacement.name)}</h3>
-                <p style={muted}>Today's contextual marker in the same emotional spectrum.</p>
-                <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>Today's marker in the same spectrum. It is contextual and is not a third ingredient in the two-primary blend.</p>
-              </div>
             </div>
+            {!secondRevealed && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '22px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSecondRevealed(true)}
+                  style={{ padding: '14px 18px', border: 0, borderRadius: '4px', background: 'linear-gradient(115deg, #c9e0d8, #d9c9ff)', color: '#101018', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase' }}
+                >
+                  Reveal my birthstone color
+                </button>
+              </div>
+            )}
           </section>
 
-                    <section style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
+          {secondRevealed && <>
+                    <section id="second-hue-reveal" style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+              <button type="button" onClick={() => document.getElementById('first-hue-reveal')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#d9c9ff', padding: '8px 12px', borderRadius: '999px', cursor: 'pointer' }}>Back to first reveal</button>
+            </div>
             <p style={eyebrow}>PRIMARY HUE 2 · GEOGRAPHIC BIRTHSTONE RESONANCE</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Literal stone color first. Name second.</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(125px, 0.7fr) minmax(210px, 1.5fr)', gap: '20px', alignItems: 'stretch', marginTop: '18px' }}>
@@ -390,6 +402,7 @@ export default function AuraSpectrumPage() {
               </>
             )}
           </section>
+          </>}
         </>
       )}
 

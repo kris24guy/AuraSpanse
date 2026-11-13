@@ -94,20 +94,20 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
       <div class="logo" aria-hidden="true"><i></i></div>
       <div>
         <h1>Aura-Spectrum Cyclone</h1>
-        <div class="sub-mono">Color-ordered // 374 emotions // 1 continuous tornado</div>
+        <div class="sub-mono">Birthdate-led // 374 emotions // 1 living cyclone</div>
       </div>
     </div>
     <div class="pill" id="huePill"><span id="hueText">Selected emotion point</span><b></b></div>
   </div>
 
-  <p class="intro">All 374 named emotions glow around the transparent wall, arranged by color rather than alphabet. The center is a continuous tapered vortex—not a field of dots—where the age-derived primary hue and the natural birthstone hue interact. Geological-deposit proximity controls the stone tint strength, while both wall and vortex grow darker toward the upper rim.</p>
+  <p class="intro">All 374 named emotions rise from a diamond-funnel point on a golden-angle spiral, then unfurl into woven willow-like color streams around one continuous cyclone. Your age-derived emotion anchors the first reveal; your birth month's literal gemstone color supplies the second. The surrounding field imagines a one-foot halo around a person as an artistic metaphor—not a measured physical aura.</p>
 
   <div class="grid">
     <section class="frame" id="stage">
       <span class="tick a"></span><span class="tick b"></span><span class="tick c"></span><span class="tick d"></span>
-      <div class="tag"><span>374 color-ordered emotions // hue-flow wall</span><span id="stoneLayerText">COLOR POINTS</span><i></i></div>
-      <canvas id="cv" role="img" aria-label="A rotating transparent can with all 374 color-ordered emotion labels represented around its wall and a continuous tapered vortex blending the age-derived primary hue with the natural birthstone hue."></canvas>
-      <div class="strip"><span>&gt; Transparent cylinder // color-ordered wall</span><span id="stripSel"><em>●</em> Selected point</span></div>
+      <div class="tag"><span>374 emotion colors // spiral to woven crown</span><span id="stoneLayerText">COLOR POINTS</span><i></i></div>
+      <canvas id="cv" role="img" aria-label="A rotating diamond-shaped funnel with 374 named emotion colors climbing a golden-angle spiral and opening into woven willow-like streams around a continuous cyclone that blends an age-derived emotion color and a natural birthstone color."></canvas>
+      <div class="strip"><span>&gt; Diamond funnel // 374-point spiral</span><span id="stripSel"><em>●</em> Selected point</span></div>
     </section>
 
     <div class="side">
@@ -125,7 +125,7 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     <div class="list" id="list"></div>
   </details>
 
-  <p class="note"><span style="color:var(--muted)">MODEL:</span> Every one of the 374 source emotions keeps its name, definition, and original palette color. The wall is ordered by color hue, not A-to-Z. The center is rendered as connected, continuous surfaces and flowing ribbons, never as a cloud of particle dots. Primary Hue 1 supplies the age-derived inner hue; Primary Hue 2 supplies the literal natural birthstone color. Geological-deposit proximity sets the strength of the second hue, and the upper region darkens progressively toward the rim. This visual layer does not change the birthdate-based reading calculations.</p>
+  <p class="note"><span style="color:var(--muted)">MODEL:</span> All 374 source emotions retain their names, definitions, and original palette colors, arranged by hue rather than alphabet. The points climb a diamond-shaped funnel in a golden-angle spiral; the upper points weave into a willow-like crown around connected, continuous vortex surfaces. The age-derived emotion is the first personal color; the natural birthstone swatch is the second. Geographic deposit proximity controls only the birthstone tint strength. This is an artistic self-reflection model—not a measured aura or scientific claim—and its illustration does not alter the birthdate calculations.</p>
 </main>
 
 <script>
@@ -169,16 +169,17 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
   }
 
   var wall = DATA.wall;
-  var W = 680, H = 700, CX = 340, R = 200, RY = 40, TOP = 70, BOT = 610, FUN_BOT = 490;
-  var TAU = Math.PI * 2;
+  var W = 680, H = 700, CX = 340, TOP = 70, BOT = 610, FUN_BOT = 490, FUNNEL_TIP_Y = 248, WILLOW_TOP_Y = 82;
+  var TAU = Math.PI * 2, GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var tCan = document.createElement('canvas');
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var cs = getComputedStyle(document.documentElement);
   var FG = cs.getPropertyValue('--fg').trim() || '#e9e9f0';
   var PANEL = cs.getPropertyValue('--bg').trim() || '#0a0a12';
   var FONT = cs.getPropertyValue('--font-body').trim() || 'sans-serif';
 
-  /* Each emotion gets an evenly spaced cylindrical wall position. */
+  /* Hue-ordered emotions climb the funnel, then branch into a woven upper crown. */
   var nodes = [];
   wall.forEach(function (w) { nodes.push({ kind: 'wall', name: w.n, def: w.d, baseHex: w.h, hex: w.h, src: w.s, core: 4.6 }); });
   function colorSortInfo(hex) {
@@ -204,13 +205,26 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
       b.brightness - a.brightness ||
       left.name.localeCompare(right.name, 'en', { sensitivity: 'base', ignorePunctuation: true });
   });
-  var COLUMNS = 18, ROWS = Math.ceil(nodes.length / COLUMNS), byName = {};
+  var FUNNEL_NODE_COUNT = Math.round(nodes.length * 0.78), WILLOW_BRANCHES = 7, byName = {};
   nodes.forEach(function (n, i) {
     n.id = i;
-    n.theta = ((i % COLUMNS) / COLUMNS) * TAU;
-    var row = Math.floor(i / COLUMNS);
-    var heightRatio = row / Math.max(1, ROWS - 1);
-    n.y = BOT - 36 - heightRatio * (BOT - TOP - 72);
+    var heightRatio = i / Math.max(1, nodes.length - 1);
+    if (i < FUNNEL_NODE_COUNT) {
+      var rise = i / Math.max(1, FUNNEL_NODE_COUNT - 1);
+      n.theta = i * GOLDEN_ANGLE;
+      n.y = FUN_BOT + 65 - rise * (FUN_BOT + 65 - FUNNEL_TIP_Y);
+      n.radius = 12 + 152 * Math.pow(Math.sin(Math.PI * rise), 0.84);
+    } else {
+      var willowIndex = i - FUNNEL_NODE_COUNT;
+      var branch = willowIndex % WILLOW_BRANCHES;
+      var branchRise = Math.floor(willowIndex / WILLOW_BRANCHES) /
+        Math.max(1, Math.ceil((nodes.length - FUNNEL_NODE_COUNT) / WILLOW_BRANCHES) - 1);
+      n.theta = branch * TAU / WILLOW_BRANCHES + branchRise * 0.78 +
+        Math.sin(branchRise * Math.PI) * 0.18 * (branch % 2 ? 1 : -1);
+      n.y = FUNNEL_TIP_Y - branchRise * (FUNNEL_TIP_Y - WILLOW_TOP_Y) +
+        Math.sin(branchRise * TAU + branch) * 5;
+      n.radius = 14 + 150 * Math.sin(branchRise * Math.PI * 0.5);
+    }
     var overlayOpacity = stoneHex ? stoneOpacity * (1 - 0.23 * heightRatio) : 0;
     var stoneLayered = blendDisplayHex(n.baseHex, stoneHex || n.baseHex, overlayOpacity);
     n.hex = darkenDisplayHex(stoneLayered, 0.03 + 0.55 * heightRatio);
@@ -292,11 +306,11 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     c.restore();
   }
 
-  function renderTornado() {
-    tCan.width = cv.width;
-    tCan.height = cv.height;
+  function renderTornado(phase) {
+    phase = phase || 0;
     var c = tCan.getContext('2d');
     c.setTransform(sc, 0, 0, sc, 0, 0);
+    c.clearRect(0, 0, W, H);
     var outer = c.createLinearGradient(0, FUN_BOT, 0, TOP);
     outer.addColorStop(0, vortexTint(0, 0.22, 0.02));
     outer.addColorStop(0.24, vortexTint(0.24, 0.42, 0.08));
@@ -315,13 +329,37 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     inner.addColorStop(0.58, vortexTint(0.58, 1, 0.30));
     inner.addColorStop(1, vortexTint(1, 1, 0.88));
 
-    drawVortexSurface(c, 1, 0.1, outer, 0.80, primaryHex);
-    drawVortexSurface(c, 0.64, 1.75, interaction, 0.66, stoneHex || primaryHex);
-    drawVortexSurface(c, 0.25, 3.05, inner, 0.90, stoneHex || primaryHex);
+    drawVortexSurface(c, 1, 0.1 + phase, outer, 0.80, primaryHex);
+    drawVortexSurface(c, 0.64, 1.75 - phase * 0.78, interaction, 0.66, stoneHex || primaryHex);
+    drawVortexSurface(c, 0.25, 3.05 + phase * 1.12, inner, 0.90, stoneHex || primaryHex);
 
     // The inner and outer hues meet as continuous luminous flows, not particles.
-    drawFlowEdge(c, 0.0, primaryHex || '#8c84ff', stoneHex || primaryHex || '#8c84ff', 0.74, 2.2);
-    drawFlowEdge(c, Math.PI, stoneHex || primaryHex || '#8c84ff', primaryHex || '#8c84ff', 0.48 + stoneOpacity * 0.28, 1.7);
+    drawFlowEdge(c, phase, primaryHex || '#8c84ff', stoneHex || primaryHex || '#8c84ff', 0.74, 2.2);
+    drawFlowEdge(c, Math.PI - phase * 0.8, stoneHex || primaryHex || '#8c84ff', primaryHex || '#8c84ff', 0.48 + stoneOpacity * 0.28, 1.7);
+
+    // Fine, intertwined willow strands rise from the funnel throat around the cyclone.
+    c.save();
+    c.globalCompositeOperation = 'screen';
+    c.lineCap = 'round';
+    c.lineWidth = 1.25;
+    c.shadowBlur = 9;
+    for (var branchIndex = 0; branchIndex < WILLOW_BRANCHES; branchIndex++) {
+      var branchAngle = branchIndex * TAU / WILLOW_BRANCHES + phase * 0.16;
+      var endX = CX + Math.sin(branchAngle) * 156;
+      var endY = WILLOW_TOP_Y + (branchIndex % 2) * 20;
+      var branchGradient = c.createLinearGradient(CX, FUNNEL_TIP_Y, endX, endY);
+      branchGradient.addColorStop(0, primaryHex || '#8c84ff');
+      branchGradient.addColorStop(1, stoneHex || primaryHex || '#8c84ff');
+      c.globalAlpha = 0.30;
+      c.strokeStyle = branchGradient;
+      c.shadowColor = stoneHex || primaryHex || '#8c84ff';
+      c.beginPath();
+      c.moveTo(CX, FUNNEL_TIP_Y);
+      c.bezierCurveTo(CX + Math.sin(branchAngle + 0.55) * 18, FUNNEL_TIP_Y - 54,
+        CX + Math.sin(branchAngle - 0.35 + phase * 0.12) * 108, endY + 66, endX, endY);
+      c.stroke();
+    }
+    c.restore();
 
     // A narrow, semitransparent core reinforces the taper while preserving the transparent can.
     var core = c.createLinearGradient(0, FUN_BOT, 0, TOP);
@@ -347,6 +385,7 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     var w = cv.clientWidth || 680;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.round(w * dpr); cv.height = Math.round(w * dpr * H / W);
+    tCan.width = cv.width; tCan.height = cv.height;
     sc = cv.width / W;
     renderTornado();
   }
@@ -371,9 +410,9 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     var h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
     return mod360(h * 60);
   }
-  function project(theta, y) {
+  function project(theta, y, radius) {
     var a = theta + rot, s = Math.sin(a), c = Math.cos(a);
-    return { x: CX + R * s, y: y + RY * c, z: c };
+    return { x: CX + radius * s, y: y + radius * 0.2 * c, z: c };
   }
   function dim(n) { return matches && !matches[n.id]; }
 
@@ -392,16 +431,36 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
   }
 
   function drawGuides(front) {
-    ctx.lineWidth = 0.8; ctx.strokeStyle = 'rgba(180,190,220,.22)';
-    if (!front) {
-      ctx.beginPath(); ctx.moveTo(CX - R, TOP); ctx.lineTo(CX - R, BOT);
-      ctx.moveTo(CX + R, TOP); ctx.lineTo(CX + R, BOT); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(CX, BOT, R, RY, 0, Math.PI, TAU); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(CX, TOP, R, RY, 0, Math.PI, TAU); ctx.stroke();
-    } else {
-      ctx.beginPath(); ctx.ellipse(CX, BOT, R, RY, 0, 0, Math.PI); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(CX, TOP, R, RY, 0, 0, Math.PI); ctx.stroke();
+    ctx.save();
+    ctx.lineWidth = 0.8;
+    ctx.strokeStyle = front ? 'rgba(200,205,235,.24)' : 'rgba(180,190,220,.11)';
+    for (var rib = 0; rib < 10; rib++) {
+      var theta = rib * TAU / 10;
+      var depth = Math.cos(theta + rot);
+      if ((depth >= 0) !== front) continue;
+      ctx.beginPath();
+      for (var step = 0; step <= 56; step++) {
+        var q = step / 56;
+        var point = project(theta, FUN_BOT + 65 - q * (FUN_BOT + 65 - FUNNEL_TIP_Y),
+          12 + 152 * Math.pow(Math.sin(Math.PI * q), 0.84));
+        if (step === 0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y);
+      }
+      ctx.stroke();
     }
+    for (var ring = 1; ring <= 4; ring++) {
+      var q = ring / 5;
+      var radius = 12 + 152 * Math.pow(Math.sin(Math.PI * q), 0.84);
+      var y = FUN_BOT + 65 - q * (FUN_BOT + 65 - FUNNEL_TIP_Y);
+      var start = (front ? -Math.PI / 2 : Math.PI / 2) - rot;
+      var end = (front ? Math.PI / 2 : Math.PI * 1.5) - rot;
+      ctx.beginPath();
+      for (var arc = 0; arc <= 36; arc++) {
+        var p = project(start + (end - start) * arc / 36, y, radius);
+        if (arc === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawLabel(n, text, strong) {
@@ -435,9 +494,10 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     if (hi !== hueShown) { hueShown = hi; rootStyle.setProperty('--hue', String(hi)); if (selected) hueText.textContent = 'Hue ' + hi + '° · ' + selected.name; }
     ctx.setTransform(sc, 0, 0, sc, 0, 0);
     ctx.clearRect(0, 0, W, H);
+    renderTornado(reduce ? 0 : t * 0.18);
     var back = [], front = [];
     for (var i = 0; i < nodes.length; i++) {
-      var n = nodes[i], p = project(n.theta, n.y); proj[i] = p;
+      var n = nodes[i], p = project(n.theta, n.y, n.radius); proj[i] = p;
       (p.z < 0 ? back : front).push(n);
     }
     back.sort(byZ); front.sort(byZ);
@@ -502,7 +562,9 @@ details.all summary { cursor: pointer; padding: 14px 0; font-family: var(--font-
     row.appendChild(sw); row.appendChild(el('h2', '', n.name)); insp.appendChild(row);
     var meta = el('div', 'meta');
     var place = 'color position ' + (n.id + 1) + ' of ' + nodes.length;
-    meta.textContent = 'Original emotion color · stone-tinted display · ' + place;
+    meta.textContent = stoneHex
+      ? 'Original emotion color · stone-tinted display · ' + place
+      : 'Original emotion color · first-reveal display · ' + place;
     insp.appendChild(meta);
     insp.appendChild(el('p', 'def', n.def));
     var provenance = n.src === 'db'

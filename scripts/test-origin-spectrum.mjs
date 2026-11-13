@@ -180,6 +180,15 @@ assert.ok(pageSource.includes("data.subscribed !== true"),
   "the page must wait for server-confirmed mailing-list subscription before revealing the blend");
 assert.ok(pageSource.includes("fetch('/api/subscribe-aura-spectrum?birthDate='"),
   "a previous subscription must be restored only through server validation");
+assert.ok(pageSource.includes("const [secondRevealed, setSecondRevealed] = useState(false)"),
+  "the birthstone color must remain unrevealed until the user advances");
+assert.ok(pageSource.includes("Reveal my birthstone color") && pageSource.includes("{secondRevealed && <>"),
+  "the birthstone and email-gated blend must appear only in the second reveal");
+assert.ok(!pageSource.includes("CURRENT PLACEMENT · CONTEXT MARKER"),
+  "the first reveal must stay focused on its single personal primary color");
+assert.ok(pageSource.includes("secondRevealed ? encodeURIComponent(result.birthstone.hex) : ''") &&
+  pageSource.includes("secondRevealed ? String(result.birthstone.opacity) : '0'"),
+  "the first-stage cyclone must not receive or render the hidden birthstone tint");
 
 const cycloneSource = await readFile(new URL("../public/aura-spectrum-cyclone.html", import.meta.url), "utf8");
 assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show the 374 emotion entries");
@@ -193,6 +202,13 @@ assert.ok(cycloneSource.includes("var sourcePrimaryHex = queryParams.get('primar
   "the can must receive Primary Hue 1 from the reveal engine");
 assert.ok(cycloneSource.includes("var sourceStoneHex = queryParams.get('stone') || '';"),
   "the can must receive Primary Hue 2's natural birthstone color");
+assert.ok(cycloneSource.includes("var tCan = document.createElement('canvas');"),
+  "the offscreen tornado canvas must exist before the render loop uses it");
+assert.ok(cycloneSource.includes("GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))") &&
+  cycloneSource.includes("FUNNEL_NODE_COUNT = Math.round(nodes.length * 0.78)"),
+  "the 374 hue-ordered points must rise on a golden-angle funnel spiral");
+assert.ok(cycloneSource.includes("WILLOW_BRANCHES = 7") && cycloneSource.includes("Fine, intertwined willow strands"),
+  "the funnel's upper emotion points must open into the willow-like cyclone crown");
 assert.ok(cycloneSource.includes("queryParams.get('opacity')"),
   "the can must receive model-computed geological-deposit proximity strength");
 assert.ok(cycloneSource.includes("function vortexTint(height, stoneInfluence, darkness)") &&
@@ -208,8 +224,9 @@ assert.ok(!cycloneSource.includes("function disc(pt)") && !cycloneSource.include
   "the central tornado must not be rendered as separate particle dots");
 assert.ok(!cycloneSource.includes("A to Z upward") && !cycloneSource.includes("All points, A to Z"),
   "the emotion wall must not be presented as alphabetically ordered");
-assert.ok(cycloneSource.includes("meta.textContent = 'Original emotion color · stone-tinted display · ' + place"),
-  "the inspector must distinguish the original emotion color from its stone-tinted appearance");
+assert.ok(cycloneSource.includes("'Original emotion color · stone-tinted display · ' + place") &&
+  cycloneSource.includes("'Original emotion color · first-reveal display · ' + place"),
+  "the inspector must distinguish the original color from first-stage and stone-tinted display colors");
 const legacyPrototypeSource = await readFile(new URL("../server.js", import.meta.url), "utf8");
 const spectrumComponentSource = await readFile(new URL("../app/components/AuraSpectrum.tsx", import.meta.url), "utf8");
 const guideSource = await readFile(new URL("../app/aura-guide/page.tsx", import.meta.url), "utf8");
@@ -221,8 +238,8 @@ assert.ok(!/\bfreq\b|frequency|0\s*[-–]\s*1000|1000\s*hz|\bHz\b/i.test(
 ), "the full app and retired prototype must not use the old 0–1000 emotion-frequency scale");
 assert.ok(pageSource.includes("'&primary=' + encodeURIComponent(result.firstHue.hex)"),
   "the reveal page must pass Primary Hue 1 into the can renderer");
-assert.ok(pageSource.includes("opacity=' + encodeURIComponent(String(result.birthstone.opacity))"),
-  "the reveal page must pass its calculated opacity into the display-only can");
+assert.ok(pageSource.includes("secondRevealed ? String(result.birthstone.opacity) : '0'"),
+  "the second reveal must pass its calculated stone opacity into the display-only can");
 assert.ok(!cycloneSource.includes("137.5°"), "the visual UI must not prescribe a spiral-angle formula");
 assert.ok(!cycloneSource.includes("Fib //"), "the visual UI must not label itself with a spiral formula");
 assert.ok(!cycloneSource.includes("Quaintness"), "the can must not hard-code one starter emotion");
@@ -248,5 +265,5 @@ console.log("PASS: age/spectrum equation, zodiac balancing, and current placemen
 console.log("PASS: literal birthstone colors and geological-deposit opacity are preserved.");
 console.log("PASS: all 12 monthly stone colors and their geographic opacity values validate.");
 console.log("PASS: all 374 source labels preserve their definitions and receive deterministic palette swatches.");
-console.log("PASS: the transparent can is color-ordered and the continuous vortex blends both primary hues with geographic strength and upper-rim darkening.");
-console.log("PASS: the two-primary blend is not calculated by the public page and is calculated after confirmed subscription.");
+console.log("PASS: all 374 source emotions rise through the color-ordered funnel and woven continuous cyclone.");
+console.log("PASS: the first age-derived color and second birthstone reveal remain separate until confirmed subscription.");
