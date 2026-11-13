@@ -189,6 +189,23 @@ assert.ok(!pageSource.includes("CURRENT PLACEMENT · CONTEXT MARKER"),
 assert.ok(pageSource.includes("secondRevealed ? encodeURIComponent(result.birthstone.hex) : ''") &&
   pageSource.includes("secondRevealed ? String(result.birthstone.opacity) : '0'"),
   "the first-stage cyclone must not receive or render the hidden birthstone tint");
+assert.ok(pageSource.includes("TIME-WEIGHTED ALIGNMENT") &&
+  pageSource.includes("Measuring ${formatNumber(result.daysAlive)} lived days") &&
+  pageSource.includes("Detecting your ${result.zodiac.sign} frame") &&
+  pageSource.includes("Aligning ${readableName(result.firstHue.name)} with today's ${readableName(result.currentPlacement.name)} placement"),
+  "the birthdate handoff must pace accurate lived-time, zodiac, and current-placement alignment messages");
+assert.ok(pageSource.includes("prefers-reduced-motion: reduce") && pageSource.includes("setIsAligning(false)"),
+  "the timed alignment transition must finish cleanly and respect reduced-motion preferences");
+const alignmentPanelPosition = pageSource.indexOf("TIME-WEIGHTED ALIGNMENT")
+const zodiacPanelPosition = pageSource.indexOf("HISTORICAL ZODIAC FRAME")
+const ageEquationPosition = pageSource.indexOf("THE AGE EQUATION")
+assert.ok(pageSource.includes("{result && !isAligning && (") &&
+  alignmentPanelPosition < zodiacPanelPosition && zodiacPanelPosition < ageEquationPosition,
+  "the timed transition must reveal the historical zodiac frame before the age-hue journey loads");
+assert.ok(pageSource.includes("const [zodiacRevealCount, setZodiacRevealCount] = useState(0)") &&
+  pageSource.includes("traitChannels.slice(0, zodiacRevealCount)") &&
+  pageSource.includes("Reveal {result.zodiac.traitChannels[zodiacRevealCount].polarity} color"),
+  "positive, neutral, and shadow zodiac colors must be revealed one at a time in order");
 
 const cycloneSource = await readFile(new URL("../public/aura-spectrum-cyclone.html", import.meta.url), "utf8");
 assert.ok(cycloneSource.includes("Browse all 374 points"), "the can must show the 374 emotion entries");
@@ -267,3 +284,4 @@ console.log("PASS: all 12 monthly stone colors and their geographic opacity valu
 console.log("PASS: all 374 source labels preserve their definitions and receive deterministic palette swatches.");
 console.log("PASS: all 374 source emotions rise through the color-ordered funnel and woven continuous cyclone.");
 console.log("PASS: the first age-derived color and second birthstone reveal remain separate until confirmed subscription.");
+console.log("PASS: timed birthdate alignment leads into the zodiac frame, whose three channel colors reveal individually.");

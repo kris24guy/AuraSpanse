@@ -70,6 +70,16 @@ export default function AuraSpectrumPage() {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [unlockedBlend, setUnlockedBlend] = useState<{ hex: string; name: string } | null>(null)
   const [secondRevealed, setSecondRevealed] = useState(false)
+  const [isAligning, setIsAligning] = useState(false)
+  const [alignmentStep, setAlignmentStep] = useState(0)
+  const [zodiacRevealCount, setZodiacRevealCount] = useState(0)
+
+  const alignmentMessages = result ? [
+    `Measuring ${formatNumber(result.daysAlive)} lived days across ${formatNumber(result.spectrumPointCount)} emotion-color points…`,
+    `Detecting your ${result.zodiac.sign} frame · ${result.zodiac.element} · ${result.zodiac.modality}…`,
+    `Aligning ${readableName(result.firstHue.name)} with today's ${readableName(result.currentPlacement.name)} placement…`,
+    'Your time-weighted Aura-Spectrum is ready.',
+  ] : []
 
   useEffect(() => {
     try {
@@ -97,13 +107,33 @@ export default function AuraSpectrumPage() {
         includeComposite: false,
       })
       setResult(generated)
+      setAlignmentStep(0)
+      setIsAligning(true)
       setSecondRevealed(false)
+      setZodiacRevealCount(0)
       setError('')
     } catch (cause) {
       setResult(null)
+      setIsAligning(false)
       setError(cause instanceof Error ? cause.message : 'Aura-Spectrum could not process this birthdate.')
     }
   }, [retryKey])
+
+  useEffect(() => {
+    if (!result || !isAligning) return
+    let phase = 0
+    const intervalMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 850
+    const timer = window.setInterval(() => {
+      if (phase < 3) {
+        phase += 1
+        setAlignmentStep(phase)
+      } else {
+        window.clearInterval(timer)
+        setIsAligning(false)
+      }
+    }, intervalMs)
+    return () => window.clearInterval(timer)
+  }, [result, isAligning])
 
 
   useEffect(() => {
@@ -195,7 +225,7 @@ export default function AuraSpectrumPage() {
           Aura-Spectrum
         </h1>
         <p style={{ ...muted, maxWidth: '670px', margin: '0 auto' }}>
-          Your first reveal is an age-derived emotion color. Continue to reveal the literal gemstone color linked to your birth month. The artwork imagines a one-foot aura boundary as a visual metaphor, not a physical measurement; the two colors stay separate until the email-confirmed blend.
+          Your birthdate opens a time-weighted alignment and historical zodiac frame. Reveal its positive, neutral, and shadow colors one at a time; then explore your age-derived first primary and birthstone second primary. The artwork imagines a one-foot aura boundary as a metaphor, not a measurement. The two primaries stay separate until the email-confirmed blend.
         </p>
       </header>
 
@@ -208,8 +238,56 @@ export default function AuraSpectrumPage() {
         </section>
       )}
 
-      {result && (
+      {result && isAligning && (
+        <section style={{ ...panel, maxWidth: '760px', marginTop: '26px' }} role="status" aria-live="polite">
+          <p style={eyebrow}>TIME-WEIGHTED ALIGNMENT · {alignmentStep + 1} / {alignmentMessages.length}</p>
+          <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.6rem, 4.5vw, 2.25rem)', minHeight: '2.4em', margin: '18px 0' }}>
+            {alignmentMessages[alignmentStep]}
+          </h2>
+          <div role="progressbar" aria-label="Aura-Spectrum alignment" aria-valuemin={0} aria-valuemax={alignmentMessages.length} aria-valuenow={alignmentStep + 1} style={{ height: '5px', borderRadius: '99px', overflow: 'hidden', background: 'rgba(255,255,255,0.1)' }}>
+            <div style={{ width: `${((alignmentStep + 1) / alignmentMessages.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #c9e0d8, #d9c9ff)', transition: 'width 700ms ease' }} />
+          </div>
+          <p style={{ ...muted, fontSize: '0.84rem', marginBottom: 0 }}>Reading your saved birthdate through the lived-time equation, zodiac frame, and today's spectrum placement.</p>
+        </section>
+      )}
+
+      {result && !isAligning && (
         <>
+          <section style={panel}>
+            <p style={eyebrow}>HISTORICAL ZODIAC FRAME</p>
+            <h2 style={{ color: result.firstHue.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: '2.2rem', margin: '12px 0 4px' }}>{result.zodiac.sign}</h2>
+            <p style={muted}>{result.zodiac.element} · {result.zodiac.modality} · traditional ruler: {result.zodiac.traditionalRuler}</p>
+            <p style={muted}>{result.zodiac.description} The positive, neutral, and shadow colors are revealed individually as equal-weight symbolic context, not as ingredients in the subscriber-only blend of the two primary hues.</p>
+
+            <div style={{ marginTop: '20px', padding: '18px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', background: 'rgba(0,0,0,0.16)' }} aria-live="polite">
+              <p style={{ ...eyebrow, letterSpacing: '0.14em' }}>ZODIAC COLORS · {zodiacRevealCount} OF {result.zodiac.traitChannels.length} REVEALED</p>
+              <p style={{ ...muted, fontSize: '0.9rem' }}>Open each channel one at a time: positive, neutral, then shadow. Each carries one third symbolic weight.</p>
+              <div style={{ display: 'grid', gap: '12px', marginTop: '14px' }}>
+                {result.zodiac.traitChannels.slice(0, zodiacRevealCount).map((trait, index) => (
+                  <div key={trait.polarity} style={{ display: 'grid', gridTemplateColumns: 'minmax(74px, 0.35fr) minmax(0, 1fr)', gap: '14px', alignItems: 'center', padding: '14px', border: `1px solid ${trait.hex}66`, borderRadius: '14px', background: `${trait.hex}13` }}>
+                    <div style={{ minHeight: '66px', borderRadius: '9px', background: trait.hex, boxShadow: `0 0 22px ${trait.hex}35` }} role="img" aria-label={`${trait.polarity} channel color ${trait.hex}`} />
+                    <div>
+                      <p style={{ ...eyebrow, letterSpacing: '0.12em' }}>CHANNEL {index + 1} · {trait.polarity} · ⅓ WEIGHT</p>
+                      <strong style={{ color: trait.hex, fontSize: '1.12rem' }}>{readableName(trait.name)}</strong>
+                      <p style={{ ...muted, fontSize: '0.82rem', margin: '4px 0 0' }}>{trait.hex.toUpperCase()} · symbolic {trait.polarity} channel</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {zodiacRevealCount < result.zodiac.traitChannels.length ? (
+                <button
+                  type="button"
+                  onClick={() => setZodiacRevealCount((count) => Math.min(count + 1, result.zodiac.traitChannels.length))}
+                  style={{ marginTop: '16px', padding: '12px 16px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', background: 'linear-gradient(115deg, #c9e0d8, #d9c9ff)', color: '#101018', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                >
+                  Reveal {result.zodiac.traitChannels[zodiacRevealCount].polarity} color
+                </button>
+              ) : (
+                <p style={{ ...muted, marginBottom: 0 }}>The three symbolic channels balance into the spectrum label <strong style={{ color: result.zodiac.averageEmotion.hex }}>{readableName(result.zodiac.averageEmotion.name)}</strong>.</p>
+              )}
+            </div>
+          </section>
+
           <section style={panel}>
             <p style={eyebrow}>THE AGE EQUATION</p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.5rem)', margin: '12px 0' }}>
@@ -310,25 +388,6 @@ export default function AuraSpectrumPage() {
                 Existing mechanism rule: clamp(100 − distance in km ÷ 150, 25, 100). That percentage describes the birthstone's geographic-resonance layer. The gemstone name never generates the hue, and the two personal primary swatches remain unblended until subscription is confirmed.
               </p>
             </div>
-          </section>
-
-          <section style={panel}>
-            <p style={eyebrow}>HISTORICAL ZODIAC FRAME</p>
-            <h2 style={{ color: result.firstHue.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: '2.2rem', margin: '12px 0 4px' }}>{result.zodiac.sign}</h2>
-            <p style={muted}>{result.zodiac.element} · {result.zodiac.modality} · traditional ruler: {result.zodiac.traditionalRuler}</p>
-            <p style={muted}>{result.zodiac.description} The sign's positive, neutral, and shadow channels provide equal-weight symbolic context. They are not additional ingredients in the subscriber-only blend of the two primary hues.</p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginTop: '20px' }}>
-              {result.zodiac.traitChannels.map((trait) => (
-                <div key={trait.polarity} style={{ padding: '16px', border: `1px solid ${trait.hex}66`, borderRadius: '16px', background: `${trait.hex}13` }}>
-                  <p style={{ ...eyebrow, letterSpacing: '0.14em' }}>{trait.polarity} · ⅓ weight</p>
-                  <div style={{ height: '38px', borderRadius: '8px', background: trait.hex, margin: '12px 0' }} />
-                  <strong style={{ color: trait.hex }}>{readableName(trait.name)}</strong>
-                  <p style={{ ...muted, fontSize: '0.85rem', marginBottom: 0 }}>Symbolic {trait.polarity} channel</p>
-                </div>
-              ))}
-            </div>
-            <p style={muted}>The three symbolic channels balance into the spectrum label <strong>{readableName(result.zodiac.averageEmotion.name)}</strong>.</p>
           </section>
 
           <section style={{ ...panel, borderColor: isSubscribed ? ((unlockedBlend?.hex || result.firstHue.hex) + '88') : 'rgba(201,224,216,0.36)' }} aria-live="polite">
