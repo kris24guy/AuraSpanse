@@ -116,14 +116,14 @@ export async function GET(request: NextRequest) {
     }
 
     const result = calculatePrimaryResult(ticket.birthDate)
-    const blendHex = blendTwoPrimaryHex(result.firstHue.hex, result.birthstone.hex)
+    const blendHex = blendTwoPrimaryHex(result.zodiacHue1.hex, result.birthstone.hex)
     const response = NextResponse.json({
       success: true,
       subscribed: true,
       emailSent: false,
       birthDate: result.birthDate,
-      primaryHueName: readableName(result.firstHue.name),
-      primaryHueHex: result.firstHue.hex,
+      primaryHueName: readableName(result.zodiacHue1.name),
+      primaryHueHex: result.zodiacHue1.hex,
       birthstoneName: result.birthstone.name,
       birthstoneHex: result.birthstone.hex,
       birthstoneOpacityPercent: result.birthstone.opacityPercent,
@@ -175,15 +175,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Recreate the day-based reading shown in the browser, then synthesize one
-    // personal definition from its three zodiac channels and two age hues.
+    // Recreate the reading shown in the browser, then synthesize one personal
+    // definition from the zodiac triad, time-weighted fourth color, and Hue 1 result.
     const result = calculatePrimaryResult(birthDate, snapshotTime)
     const personalized = await generatePersonalizedEmotionReading([
       ...result.zodiac.traitChannels.map((trait) => ({ name: trait.name, hex: trait.hex })),
-      result.firstHue,
       result.currentPlacement,
-      result.zodiac.averageEmotion,
-      ...(result.composite ? [result.composite.nearestEmotion] : []),
+      { name: result.zodiacHue1.name, hex: result.zodiacHue1.hex },
     ])
 
     // Add the address to the configured Resend audience before producing the blend.
@@ -232,9 +230,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Only after the mailing-list confirms subscription do the two separate primaries blend.
-    const blendHex = blendTwoPrimaryHex(result.firstHue.hex, result.birthstone.hex)
+    const blendHex = blendTwoPrimaryHex(result.zodiacHue1.hex, result.birthstone.hex)
     let emailSent = false
-    const firstHueName = readableName(result.firstHue.name)
+    const firstHueName = readableName(result.zodiacHue1.name)
     const secondHueName = result.birthstone.name
     const generatedAtLabel = escapeHtml(result.currentDate)
     const emotionCards = personalized.components.map((component) => `
@@ -258,10 +256,11 @@ export async function POST(request: NextRequest) {
           ...personalized.components.map((component) => `${component.emotion} — ${component.hex}`),
           '',
           'Primary Hue 1 — ' + firstHueName,
+          'Hue 1 equally blends the positive, neutral, and shadow zodiac colors with the fourth time-weighted current-placement color.',
           'Primary Hue 2 — ' + secondHueName,
           'Your combined hue is shown below.',
           '',
-          'The combined hue is the equal-weight RGB blend of the two primaries only.',
+          'The combined hue is the equal-weight RGB blend of Primary Hue 1 and the literal birthstone Primary Hue 2.',
           'The AuraSpanse model is a symbolic tool for entertainment and personal reflection.',
           'Future AuraScope updates will be sent to this subscribed email address.',
         ].join('\n'),
@@ -277,9 +276,9 @@ export async function POST(request: NextRequest) {
             <p style="margin-top:18px;color:#c9e0d8">Subscription confirmed.</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
               <div style="border:1px solid #ffffff22;border-radius:14px;padding:14px">
-                <div style="height:72px;border-radius:8px;background:${result.firstHue.hex}"></div>
+                <div style="height:72px;border-radius:8px;background:${result.zodiacHue1.hex}"></div>
                 <h2 style="font-size:16px">${escapeHtml(firstHueName)}</h2>
-                <p>Primary Hue 1 · original emotion color</p>
+                <p>Primary Hue 1 · four-color zodiac/time blend</p>
               </div>
               <div style="border:1px solid #ffffff22;border-radius:14px;padding:14px">
                 <div style="height:72px;border-radius:8px;background:${result.birthstone.hex}"></div>
@@ -291,7 +290,7 @@ export async function POST(request: NextRequest) {
             <h2 style="margin-top:28px">Your combined hue</h2>
             <div style="height:136px;border-radius:14px;background:${blendHex};border:1px solid #ffffff33"></div>
             <p><strong>Your two colors are now blended.</strong></p>
-            <p style="line-height:1.7;color:#d2d2dc">This color is the equal-weight RGB average of Primary Hue 1 and Primary Hue 2 only. The zodiac frame and current placement remain contextual and are not added as extra blend ingredients.</p>
+            <p style="line-height:1.7;color:#d2d2dc">Primary Hue 1 is the equal-weight blend of the positive, neutral, and shadow zodiac colors plus the fourth time-weighted placement color. The final color equally blends that Hue 1 with the literal birthstone Hue 2.</p>
             <p style="font-size:12px;line-height:1.6;color:#888">AuraSpanse is a symbolic tool for entertainment and personal reflection, not a scientifically validated measure of personality or emotional state. You subscribed to AuraScope email updates; future list mailings should provide an unsubscribe option.</p>
           </div>
         `,
@@ -307,7 +306,7 @@ export async function POST(request: NextRequest) {
       emailSent,
       birthDate: result.birthDate,
       primaryHueName: firstHueName,
-      primaryHueHex: result.firstHue.hex,
+      primaryHueHex: result.zodiacHue1.hex,
       birthstoneName: secondHueName,
       birthstoneHex: result.birthstone.hex,
       birthstoneOpacityPercent: result.birthstone.opacityPercent,

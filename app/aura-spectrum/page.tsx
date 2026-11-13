@@ -20,7 +20,7 @@ const shell: CSSProperties = {
 
 const panel: CSSProperties = {
   width: '100%',
-  maxWidth: '920px',
+  maxWidth: '800px',
   margin: '0 auto 18px',
   padding: 'clamp(20px, 4vw, 34px)',
   boxSizing: 'border-box',
@@ -43,12 +43,21 @@ const muted: CSSProperties = {
   lineHeight: 1.75,
 }
 
-function readableName(name: string): string {
-  return name.replace(/^The-/, '').replace(/-/g, ' ')
+const primaryButton: CSSProperties = {
+  marginTop: '16px',
+  padding: '13px 17px',
+  border: 0,
+  borderRadius: '4px',
+  background: 'linear-gradient(115deg, #c9e0d8, #d9c9ff)',
+  color: '#101018',
+  fontWeight: 700,
+  cursor: 'pointer',
+  letterSpacing: '0.07em',
+  textTransform: 'uppercase',
 }
 
-function formatNumber(value: number): string {
-  return Math.round(value).toLocaleString('en-US')
+function readableName(name: string): string {
+  return name.replace(/^The-/, '').replace(/-/g, ' ')
 }
 
 function blendTwoHex(firstHex: string, secondHex: string): string {
@@ -69,17 +78,36 @@ export default function AuraSpectrumPage() {
   const [subscriptionMessage, setSubscriptionMessage] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [unlockedBlend, setUnlockedBlend] = useState<{ hex: string; name: string } | null>(null)
-  const [secondRevealed, setSecondRevealed] = useState(false)
+  const [hue2Revealed, setHue2Revealed] = useState(false)
   const [isAligning, setIsAligning] = useState(false)
   const [alignmentStep, setAlignmentStep] = useState(0)
   const [zodiacRevealCount, setZodiacRevealCount] = useState(0)
 
   const alignmentMessages = result ? [
-    `Measuring ${formatNumber(result.daysAlive)} lived days across ${formatNumber(result.spectrumPointCount)} emotion-color points…`,
-    `Detecting your ${result.zodiac.sign} frame · ${result.zodiac.element} · ${result.zodiac.modality}…`,
-    `Aligning ${readableName(result.firstHue.name)} with today's ${readableName(result.currentPlacement.name)} placement…`,
-    'Your time-weighted Aura-Spectrum is ready.',
+    'Measuring lived time across the 374-emotion spectrum…',
+    `Detecting your historical ${result.zodiac.sign} frame · ${result.zodiac.element}…`,
+    "Aligning your date with today's time-weighted spectrum placement…",
+    'Your four-color Zodiac Hue 1 reveal is ready.',
   ] : []
+  const hue1Sources = result ? [
+    ...result.zodiac.traitChannels.map((trait) => ({
+      key: trait.polarity,
+      title: `ZODIAC · ${trait.polarity.toUpperCase()}`,
+      name: trait.name,
+      hex: trait.hex,
+      description: emotionGlossaryPoints.find((point) => point.name === trait.name)?.definition ?? `Symbolic ${trait.polarity} channel.`,
+    })),
+    {
+      key: 'time-weighted',
+      title: 'TIME WEIGHT · COLOR 4 OF 4',
+      name: result.currentPlacement.name,
+      hex: result.currentPlacement.hex,
+      description: "Your lived-time cycle and today's placement determine this fourth Hue 1 color.",
+    },
+  ] : []
+  const hue1Definition = result
+    ? emotionGlossaryPoints.find((point) => point.name === result.zodiacHue1.name)?.definition
+    : undefined
 
   useEffect(() => {
     try {
@@ -87,15 +115,6 @@ export default function AuraSpectrumPage() {
       if (!birthDate) {
         setError('No birthdate is saved in this browser. Enter a birthdate to initialize Aura-Spectrum.')
         return
-      }
-
-      // Supply the display-only can with the exact same point records used by the reveal engine.
-      try {
-        window.localStorage.setItem('aura-spectrum-cyclone-points', JSON.stringify(
-          emotionGlossaryPoints.map(({ name, definition, hex, colorAssignment }) => ({ name, definition, hex, colorAssignment }))
-        ))
-      } catch {
-        // The can iframe falls back to its bundled display data if storage is blocked.
       }
 
       const generated = generateOriginSpectrum(birthDate, {
@@ -109,12 +128,14 @@ export default function AuraSpectrumPage() {
       setResult(generated)
       setAlignmentStep(0)
       setIsAligning(true)
-      setSecondRevealed(false)
+      setHue2Revealed(false)
       setZodiacRevealCount(0)
       setError('')
     } catch (cause) {
       setResult(null)
       setIsAligning(false)
+      setHue2Revealed(false)
+      setZodiacRevealCount(0)
       setError(cause instanceof Error ? cause.message : 'Aura-Spectrum could not process this birthdate.')
     }
   }, [retryKey])
@@ -134,7 +155,6 @@ export default function AuraSpectrumPage() {
     }, intervalMs)
     return () => window.clearInterval(timer)
   }, [result, isAligning])
-
 
   useEffect(() => {
     if (!result) return
@@ -159,14 +179,15 @@ export default function AuraSpectrumPage() {
 
         setUnlockedBlend({
           hex: data.blendHex,
-          name: readableName(data.primaryHueName || result.firstHue.name) + ' × ' + (data.birthstoneName || result.birthstone.name),
+          name: readableName(data.primaryHueName || result.zodiacHue1.name) + ' × ' + (data.birthstoneName || result.birthstone.name),
         })
         setIsSubscribed(true)
-        setSecondRevealed(true)
-        setSubscriptionMessage('Your previous subscription has been verified. The two-primary blend is restored.')
+        setZodiacRevealCount(4)
+        setHue2Revealed(true)
+        setSubscriptionMessage('Your previous subscription has been verified. The four-color Hue 1 and final blend are restored.')
       })
       .catch(() => {
-        // No signed subscription ticket: leave the combined hue locked.
+        // No signed subscription ticket: leave the final blend locked.
       })
 
     return () => {
@@ -176,7 +197,7 @@ export default function AuraSpectrumPage() {
 
   async function handleSubscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!result || !email.trim()) return
+    if (!result || zodiacRevealCount !== 4 || !hue2Revealed || !email.trim()) return
     if (!consent) {
       setSubscriptionError('Confirm that you want to receive AuraSpanse email updates to continue.')
       return
@@ -198,15 +219,16 @@ export default function AuraSpectrumPage() {
 
       const blend = {
         hex: data.blendHex as string,
-        name: readableName(data.primaryHueName || result.firstHue.name) + ' × ' + (data.birthstoneName || result.birthstone.name),
+        name: readableName(data.primaryHueName || result.zodiacHue1.name) + ' × ' + (data.birthstoneName || result.birthstone.name),
       }
       setUnlockedBlend(blend)
       setIsSubscribed(true)
-      setSecondRevealed(true)
+      setZodiacRevealCount(4)
+      setHue2Revealed(true)
       setSubscriptionMessage(
         data.emailSent
-          ? 'Subscription confirmed. Your personalized five-emotion reading and this snapshot’s colors were emailed.'
-          : 'Subscription confirmed. Your two-primary blend is revealed below. The reading email could not be sent, but the subscription is active.'
+          ? 'Subscription confirmed. Your personalized five-color reading, four-color Hue 1, and this snapshot were emailed.'
+          : 'Subscription confirmed. Your Hue 1 + Hue 2 blend is revealed below. The reading email could not be sent, but the subscription is active.'
       )
     } catch (cause) {
       setSubscriptionError(cause instanceof Error ? cause.message : 'The subscription could not be confirmed.')
@@ -219,262 +241,185 @@ export default function AuraSpectrumPage() {
     <main style={shell}>
       <AuraSky />
       <div style={{ position: 'relative', zIndex: 1 }}>
-      <header style={{ ...panel, textAlign: 'center', paddingTop: '42px', paddingBottom: '42px' }}>
-        <p style={eyebrow}>AURASPANSE · THE AURA-SPECTRUM MECHANISM</p>
-        <h1 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(2.4rem, 7vw, 4.3rem)', letterSpacing: '-0.035em', margin: '16px 0 12px' }}>
-          Aura-Spectrum
-        </h1>
-        <p style={{ ...muted, maxWidth: '670px', margin: '0 auto' }}>
-          Your birthdate opens a time-weighted alignment and historical zodiac frame. Reveal its positive, neutral, and shadow colors one at a time; then explore your age-derived first primary and birthstone second primary. The artwork imagines a one-foot aura boundary as a metaphor, not a measurement. The two primaries stay separate until the email-confirmed blend.
-        </p>
-      </header>
+        <header style={{ ...panel, textAlign: 'center', paddingTop: '38px', paddingBottom: '38px' }}>
+          <p style={eyebrow}>AURASPANSE · THE AURA-SPECTRUM MECHANISM</p>
+          <h1 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(2.4rem, 7vw, 4.3rem)', letterSpacing: '-0.035em', margin: '16px 0 12px' }}>
+            Aura-Spectrum
+          </h1>
+          <p style={{ ...muted, maxWidth: '650px', margin: '0 auto' }}>
+            One birthdate. A quiet time-weighted transition. Four colors revealed in sequence to form Zodiac Hue 1; your birthstone is the separate Hue 2.
+          </p>
+        </header>
 
-      {error && (
-        <section style={{ ...panel, borderColor: 'rgba(211,154,184,0.45)' }} aria-live="polite">
-          <p style={eyebrow}>INPUT REQUIRED</p>
-          <h2 style={{ color: '#d39ab8', fontWeight: 500 }}>{error}</h2>
-          <p style={muted}>Return to the birthdate entry, enter a valid date, and initialize Aura-Spectrum.</p>
-          <a href="/aura-scope-mechanism.html" style={{ color: '#d9c9ff', textUnderlineOffset: '4px' }}>Return to birthdate entry →</a>
-        </section>
-      )}
+        {error && (
+          <section style={{ ...panel, borderColor: 'rgba(211,154,184,0.45)' }} aria-live="polite">
+            <p style={eyebrow}>INPUT REQUIRED</p>
+            <h2 style={{ color: '#d39ab8', fontWeight: 500 }}>{error}</h2>
+            <a href="/aura-scope-mechanism.html" style={{ color: '#d9c9ff', textUnderlineOffset: '4px' }}>Return to birthdate entry →</a>
+          </section>
+        )}
 
-      {result && isAligning && (
-        <section style={{ ...panel, maxWidth: '760px', marginTop: '26px' }} role="status" aria-live="polite">
-          <p style={eyebrow}>TIME-WEIGHTED ALIGNMENT · {alignmentStep + 1} / {alignmentMessages.length}</p>
-          <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.6rem, 4.5vw, 2.25rem)', minHeight: '2.4em', margin: '18px 0' }}>
-            {alignmentMessages[alignmentStep]}
-          </h2>
-          <div role="progressbar" aria-label="Aura-Spectrum alignment" aria-valuemin={0} aria-valuemax={alignmentMessages.length} aria-valuenow={alignmentStep + 1} style={{ height: '5px', borderRadius: '99px', overflow: 'hidden', background: 'rgba(255,255,255,0.1)' }}>
-            <div style={{ width: `${((alignmentStep + 1) / alignmentMessages.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #c9e0d8, #d9c9ff)', transition: 'width 700ms ease' }} />
-          </div>
-          <p style={{ ...muted, fontSize: '0.84rem', marginBottom: 0 }}>Reading your saved birthdate through the lived-time equation, zodiac frame, and today's spectrum placement.</p>
-        </section>
-      )}
+        {result && isAligning && (
+          <section style={{ ...panel, maxWidth: '760px', marginTop: '26px' }} role="status" aria-live="polite">
+            <p style={eyebrow}>TIME-WEIGHTED ALIGNMENT · {alignmentStep + 1} / {alignmentMessages.length}</p>
+            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.6rem, 4.5vw, 2.25rem)', minHeight: '2.4em', margin: '18px 0' }}>
+              {alignmentMessages[alignmentStep]}
+            </h2>
+            <div role="progressbar" aria-label="Aura-Spectrum alignment" aria-valuemin={0} aria-valuemax={alignmentMessages.length} aria-valuenow={alignmentStep + 1} style={{ height: '5px', borderRadius: '99px', overflow: 'hidden', background: 'rgba(255,255,255,0.1)' }}>
+              <div style={{ width: `${((alignmentStep + 1) / alignmentMessages.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #c9e0d8, #d9c9ff)', transition: 'width 700ms ease' }} />
+            </div>
+            <p style={{ ...muted, fontSize: '0.84rem', marginBottom: 0 }}>The time-weighting calculation stays behind the scenes; its color enters the Hue 1 sequence as source four.</p>
+          </section>
+        )}
 
-      {result && !isAligning && (
-        <>
-          <section style={panel}>
-            <p style={eyebrow}>HISTORICAL ZODIAC FRAME</p>
-            <h2 style={{ color: result.firstHue.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: '2.2rem', margin: '12px 0 4px' }}>{result.zodiac.sign}</h2>
-            <p style={muted}>{result.zodiac.element} · {result.zodiac.modality} · traditional ruler: {result.zodiac.traditionalRuler}</p>
-            <p style={muted}>{result.zodiac.description} The positive, neutral, and shadow colors are revealed individually as equal-weight symbolic context, not as ingredients in the subscriber-only blend of the two primary hues.</p>
+        {result && !isAligning && (
+          <>
+            <section id="zodiac-hue-one" style={panel} aria-live="polite">
+              <p style={eyebrow}>HISTORICAL ZODIAC FRAME · HUE 1</p>
+              <h2 style={{ color: result.zodiacHue1.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(2rem, 5vw, 2.8rem)', margin: '12px 0 4px' }}>{result.zodiac.sign}</h2>
+              <p style={muted}>{result.zodiac.element} · {result.zodiac.modality} · traditional ruler: {result.zodiac.traditionalRuler}</p>
+              <p style={muted}>{result.zodiac.description} Reveal the positive, neutral, and shadow colors, then the time-weighted fourth color. Each contributes 25% to Zodiac Hue 1.</p>
 
-            <div style={{ marginTop: '20px', padding: '18px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', background: 'rgba(0,0,0,0.16)' }} aria-live="polite">
-              <p style={{ ...eyebrow, letterSpacing: '0.14em' }}>ZODIAC COLORS · {zodiacRevealCount} OF {result.zodiac.traitChannels.length} REVEALED</p>
-              <p style={{ ...muted, fontSize: '0.9rem' }}>Open each channel one at a time: positive, neutral, then shadow. Each carries one third symbolic weight.</p>
-              <div style={{ display: 'grid', gap: '12px', marginTop: '14px' }}>
-                {result.zodiac.traitChannels.slice(0, zodiacRevealCount).map((trait, index) => (
-                  <div key={trait.polarity} style={{ display: 'grid', gridTemplateColumns: 'minmax(74px, 0.35fr) minmax(0, 1fr)', gap: '14px', alignItems: 'center', padding: '14px', border: `1px solid ${trait.hex}66`, borderRadius: '14px', background: `${trait.hex}13` }}>
-                    <div style={{ minHeight: '66px', borderRadius: '9px', background: trait.hex, boxShadow: `0 0 22px ${trait.hex}35` }} role="img" aria-label={`${trait.polarity} channel color ${trait.hex}`} />
+              <div style={{ marginTop: '20px', padding: '18px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', background: 'rgba(0,0,0,0.16)' }}>
+                <p style={{ ...eyebrow, letterSpacing: '0.14em' }}>HUE 1 COLORS · {zodiacRevealCount} OF 4 REVEALED</p>
+                <div style={{ display: 'grid', gap: '12px', marginTop: '14px' }}>
+                  {hue1Sources.slice(0, zodiacRevealCount).map((source, index) => (
+                    <div key={source.key} style={{ display: 'grid', gridTemplateColumns: 'minmax(74px, 0.35fr) minmax(0, 1fr)', gap: '14px', alignItems: 'center', padding: '14px', border: `1px solid ${source.hex}66`, borderRadius: '14px', background: `${source.hex}13` }}>
+                      <div style={{ minHeight: '66px', borderRadius: '9px', background: source.hex, boxShadow: `0 0 22px ${source.hex}35` }} role="img" aria-label={`${source.title} color ${source.hex}`} />
+                      <div>
+                        <p style={{ ...eyebrow, letterSpacing: '0.12em' }}>COLOR {index + 1} · {source.title} · 25%</p>
+                        <strong style={{ color: source.hex, fontSize: '1.12rem' }}>{readableName(source.name)}</strong>
+                        <p style={{ ...muted, fontSize: '0.82rem', margin: '4px 0 0' }}>{source.hex.toUpperCase()}</p>
+                        <p style={{ ...muted, fontSize: '0.88rem', margin: '6px 0 0' }}>{source.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {zodiacRevealCount < 4 ? (
+                  <button
+                    type="button"
+                    onClick={() => setZodiacRevealCount((count) => Math.min(count + 1, 4))}
+                    style={primaryButton}
+                  >
+                    Reveal {zodiacRevealCount < 3 ? `${result.zodiac.traitChannels[zodiacRevealCount].polarity} color` : 'time-weighted fourth color'}
+                  </button>
+                ) : (
+                  <div style={{ marginTop: '22px', padding: '18px', border: `1px solid ${result.zodiacHue1.hex}88`, borderRadius: '16px', background: `${result.zodiacHue1.hex}13` }}>
+                    <p style={eyebrow}>NEW PRIMARY HUE 1 · FOUR-COLOR BLEND</p>
+                    <div style={{ height: '96px', borderRadius: '10px', background: result.zodiacHue1.hex, boxShadow: `0 0 28px ${result.zodiacHue1.hex}35`, margin: '14px 0' }} role="img" aria-label={`Zodiac Hue 1 ${result.zodiacHue1.hex}`} />
+                    <h3 style={{ color: result.zodiacHue1.hex, fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: '1.7rem', margin: '0 0 6px' }}>{readableName(result.zodiacHue1.name)}</h3>
+                    <p style={{ ...muted, fontSize: '0.88rem' }}>{result.zodiacHue1.hex.toUpperCase()} · equal 25% blend of the three zodiac colors and the time-weighted fourth color.</p>
+                    {hue1Definition && <p style={{ ...muted, marginBottom: 0 }}>{hue1Definition}</p>}
+                    {!hue2Revealed && (
+                      <button type="button" onClick={() => setHue2Revealed(true)} style={primaryButton}>
+                        Reveal birthstone Hue 2
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {hue2Revealed && (
+              <>
+                <section id="birthstone-hue-two" style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
+                  <p style={eyebrow}>PRIMARY HUE 2 · BIRTHSTONE</p>
+                  <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, margin: '12px 0' }}>Your literal stone color</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(125px, 0.7fr) minmax(210px, 1.5fr)', gap: '20px', alignItems: 'stretch', marginTop: '18px' }}>
+                    <div style={{ borderRadius: '18px', background: result.birthstone.hex, minHeight: '150px', boxShadow: `0 0 38px ${result.birthstone.hex}35`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', boxSizing: 'border-box', color: ['#EAF5FF','#F6F0E5','#C9D8D6','#E3A341','#A5C639'].includes(result.birthstone.hex) ? '#15151a' : '#ffffff' }}>
+                      <p style={{ fontSize: '0.65rem', letterSpacing: '0.16em', margin: 0 }}>NATURAL STONE SWATCH</p>
+                      <strong style={{ fontSize: '1.1rem' }}>{result.birthstone.hex.toUpperCase()}</strong>
+                    </div>
                     <div>
-                      <p style={{ ...eyebrow, letterSpacing: '0.12em' }}>CHANNEL {index + 1} · {trait.polarity} · ⅓ WEIGHT</p>
-                      <strong style={{ color: trait.hex, fontSize: '1.12rem' }}>{readableName(trait.name)}</strong>
-                      <p style={{ ...muted, fontSize: '0.82rem', margin: '4px 0 0' }}>{trait.hex.toUpperCase()} · symbolic {trait.polarity} channel</p>
+                      <h3 style={{ color: result.birthstone.hex, fontSize: '1.5rem', margin: '0 0 9px', fontWeight: 500 }}>{result.birthstone.name}</h3>
+                      <p style={muted}>{result.birthstone.sourceNote}</p>
+                      <p style={muted}><strong>Deposit:</strong> {result.birthstone.deposit} · {Math.round(result.birthstone.distanceKm).toLocaleString('en-US')} km from {result.birthstone.origin.name}</p>
+                      <p style={{ ...muted, fontSize: '0.86rem' }}>Geographic resonance: {result.birthstone.opacityPercent.toFixed(1)}%. This describes the deposit reference; Hue 2 remains the literal stone swatch.</p>
                     </div>
                   </div>
-                ))}
-              </div>
-              {zodiacRevealCount < result.zodiac.traitChannels.length ? (
-                <button
-                  type="button"
-                  onClick={() => setZodiacRevealCount((count) => Math.min(count + 1, result.zodiac.traitChannels.length))}
-                  style={{ marginTop: '16px', padding: '12px 16px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', background: 'linear-gradient(115deg, #c9e0d8, #d9c9ff)', color: '#101018', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                >
-                  Reveal {result.zodiac.traitChannels[zodiacRevealCount].polarity} color
-                </button>
-              ) : (
-                <p style={{ ...muted, marginBottom: 0 }}>The three symbolic channels balance into the spectrum label <strong style={{ color: result.zodiac.averageEmotion.hex }}>{readableName(result.zodiac.averageEmotion.name)}</strong>.</p>
-              )}
-            </div>
-          </section>
+                </section>
 
-          <section style={panel}>
-            <p style={eyebrow}>THE AGE EQUATION</p>
-            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.5rem)', margin: '12px 0' }}>
-              {formatNumber(result.daysAlive)} days alive
-            </h2>
-            <p style={muted}>
-              {formatNumber(result.daysAlive)} ÷ {formatNumber(result.spectrumPointCount)} emotion-color points = <strong style={{ color: '#c9e0d8' }}>{result.ageSpectrumRatio.toFixed(4)}</strong> spectrum cycles.
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '22px' }}>
-              {[
-                { label: 'Birthdate', value: result.birthDate },
-                { label: 'Calculation date', value: result.currentDate },
-                { label: 'Spectrum points', value: formatNumber(result.spectrumPointCount) },
-                { label: 'Completed cycles', value: formatNumber(result.completedSpectrumCycles) },
-                { label: 'Remainder', value: formatNumber(result.remainingLifeDays) },
-                { label: 'Exponent residue', value: formatNumber(result.exponentResidue) },
-              ].map((item) => (
-                <div key={item.label} style={{ padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(0,0,0,0.18)' }}>
-                  <p style={{ ...eyebrow, letterSpacing: '0.12em' }}>{item.label}</p>
-                  <p style={{ margin: '8px 0 0', fontSize: '1.05rem', fontVariantNumeric: 'tabular-nums' }}>{item.value}</p>
-                </div>
-              ))}
-            </div>
-
-            <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>
-              First-hue index = (({result.spectrumPointCount}<sup>{formatNumber(result.daysAlive)}</sup> mod {formatNumber(result.exponentModulus)}) mod {result.spectrumPointCount} + age remainder + zodiac index) mod spectrum size. The large exponent is evaluated with bounded modular arithmetic, not constructed as an unmanageably large integer.
-            </p>
-          </section>
-
-          <section id="first-hue-reveal" style={{ ...panel, maxWidth: '1180px', padding: '20px' }}>
-            <p style={eyebrow}>THE 374-POINT EMOTION FUNNEL</p>
-            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Explore the emotional spectrum</h2>
-            <p style={muted}>
-              This explorer uses the same 374 named emotions, definitions, and source colors as your reading. On this first reveal, the points spiral up a faceted funnel around the age-derived color. After you continue, your birthstone color enters as the second tint and the upper points unfurl into woven streams around the continuous cyclone. The arrangement is a symbolic visualization, not a measured aura.
-            </p>
-            <div style={{ marginTop: '18px', border: '1px solid rgba(255,255,255,0.11)', borderRadius: '10px', overflow: 'hidden', background: '#0a0a12' }}>
-              <iframe
-                title="AuraSpanse interactive emotion-spectrum cyclone"
-                src={'/aura-spectrum-cyclone.html?selected=' + encodeURIComponent(result.firstHue.name) + '&primary=' + encodeURIComponent(result.firstHue.hex) + '&stone=' + (secondRevealed ? encodeURIComponent(result.birthstone.hex) : '') + '&opacity=' + encodeURIComponent(secondRevealed ? String(result.birthstone.opacity) : '0')}
-                loading="eager"
-                style={{ display: 'block', width: '100%', height: 'clamp(900px, 112vh, 1180px)', border: 0, background: '#0a0a12' }}
-              />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '22px' }}>
-              <div style={{ border: '1px solid ' + result.firstHue.hex + '88', background: result.firstHue.hex + '18', borderRadius: '12px', padding: '18px' }}>
-                <p style={eyebrow}>PRIMARY HUE 1 · AGE-DERIVED</p>
-                <div style={{ height: '58px', borderRadius: '8px', margin: '14px 0', background: result.firstHue.hex }} />
-                <h3 style={{ color: result.firstHue.hex, margin: '0 0 5px' }}>{readableName(result.firstHue.name)}</h3>
-                <p style={muted}>Age-derived starting color from the emotional spectrum.</p>
-                <p style={{ ...muted, fontSize: '0.9rem', marginBottom: 0 }}>{emotionGlossaryPoints[result.firstHueIndex]?.definition}</p>
-              </div>
-            </div>
-            {!secondRevealed && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '22px' }}>
-                <button
-                  type="button"
-                  onClick={() => setSecondRevealed(true)}
-                  style={{ padding: '14px 18px', border: 0, borderRadius: '4px', background: 'linear-gradient(115deg, #c9e0d8, #d9c9ff)', color: '#101018', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase' }}
-                >
-                  Reveal my birthstone color
-                </button>
-              </div>
-            )}
-          </section>
-
-          {secondRevealed && <>
-                    <section id="second-hue-reveal" style={{ ...panel, borderColor: `${result.birthstone.hex}88` }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-              <button type="button" onClick={() => document.getElementById('first-hue-reveal')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#d9c9ff', padding: '8px 12px', borderRadius: '999px', cursor: 'pointer' }}>Back to first reveal</button>
-            </div>
-            <p style={eyebrow}>PRIMARY HUE 2 · GEOGRAPHIC BIRTHSTONE RESONANCE</p>
-            <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, marginTop: '12px' }}>Literal stone color first. Name second.</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(125px, 0.7fr) minmax(210px, 1.5fr)', gap: '20px', alignItems: 'stretch', marginTop: '18px' }}>
-              <div style={{ borderRadius: '18px', background: result.birthstone.hex, minHeight: '170px', boxShadow: `0 0 38px ${result.birthstone.hex}35`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', boxSizing: 'border-box', color: ['#EAF5FF','#F6F0E5','#C9D8D6','#E3A341','#A5C639'].includes(result.birthstone.hex) ? '#15151a' : '#ffffff' }}>
-                <p style={{ fontSize: '0.65rem', letterSpacing: '0.16em', margin: 0 }}>NATURAL STONE COLOR</p>
-                <div>
-                  <strong style={{ fontSize: '1.1rem' }}>Original stone color</strong>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.75rem' }}>Used as the second primary hue</p>
-                </div>
-              </div>
-              <div>
-                <h3 style={{ color: result.birthstone.hex, fontSize: '1.5rem', margin: '0 0 9px', fontWeight: 500 }}>{result.birthstone.name}</h3>
-                <p style={muted}>{result.birthstone.sourceNote}</p>
-                <p style={muted}><strong>Deposit reference:</strong> {result.birthstone.deposit}</p>
-                <p style={muted}><strong>Geographic distance:</strong> {Math.round(result.birthstone.distanceKm).toLocaleString('en-US')} km from {result.birthstone.origin.name}</p>
-              </div>
-            </div>
-            <div style={{ marginTop: '20px', padding: '16px', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '16px', background: 'rgba(0,0,0,0.15)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', flexWrap: 'wrap' }}>
-                <strong>Geographic opacity point</strong>
-                <strong style={{ fontSize: '1.4rem', color: result.birthstone.hex, fontVariantNumeric: 'tabular-nums' }}>{result.birthstone.opacityPercent.toFixed(1)}%</strong>
-              </div>
-              <div style={{ height: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '99px', overflow: 'hidden', margin: '12px 0' }}>
-                <div style={{ height: '100%', width: `${result.birthstone.opacityPercent}%`, background: result.birthstone.hex, boxShadow: `0 0 14px ${result.birthstone.hex}88` }} />
-              </div>
-              <p style={{ ...muted, fontSize: '0.88rem', marginBottom: 0 }}>
-                Existing mechanism rule: clamp(100 − distance in km ÷ 150, 25, 100). That percentage describes the birthstone's geographic-resonance layer. The gemstone name never generates the hue, and the two personal primary swatches remain unblended until subscription is confirmed.
-              </p>
-            </div>
-          </section>
-
-          <section style={{ ...panel, borderColor: isSubscribed ? ((unlockedBlend?.hex || result.firstHue.hex) + '88') : 'rgba(201,224,216,0.36)' }} aria-live="polite">
-            {!isSubscribed ? (
-              <>
-                <p style={eyebrow}>SUBSCRIBE TO REVEAL THE BLEND</p>
-                <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.4rem)', margin: '12px 0' }}>Two primaries. One personal color.</h2>
-                <p style={muted}>
-                  Primary Hue 1 is <strong style={{ color: result.firstHue.hex }}>{readableName(result.firstHue.name)}</strong>. Primary Hue 2 is <strong style={{ color: result.birthstone.hex }}>{result.birthstone.name}</strong>, represented by its natural-stone color. Both appear separately. The combined hue is calculated on the server only after your email subscription is confirmed.
-                </p>
-                <p style={{ ...muted, fontSize: '0.9rem' }}>Your email also includes a personalized definition blended from five emotion channels in this reading, their exact source colors, and the snapshot date.</p>
-                <form onSubmit={handleSubscribe} style={{ display: 'grid', gap: '14px', marginTop: '22px' }}>
-                  <label htmlFor="aura-spectrum-email" style={{ display: 'grid', gap: '7px', fontSize: '0.9rem', color: 'rgba(243,240,235,0.9)' }}>
-                    Email address
-                    <input
-                      id="aura-spectrum-email"
-                      type="email"
-                      required
-                      autoComplete="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="you@example.com"
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '13px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', background: '#12121d', color: '#f3f0eb', font: 'inherit' }}
-                    />
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.82rem', lineHeight: 1.55, color: 'rgba(243,240,235,0.7)' }}>
-                    <input
-                      type="checkbox"
-                      required
-                      checked={consent}
-                      onChange={(event) => setConsent(event.target.checked)}
-                      style={{ marginTop: '4px', accentColor: '#c9e0d8', flex: '0 0 auto' }}
-                    />
-                    <span>I agree to subscribe to AuraSpanse email updates and receive this reading. I understand future updates will be sent to this address and I can unsubscribe.</span>
-                  </label>
-                  {subscriptionError && <p role="alert" style={{ margin: 0, color: '#f0a8b8', lineHeight: 1.6 }}>{subscriptionError}</p>}
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    style={{ padding: '14px 18px', border: 0, borderRadius: '4px', background: submitting ? '#5d5c68' : 'linear-gradient(115deg, #c9e0d8, #d9c9ff)', color: '#101018', fontWeight: 700, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.8 : 1, letterSpacing: '0.08em', textTransform: 'uppercase' }}
-                  >
-                    {submitting ? 'Confirming subscription…' : 'Subscribe and reveal'}
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <p style={eyebrow}>SUBSCRIPTION CONFIRMED · TWO-PRIMARY REVEAL</p>
-                <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.4rem)', margin: '12px 0' }}>Your primaries, now combined</h2>
-                {subscriptionMessage && <p style={{ ...muted, color: '#c9e0d8' }}>{subscriptionMessage}</p>}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '12px', marginTop: '20px' }}>
-                  <div style={{ padding: '14px', border: '1px solid ' + result.firstHue.hex + '66', borderRadius: '8px' }}>
-                    <div style={{ height: '46px', borderRadius: '6px', background: result.firstHue.hex, marginBottom: '10px' }} />
-                    <strong>{readableName(result.firstHue.name)}</strong>
-                    <p style={{ ...muted, fontSize: '0.78rem' }}>Primary Hue 1 · original color</p>
-                  </div>
-                  <div style={{ padding: '14px', border: '1px solid ' + result.birthstone.hex + '66', borderRadius: '8px' }}>
-                    <div style={{ height: '46px', borderRadius: '6px', background: result.birthstone.hex, marginBottom: '10px' }} />
-                    <strong>{result.birthstone.name}</strong>
-                    <p style={{ ...muted, fontSize: '0.78rem' }}>Deposit proximity · {result.birthstone.opacityPercent.toFixed(1)}% color strength</p>
-                  </div>
-                </div>
-                <div style={{ height: 'min(240px, 42vw)', minHeight: '150px', borderRadius: '8px', margin: '24px 0 16px', background: unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex), boxShadow: '0 0 45px ' + ((unlockedBlend?.hex || blendTwoHex(result.firstHue.hex, result.birthstone.hex)) + '55'), border: '1px solid rgba(255,255,255,0.22)' }} />
-                <h3 style={{ color: unlockedBlend?.hex || result.firstHue.hex, fontFamily: 'Georgia, serif', fontSize: 'clamp(1.35rem, 4vw, 2rem)', fontWeight: 400, margin: '0 0 8px' }}>
-                  {unlockedBlend?.name || (readableName(result.firstHue.name) + ' × ' + result.birthstone.name)}
-                </h3>
-                <p style={muted}>
-                  Equal blend of Primary Hue 1 and Primary Hue 2 only.
-                </p>
-                <p style={{ ...muted, fontSize: '0.8rem' }}>Zodiac traits and today's placement are contextual; neither is added as a third blend ingredient.</p>
+                <section style={{ ...panel, borderColor: isSubscribed ? `${unlockedBlend?.hex || result.zodiacHue1.hex}88` : 'rgba(201,224,216,0.36)' }} aria-live="polite">
+                  {!isSubscribed ? (
+                    <>
+                      <p style={eyebrow}>THE PERSONAL TWO-PRIMARY BLEND</p>
+                      <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.4rem)', margin: '12px 0' }}>Zodiac Hue 1 × Birthstone Hue 2</h2>
+                      <p style={muted}>
+                        Hue 1 is <strong style={{ color: result.zodiacHue1.hex }}>{readableName(result.zodiacHue1.name)}</strong>. Hue 2 is the literal <strong style={{ color: result.birthstone.hex }}>{result.birthstone.name}</strong> swatch. The final equal blend is calculated on the server after your email subscription is confirmed.
+                      </p>
+                      <p style={{ ...muted, fontSize: '0.9rem' }}>Your email also includes one personal definition synthesized from five emotion colors in this reading and their exact source swatches.</p>
+                      <form onSubmit={handleSubscribe} style={{ display: 'grid', gap: '14px', marginTop: '22px' }}>
+                        <label htmlFor="aura-spectrum-email" style={{ display: 'grid', gap: '7px', fontSize: '0.9rem', color: 'rgba(243,240,235,0.9)' }}>
+                          Email address
+                          <input
+                            id="aura-spectrum-email"
+                            type="email"
+                            required
+                            autoComplete="email"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
+                            placeholder="you@example.com"
+                            style={{ width: '100%', boxSizing: 'border-box', padding: '13px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', background: '#12121d', color: '#f3f0eb', font: 'inherit' }}
+                          />
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.82rem', lineHeight: 1.55, color: 'rgba(243,240,235,0.7)' }}>
+                          <input
+                            type="checkbox"
+                            required
+                            checked={consent}
+                            onChange={(event) => setConsent(event.target.checked)}
+                            style={{ marginTop: '4px', accentColor: '#c9e0d8', flex: '0 0 auto' }}
+                          />
+                          <span>I agree to subscribe to AuraSpanse email updates and receive this reading. I understand future updates will be sent to this address and I can unsubscribe.</span>
+                        </label>
+                        {subscriptionError && <p role="alert" style={{ margin: 0, color: '#f0a8b8', lineHeight: 1.6 }}>{subscriptionError}</p>}
+                        <button
+                          type="submit"
+                          disabled={submitting}
+                          style={{ ...primaryButton, marginTop: 0, background: submitting ? '#5d5c68' : primaryButton.background, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.8 : 1 }}
+                        >
+                          {submitting ? 'Confirming subscription…' : 'Subscribe and reveal final blend'}
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      <p style={eyebrow}>SUBSCRIPTION CONFIRMED · FINAL BLEND</p>
+                      <h2 style={{ fontFamily: 'Georgia, serif', fontWeight: 400, fontSize: 'clamp(1.7rem, 5vw, 2.4rem)', margin: '12px 0' }}>Your two primaries, combined</h2>
+                      {subscriptionMessage && <p style={{ ...muted, color: '#c9e0d8' }}>{subscriptionMessage}</p>}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '12px', marginTop: '20px' }}>
+                        <div style={{ padding: '14px', border: `1px solid ${result.zodiacHue1.hex}66`, borderRadius: '8px' }}>
+                          <div style={{ height: '46px', borderRadius: '6px', background: result.zodiacHue1.hex, marginBottom: '10px' }} />
+                          <strong>{readableName(result.zodiacHue1.name)}</strong>
+                          <p style={{ ...muted, fontSize: '0.78rem' }}>Hue 1 · four-color zodiac/time blend</p>
+                        </div>
+                        <div style={{ padding: '14px', border: `1px solid ${result.birthstone.hex}66`, borderRadius: '8px' }}>
+                          <div style={{ height: '46px', borderRadius: '6px', background: result.birthstone.hex, marginBottom: '10px' }} />
+                          <strong>{result.birthstone.name}</strong>
+                          <p style={{ ...muted, fontSize: '0.78rem' }}>Hue 2 · literal stone color</p>
+                        </div>
+                      </div>
+                      <div style={{ height: 'min(220px, 42vw)', minHeight: '145px', borderRadius: '8px', margin: '24px 0 16px', background: unlockedBlend?.hex || blendTwoHex(result.zodiacHue1.hex, result.birthstone.hex), boxShadow: '0 0 45px ' + ((unlockedBlend?.hex || blendTwoHex(result.zodiacHue1.hex, result.birthstone.hex)) + '55'), border: '1px solid rgba(255,255,255,0.22)' }} />
+                      <h3 style={{ color: unlockedBlend?.hex || result.zodiacHue1.hex, fontFamily: 'Georgia, serif', fontSize: 'clamp(1.35rem, 4vw, 2rem)', fontWeight: 400, margin: '0 0 8px' }}>
+                        {unlockedBlend?.name || (readableName(result.zodiacHue1.name) + ' × ' + result.birthstone.name)}
+                      </h3>
+                      <p style={{ ...muted, marginBottom: 0 }}>The final color is the equal-weight RGB blend of Hue 1 and Hue 2. Hue 1 is already the blend of its four revealed source colors.</p>
+                    </>
+                  )}
+                </section>
               </>
             )}
-          </section>
-          </>}
-        </>
-      )}
+          </>
+        )}
 
-      <footer style={{ ...panel, textAlign: 'center', padding: '22px' }}>
-        <p style={eyebrow}>AURA-SPECTRUM · TWO-PRIMARY REVEAL</p>
-        <p style={{ ...muted, fontSize: '0.82rem' }}>
-          A custom symbolic model for entertainment and self-reflection, not a scientifically validated measure of personality, emotion, or destiny.
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+        <footer style={{ ...panel, textAlign: 'center', padding: '22px' }}>
+          <p style={eyebrow}>AURA-SPECTRUM · FOUR-COLOR HUE 1 · TWO-PRIMARY REVEAL</p>
+          <p style={{ ...muted, fontSize: '0.82rem' }}>
+            A custom symbolic model for entertainment and self-reflection, not a scientifically validated measure of personality, emotion, or destiny.
+          </p>
           <a href="/aura-scope-mechanism.html" style={{ color: '#d9c9ff', textUnderlineOffset: '4px' }}>Enter another birthdate</a>
-          <button onClick={() => setRetryKey((key) => key + 1)} style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#f3f0eb', padding: '9px 14px', borderRadius: '999px', cursor: 'pointer' }}>Recalculate today</button>
-        </div>
-      </footer>
+        </footer>
       </div>
     </main>
   )

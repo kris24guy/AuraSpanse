@@ -32,6 +32,13 @@ export interface OriginSpectrumComposite {
   sourceWeights: Array<{ source: string; name: string; hex: string; weight: number }>
 }
 
+export interface OriginSpectrumHue1 {
+  name: string
+  hex: string
+  nearestEmotion: OriginEmotionColor
+  sourceWeights: Array<{ source: string; name: string; hex: string; weight: number }>
+}
+
 export interface OriginSpectrumResult {
   birthDate: string
   currentDate: string
@@ -47,6 +54,7 @@ export interface OriginSpectrumResult {
   currentPlacementIndex: number
   firstHue: OriginEmotionColor
   currentPlacement: OriginEmotionColor
+  zodiacHue1: OriginSpectrumHue1
   birthstone: BirthstoneResonance
   zodiac: {
     sign: string
@@ -246,56 +254,59 @@ export function generateOriginSpectrum(
     polarity,
     name: color.name,
     hex: color.hex,
-    weight: 1 / 3
+    weight: 1 / 4
   }))
   const zodiacAveragePositionIndex = Math.round(
     rawChannels.reduce((sum, item) => sum + paletteIndex(item.color, spectrum), 0) / rawChannels.length
   )
   const zodiacAverageEmotion = nearestEmotionAtIndex(zodiacAveragePositionIndex, spectrum)
 
+  const hue1ColorSources = [
+    { source: 'Zodiac · positive', color: zodiacRecord.pos },
+    { source: 'Zodiac · neutral', color: zodiacRecord.neu },
+    { source: 'Zodiac · shadow', color: zodiacRecord.neg },
+    { source: 'Time-weighted current placement', color: currentPlacement },
+  ]
+  const zodiacHue1Hex = averageHex(hue1ColorSources.map((item) => item.color.hex))
+  const zodiacHue1NearestEmotion = nearestEmotionByColor(zodiacHue1Hex, spectrum)
+  const zodiacHue1: OriginSpectrumHue1 = {
+    name: zodiacHue1NearestEmotion.name,
+    hex: zodiacHue1Hex,
+    nearestEmotion: zodiacHue1NearestEmotion,
+    sourceWeights: hue1ColorSources.map((item) => ({
+      source: item.source,
+      name: item.color.name,
+      hex: item.color.hex,
+      weight: 1 / 4,
+    })),
+  }
+
   let composite: OriginSpectrumComposite | null = null
   if (includeComposite) {
-    // The five primary contributors remain equal in the base field.
-    // The natural stone color is layered over the base using geological proximity strength.
-    // The name identifies the stone; its configured swatch supplies the tint.
-    const sourceColors = [
-      { source: 'Zodiac · positive', color: zodiacRecord.pos },
-      { source: 'Zodiac · neutral', color: zodiacRecord.neu },
-      { source: 'Zodiac · shadow', color: zodiacRecord.neg },
-      { source: 'Age-derived first hue', color: firstHue },
-      { source: 'Current spectrum placement', color: currentPlacement }
-    ]
-    const basePositionIndex = Math.round(
-      sourceColors.reduce((sum, item) => sum + paletteIndex(item.color, spectrum), 0) / sourceColors.length
-    )
-    const baseHex = averageHex(sourceColors.map((item) => item.color.hex))
-    const gemstoneEmotion = nearestEmotionByColor(birthstone.hex, spectrum)
-    const gemstonePositionIndex = paletteIndex(gemstoneEmotion, spectrum)
-    const compositePositionIndex = Math.round(
-      basePositionIndex * (1 - birthstone.opacity) + gemstonePositionIndex * birthstone.opacity
-    )
-    const compositeHex = blendHex(baseHex, birthstone.hex, birthstone.opacity)
-    const compositeNearestEmotion = nearestEmotionAtIndex(compositePositionIndex, spectrum)
-    const compositeName = `${zodiacRecord.sign} ${cleanEmotionName(firstHue.name)}–${cleanEmotionName(currentPlacement.name)} with ${birthstone.name} Resonance`
-    const definition = `The Aura-Spectrum base balances ${zodiacRecord.pos.name} (constructive channel), ${zodiacRecord.neu.name} (steady channel), and ${zodiacRecord.neg.name} (shadow channel), each contributing one third within the zodiac triad. ${cleanEmotionName(firstHue.name)} establishes the age-derived first hue; ${cleanEmotionName(currentPlacement.name)} marks today's spectrum placement. The configured natural-stone color for ${birthstone.name} is then layered at ${birthstone.opacityPercent.toFixed(1)}% strength, based on the great-circle distance from ${birthstone.origin.name} to the representative ${birthstone.deposit} region (${Math.round(birthstone.distanceKm).toLocaleString('en-US')} km). This geographic resonance is a custom symbolic rule, not a physical force or scientific measurement.`
+    // Hue 1 is formed equally from the zodiac triad plus the time-weighted placement.
+    // The final reveal then gives Hue 1 and the literal birthstone Hue 2 equal weight.
+    const compositeHex = blendHex(zodiacHue1.hex, birthstone.hex, 0.5)
+    const compositeNearestEmotion = nearestEmotionByColor(compositeHex, spectrum)
+    const compositeName = `${zodiacRecord.sign} ${cleanEmotionName(zodiacHue1.name)} with ${birthstone.name}`
+    const definition = `Zodiac Hue 1 equally blends four color inputs: ${zodiacRecord.pos.name} (positive), ${zodiacRecord.neu.name} (neutral), ${zodiacRecord.neg.name} (shadow), and the time-weighted current placement ${currentPlacement.name}. Hue 2 is the literal natural-stone color for ${birthstone.name}. The final Aura-Spectrum color is an equal blend of those two primaries. The birthstone's ${birthstone.opacityPercent.toFixed(1)}% geographic-resonance reading is contextual and does not change either primary's equal blend weight.`
     composite = {
       name: compositeName,
       hex: compositeHex,
-      baseHex,
+      baseHex: zodiacHue1.hex,
       nearestEmotion: compositeNearestEmotion,
       definition,
       sourceWeights: [
-        ...sourceColors.map((item) => ({
+        ...hue1ColorSources.map((item) => ({
           source: item.source,
           name: item.color.name,
           hex: item.color.hex,
-          weight: (1 - birthstone.opacity) / sourceColors.length
+          weight: 1 / 8
         })),
         {
-          source: `Birthstone swatch · ${birthstone.deposit}`,
+          source: `Birthstone Hue 2 · ${birthstone.deposit}`,
           name: birthstone.name,
           hex: birthstone.hex,
-          weight: birthstone.opacity
+          weight: 1 / 2
         }
       ]
     }
@@ -316,6 +327,7 @@ export function generateOriginSpectrum(
     currentPlacementIndex,
     firstHue,
     currentPlacement,
+    zodiacHue1,
     birthstone,
     zodiac: {
       sign: zodiacRecord.sign,
